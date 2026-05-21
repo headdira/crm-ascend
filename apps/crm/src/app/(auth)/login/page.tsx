@@ -25,10 +25,11 @@ function LoginError({ code }: { code: string | null }) {
       >
         <p className="font-semibold">Supabase não configurado neste deploy</p>
         <p className="mt-1 text-destructive/90">
-          No projeto Vercel <strong>ascend-crm</strong> (não só a landing), adicione{" "}
-          <code className="text-xs">NEXT_PUBLIC_SUPABASE_URL</code> e{" "}
-          <code className="text-xs">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>, marque{" "}
-          <strong>Production</strong> e faça <strong>Redeploy</strong>.
+          No projeto Vercel <strong>ascend-crm</strong>, adicione também{" "}
+          <code className="text-xs">SUPABASE_URL</code> e{" "}
+          <code className="text-xs">SUPABASE_ANON_KEY</code> (mesmos valores do
+          dashboard Supabase) — o middleware Edge usa essas na hora. Depois abra{" "}
+          <code className="text-xs">/api/health</code> para conferir.
         </p>
       </div>
     );

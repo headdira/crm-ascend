@@ -7,4 +7,5 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: ["/crm/:path*", "/login", "/api/crm/:path*"],
+  // /api/health fica de fora — diagnóstico de env
 };

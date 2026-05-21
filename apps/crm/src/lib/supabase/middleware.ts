@@ -1,11 +1,11 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
 export async function updateSession(request: NextRequest) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const { url: supabaseUrl, anonKey: supabaseAnonKey, ok } = getSupabasePublicEnv();
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!ok) {
     const path = request.nextUrl.pathname;
     if (path.startsWith("/crm") && path !== "/login") {
       const url = request.nextUrl.clone();
