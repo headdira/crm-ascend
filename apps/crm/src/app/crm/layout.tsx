@@ -21,10 +21,12 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
 
   return (
     <SupabaseConfigProvider url={supabaseEnv.url} anonKey={supabaseEnv.anonKey}>
-      <SidebarProvider>
-        <AppSidebar />
-        <SidebarInset className="min-w-0">{children}</SidebarInset>
-      </SidebarProvider>
+      <div className="ascend-crm-shell">
+        <SidebarProvider>
+          <AppSidebar />
+          <SidebarInset className="min-w-0 bg-transparent">{children}</SidebarInset>
+        </SidebarProvider>
+      </div>
     </SupabaseConfigProvider>
   );
 }

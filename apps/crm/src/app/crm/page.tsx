@@ -51,7 +51,8 @@ export default async function CrmDashboardPage() {
       />
       <div className="flex flex-col gap-6 p-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <p className="text-primary text-xs font-bold uppercase tracking-[0.2em]">Ascend Club</p>
+          <h1 className="text-2xl font-black tracking-tight">Dashboard</h1>
           <p className="text-muted-foreground text-sm">Resumo operacional — Fase 1</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -59,7 +60,7 @@ export default async function CrmDashboardPage() {
             const Icon = c.icon;
             return (
               <Link key={c.href} href={c.href}>
-                <Card className="hover:bg-accent/50 transition-colors">
+                <Card className="border-border/80 transition-colors hover:border-primary/30 hover:bg-accent/40">
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div className="flex flex-col gap-1">
                       <CardDescription>{c.title}</CardDescription>

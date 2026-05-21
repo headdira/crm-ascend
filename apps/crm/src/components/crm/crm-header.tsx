@@ -52,7 +52,7 @@ export function CrmHeader({
   }
 
   return (
-    <header className="flex h-14 shrink-0 items-center gap-4 border-b px-4">
+    <header className="flex h-14 shrink-0 items-center gap-4 border-b border-border/80 bg-card/40 px-4 backdrop-blur-sm">
       <SidebarTrigger />
       <Breadcrumb>
         <BreadcrumbList>
@@ -76,8 +76,10 @@ export function CrmHeader({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="relative size-8 rounded-full p-0">
-              <Avatar className="size-8">
-                <AvatarFallback>{initials}</AvatarFallback>
+              <Avatar className="size-8 ring-2 ring-primary/30">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-bold">
+                  {initials}
+                </AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>

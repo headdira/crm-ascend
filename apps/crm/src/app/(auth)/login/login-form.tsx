@@ -1,9 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "@crm-ascend/db";
+import { LOGO_URL, SITE_NAME } from "@/lib/brand";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -121,11 +123,19 @@ export default function LoginForm({
   }
 
   return (
-    <main className="bg-background flex min-h-screen items-center justify-center p-6">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>CRM Ascend</CardTitle>
-          <CardDescription>Acesso interno para equipe</CardDescription>
+    <main className="ascend-auth-bg flex min-h-screen items-center justify-center p-6">
+      <Card className="w-full max-w-md border-white/10 bg-card shadow-[0_0_60px_rgba(255,184,0,0.08)]">
+        <CardHeader className="items-center text-center">
+          <Image
+            src={LOGO_URL}
+            alt={SITE_NAME}
+            width={160}
+            height={48}
+            className="mx-auto mb-2 h-11 w-auto"
+            priority
+          />
+          <CardTitle className="text-xl font-black tracking-tight">CRM interno</CardTitle>
+          <CardDescription>Acesso para equipe {SITE_NAME}</CardDescription>
         </CardHeader>
         <CardContent>
           <LoginError code={urlError} configured={configured} />
@@ -175,7 +185,11 @@ export default function LoginForm({
                   required
                 />
               </Field>
-              <Button type="submit" className="w-full" disabled={loading || !configured}>
+              <Button
+                type="submit"
+                className="w-full rounded-xl font-black uppercase tracking-wide"
+                disabled={loading || !configured}
+              >
                 {loading ? "Entrando…" : "Entrar"}
               </Button>
             </FieldGroup>

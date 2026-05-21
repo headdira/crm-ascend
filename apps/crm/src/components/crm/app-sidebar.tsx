@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,6 +13,7 @@ import {
   UserPlus,
   Wrench,
 } from "lucide-react";
+import { LOGO_URL, SITE_NAME } from "@/lib/brand";
 import {
   Sidebar,
   SidebarContent,
@@ -53,15 +55,29 @@ export function AppSidebar() {
   const pathname = usePathname();
 
   return (
-    <Sidebar>
-      <SidebarHeader className="flex flex-col gap-1 border-b px-4 py-4">
-        <span className="text-sm font-semibold">CRM Ascend</span>
-        <span className="text-muted-foreground text-xs">Fase 1 · Interno</span>
+    <Sidebar className="border-sidebar-border">
+      <SidebarHeader className="border-sidebar-border flex flex-col gap-3 border-b px-4 py-4">
+        <Link href="/crm" className="flex items-center gap-3">
+          <Image
+            src={LOGO_URL}
+            alt={SITE_NAME}
+            width={140}
+            height={40}
+            className="h-9 w-auto opacity-95"
+            priority
+          />
+        </Link>
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">CRM interno</p>
+          <p className="text-muted-foreground text-xs">Operação · Fase 1</p>
+        </div>
       </SidebarHeader>
       <SidebarContent>
         {nav.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.15em]">
+              {group.label}
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
@@ -84,7 +100,9 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
         <SidebarGroup>
-          <SidebarGroupLabel>Matrículas</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-muted-foreground text-[10px] font-bold uppercase tracking-[0.15em]">
+            Matrículas
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
@@ -100,7 +118,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild isActive={pathname === "/crm"}>
                   <Link href="/crm">
                     <Settings data-icon="inline-start" />
                     <span>Dashboard</span>

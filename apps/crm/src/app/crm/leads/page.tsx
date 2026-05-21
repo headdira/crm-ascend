@@ -35,7 +35,7 @@ export default async function LeadsPage({
       />
       <div className="flex flex-col gap-4 p-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-semibold">Leads</h1>
+          <h1 className="text-2xl font-black tracking-tight">Leads</h1>
           <Button asChild>
             <Link href="/crm/leads/new">
               <UserPlus data-icon="inline-start" />
