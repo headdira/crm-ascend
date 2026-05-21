@@ -1,14 +1,25 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import type { Database } from "@crm-ascend/db";
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({ request });
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const supabase = createServerClient<Database, "public">(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    const path = request.nextUrl.pathname;
+    if (path.startsWith("/crm") && path !== "/login") {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("error", "config");
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
+  }
+
+  try {
+    let supabaseResponse = NextResponse.next({ request });
+
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (
@@ -25,34 +36,36 @@ export async function updateSession(request: NextRequest) {
           );
         },
       },
-    },
-  );
+    });
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const path = request.nextUrl.pathname;
-  const isCrm = path.startsWith("/crm");
-  const isLogin = path === "/login";
-  const isApiCrm = path.startsWith("/api/crm");
+    const path = request.nextUrl.pathname;
+    const isCrm = path.startsWith("/crm");
+    const isLogin = path === "/login";
+    const isApiCrm = path.startsWith("/api/crm");
 
-  if (isApiCrm) {
+    if (isApiCrm) {
+      return supabaseResponse;
+    }
+
+    if (isCrm && !user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/login";
+      url.searchParams.set("next", path);
+      return NextResponse.redirect(url);
+    }
+
+    if (isLogin && user) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/crm";
+      return NextResponse.redirect(url);
+    }
+
     return supabaseResponse;
+  } catch {
+    return NextResponse.next();
   }
-
-  if (isCrm && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("next", path);
-    return NextResponse.redirect(url);
-  }
-
-  if (isLogin && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/crm";
-    return NextResponse.redirect(url);
-  }
-
-  return supabaseResponse;
 }

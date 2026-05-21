@@ -18,12 +18,13 @@ export async function upsertService(input: unknown) {
   const parsed = serviceUpsertSchema.parse(input);
   const supabase = await getSupabaseServer();
 
-  if (parsed.id) {
-    const { id: _updateId, ...updatePayload } = parsed;
+  const { id, ...payload } = parsed;
+
+  if (id) {
     const { data, error } = await supabase
       .from("services")
-      .update(updatePayload)
-      .eq("id", parsed.id)
+      .update(payload)
+      .eq("id", id)
       .select()
       .single();
     if (error) throw new ActionError(error.message, "DB_ERROR");
@@ -31,8 +32,7 @@ export async function upsertService(input: unknown) {
     return data;
   }
 
-  const { id: _id, ...insert } = parsed;
-  const { data, error } = await supabase.from("services").insert(insert).select().single();
+  const { data, error } = await supabase.from("services").insert(payload).select().single();
   if (error) throw new ActionError(error.message, "DB_ERROR");
   revalidatePath("/crm/services");
   return data;

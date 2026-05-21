@@ -130,7 +130,6 @@ export async function updateLead(id: string, input: unknown) {
 export async function convertLeadToStudent(input: unknown) {
   const staff = await requireStaff();
   const { lead_id, notes } = leadConvertSchema.parse(input);
-  const salt = getHashSalt();
   const supabase = await getSupabaseServer();
 
   const { data: lead, error: leadErr } = await supabase
