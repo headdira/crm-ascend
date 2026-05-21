@@ -1,26 +1,40 @@
 import { type NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/sales/session-constants";
+
+/** Evita import com alias no bundle Edge (causa comum de MIDDLEWARE_INVOCATION_FAILED). */
+const SESSION_COOKIE = "ascend_session_id";
+const SESSION_MAX_AGE = 60 * 60 * 24 * 180;
+
+function newSessionId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
 
 export function middleware(request: NextRequest) {
-  const response = NextResponse.next();
-  const existing = request.cookies.get(SESSION_COOKIE)?.value;
+  try {
+    const response = NextResponse.next();
+    const existing = request.cookies.get(SESSION_COOKIE)?.value;
 
-  if (!existing) {
-    const sessionId = crypto.randomUUID();
-    response.cookies.set(SESSION_COOKIE, sessionId, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      path: "/",
-      maxAge: SESSION_MAX_AGE,
-    });
+    if (!existing) {
+      response.cookies.set(SESSION_COOKIE, newSessionId(), {
+        httpOnly: true,
+        secure: request.nextUrl.protocol === "https:",
+        sameSite: "lax",
+        path: "/",
+        maxAge: SESSION_MAX_AGE,
+      });
+    }
+
+    return response;
+  } catch {
+    return NextResponse.next();
   }
-
-  return response;
 }
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|avif|ico)$).*)",
+    "/api/:path*",
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml).*)",
   ],
 };
