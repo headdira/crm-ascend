@@ -21,10 +21,6 @@ const ConsentScripts = dynamic(() => import("@/components/sales/ConsentScripts")
   ssr: false,
   loading: () => null,
 });
-const EventTracker = dynamic(() => import("@/components/sales/EventTracker"), {
-  ssr: false,
-  loading: () => null,
-});
 
 export default function SalesLayoutShell({ children }: { children: ReactNode }) {
   return (
@@ -38,7 +34,6 @@ export default function SalesLayoutShell({ children }: { children: ReactNode }) 
       <LightExperienceInit />
       <div className="relative z-[1]">{children}</div>
       <DeferredClient idleMs={1500}>
-        <EventTracker />
         <CookieConsent />
         <ConsentScripts />
       </DeferredClient>

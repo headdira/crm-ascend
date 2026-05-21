@@ -2,7 +2,6 @@
 
 import type { ComponentProps } from "react";
 import { useCheckoutUrl } from "@/hooks/use-checkout-url";
-import { trackEvent } from "@/lib/sales/track-client";
 
 type Props = Omit<ComponentProps<"a">, "href"> & {
   trackLabel?: string;
@@ -18,16 +17,10 @@ export default function CheckoutLink({ trackLabel, onClick, children, ...rest }:
       rel="noopener noreferrer"
       data-track={trackLabel}
       onClick={(e) => {
-        if (typeof window !== "undefined") {
-          trackEvent("InitiateCheckout", {
-            label: trackLabel ?? "checkout",
-            checkout_url: href,
-          });
-          if (trackLabel) {
-            window.dispatchEvent(
-              new CustomEvent("ascend:cta_click", { detail: { label: trackLabel } }),
-            );
-          }
+        if (trackLabel && typeof window !== "undefined") {
+          window.dispatchEvent(
+            new CustomEvent("ascend:cta_click", { detail: { label: trackLabel } }),
+          );
         }
         onClick?.(e);
       }}
