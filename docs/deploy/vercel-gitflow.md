@@ -67,11 +67,13 @@ Configuração padrão Vercel: **Production Branch** = `main`; previews automát
 
 | Variável | Produção | Preview |
 |----------|----------|---------|
-| `NEXT_PUBLIC_SUPABASE_URL` | … | … |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | … | … |
-| `SUPABASE_SERVICE_ROLE_KEY` | … | … |
-| `HASH_SALT` | … | … |
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://tcolzuozekujmqlpwdkv.supabase.co` (seu projeto) | igual |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | chave **anon** / **publishable** do Supabase | igual |
+| `SUPABASE_SERVICE_ROLE_KEY` | chave **service_role** (não use a anon aqui) | secret |
+| `HASH_SALT` | string longa aleatória | secret |
 | `BUILDER_API_KEY` | … | … |
+
+**Importante:** são **dois projetos Vercel** no mesmo repo. Env da landing **não** vale para o CRM. Se `/login?error=config`, faltam as `NEXT_PUBLIC_*` no projeto **ascend-crm** ou falta **Redeploy** depois de salvar as env (elas entram no build do Next).
 
 Use **Environment** na Vercel: Production / Preview / Development para não vazar secrets em preview se não quiser.
 
