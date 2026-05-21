@@ -1,0 +1,26 @@
+{
+  "name": "crm-ascend",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "typecheck": "turbo typecheck",
+    "login:vercel": "vercel login",
+    "login:supabase": "supabase login",
+    "link:vercel:landing": "vercel link --cwd apps/landing",
+    "link:vercel:crm": "vercel link --cwd apps/crm"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "supabase": "^2.20.12",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3",
+    "vercel": "^41.7.0"
+  },
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,214 @@
+@import "tailwindcss";
+
+@theme inline {
+  --font-inter: var(--font-inter-family), ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #ffb800;
+  --color-primary-foreground: #0a0a0a;
+  --color-background: #0a0a0a;
+  --color-foreground: #fafafa;
+}
+
+body {
+  background: #0a0a0a;
+  color: #fafafa;
+}
+
+.sales-landing {
+  --primary: #ffb800;
+  --primary-foreground: #0a0a0a;
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --ascend-surface-elevated: #111111;
+  --ascend-surface-deep: #0d0d0d;
+  --ascend-urgency: #dc2626;
+}
+
+.sales-landing-brand {
+  --primary: #ffb800;
+  --primary-foreground: #0a0a0a;
+  --background: #0a0a0a;
+  --foreground: #fafafa;
+  --ascend-surface-elevated: #111111;
+  --ascend-surface-deep: #0d0d0d;
+  --ascend-urgency: #dc2626;
+}
+
+.sales-landing-brand .sales-star {
+  position: absolute;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.9), 0 0 10px rgba(255, 184, 0, 0.35);
+  opacity: 0.35;
+  will-change: transform, opacity;
+}
+
+.sales-landing-brand .sales-star--drift-0 {
+  animation: sales-star-twinkle var(--star-dur, 3s) ease-in-out infinite,
+    sales-star-drift-a var(--star-drift-dur, 4.5s) ease-in-out infinite;
+}
+
+.sales-landing-brand .sales-star--drift-1 {
+  animation: sales-star-twinkle var(--star-dur, 3s) ease-in-out infinite,
+    sales-star-drift-b var(--star-drift-dur, 4.5s) ease-in-out infinite;
+}
+
+.sales-landing-brand .sales-star--drift-2 {
+  animation: sales-star-twinkle var(--star-dur, 3s) ease-in-out infinite,
+    sales-star-drift-c var(--star-drift-dur, 4.5s) ease-in-out infinite;
+}
+
+.sales-landing-brand .sales-star--drift-3 {
+  animation: sales-star-twinkle var(--star-dur, 3s) ease-in-out infinite,
+    sales-star-drift-d var(--star-drift-dur, 4.5s) ease-in-out infinite;
+}
+
+.sales-landing-brand .sales-star--drift-4 {
+  animation: sales-star-twinkle var(--star-dur, 3s) ease-in-out infinite,
+    sales-star-drift-a var(--star-drift-dur, 5s) ease-in-out infinite reverse;
+}
+
+.sales-landing-brand .sales-star--hot {
+  opacity: 1 !important;
+  transform: scale(2) !important;
+  box-shadow: 0 0 6px #fff, 0 0 14px rgba(255, 184, 0, 0.9), 0 0 22px rgba(255, 184, 0, 0.45) !important;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.sales-landing-brand .sales-star--static {
+  opacity: 0.25;
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-landing-brand .sales-star {
+    animation: none !important;
+    opacity: 0.3;
+  }
+}
+
+@keyframes ticker-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-marquee {
+  animation: ticker-marquee 18s linear infinite;
+}
+
+html[data-light="true"] .ticker-marquee {
+  animation: none;
+}
+
+html[data-light="true"] [data-motion="true"] {
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+@keyframes sales-star-twinkle {
+  0%,
+  100% {
+    opacity: 0.15;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.35);
+  }
+}
+
+@keyframes sales-star-drift-a {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(4px, -5px);
+  }
+}
+
+@keyframes sales-star-drift-b {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-5px, 3px);
+  }
+}
+
+@keyframes sales-star-drift-c {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(3px, 4px);
+  }
+}
+
+@keyframes sales-star-drift-d {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-3px, -4px);
+  }
+}
+
+.sales-landing .sales-star {
+  position: absolute;
+  border-radius: 9999px;
+  background: #fff;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.9), 0 0 10px rgba(255, 184, 0, 0.35);
+  opacity: 0.35;
+  will-change: transform, opacity;
+}
+
+.sales-landing .sales-star--drift-0 {
+  animation: sales-star-twinkle var(--star-dur, 3s) ease-in-out infinite,
+    sales-star-drift-a var(--star-drift-dur, 4.5s) ease-in-out infinite;
+}
+
+.sales-landing .sales-star--drift-1 {
+  animation: sales-star-twinkle var(--star-dur, 3s) ease-in-out infinite,
+    sales-star-drift-b var(--star-drift-dur, 4.5s) ease-in-out infinite;
+}
+
+.sales-landing .sales-star--drift-2 {
+  animation: sales-star-twinkle var(--star-dur, 3s) ease-in-out infinite,
+    sales-star-drift-c var(--star-drift-dur, 4.5s) ease-in-out infinite;
+}
+
+.sales-landing .sales-star--drift-3 {
+  animation: sales-star-twinkle var(--star-dur, 3s) ease-in-out infinite,
+    sales-star-drift-d var(--star-drift-dur, 4.5s) ease-in-out infinite;
+}
+
+.sales-landing .sales-star--drift-4 {
+  animation: sales-star-twinkle var(--star-dur, 3s) ease-in-out infinite,
+    sales-star-drift-a var(--star-drift-dur, 5s) ease-in-out infinite reverse;
+}
+
+.sales-landing .sales-star--hot {
+  opacity: 1 !important;
+  transform: scale(2) !important;
+  box-shadow: 0 0 6px #fff, 0 0 14px rgba(255, 184, 0, 0.9), 0 0 22px rgba(255, 184, 0, 0.45) !important;
+  transition: opacity 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.sales-landing .sales-star--static {
+  opacity: 0.25;
+  animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sales-landing .sales-star {
+    animation: none !important;
+    opacity: 0.3;
+  }
+}
