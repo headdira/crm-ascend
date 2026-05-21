@@ -59,6 +59,10 @@ export async function updateSession(request: NextRequest) {
     }
 
     if (isLogin && user) {
+      const err = request.nextUrl.searchParams.get("error");
+      if (err === "staff" || err === "config") {
+        return supabaseResponse;
+      }
       const url = request.nextUrl.clone();
       url.pathname = "/crm";
       return NextResponse.redirect(url);

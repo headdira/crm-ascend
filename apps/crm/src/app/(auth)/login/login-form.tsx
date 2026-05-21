@@ -61,11 +61,13 @@ function LoginError({ code, configured }: { code: string | null; configured: boo
         role="alert"
         className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-amber-900 dark:text-amber-200"
       >
-        <p className="font-semibold">Usuário sem acesso staff</p>
+        <p className="font-semibold">Conta sem acesso ao CRM</p>
         <p className="mt-1 opacity-90">
-          Promova no SQL:{" "}
+          Tente entrar de novo (o sistema cria o staff automaticamente). Se persistir, rode no
+          Supabase SQL Editor a migration <code className="text-xs">007_staff_self_register.sql</code>{" "}
+          ou:{" "}
           <code className="text-xs">
-            UPDATE staff_users SET role=&apos;admin&apos;, is_active=true WHERE email=&apos;...&apos;
+            UPDATE staff_users SET is_active=true, role=&apos;admin&apos; WHERE email=&apos;seu@email&apos;;
           </code>
         </p>
       </div>
@@ -86,6 +88,17 @@ export default function LoginForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
+
+  async function handleSignOut() {
+    if (!configured) return;
+    setSigningOut(true);
+    const supabase = createBrowserClient<Database>(supabaseUrl, supabaseAnonKey);
+    await supabase.auth.signOut();
+    setSigningOut(false);
+    router.replace("/login");
+    router.refresh();
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -116,6 +129,16 @@ export default function LoginForm({
         </CardHeader>
         <CardContent>
           <LoginError code={urlError} configured={configured} />
+          {urlError === "staff" && configured && (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="mb-4 w-full text-xs text-muted-foreground underline hover:text-foreground"
+            >
+              {signingOut ? "Saindo…" : "Sair e tentar outro usuário"}
+            </button>
+          )}
           {!configured && (
             <div
               role="alert"
