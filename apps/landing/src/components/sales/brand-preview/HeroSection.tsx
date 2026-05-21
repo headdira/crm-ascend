@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Clock3, Flame, ShieldCheck, Star } from "lucide-react";
 import BrandCheckoutLink from "./BrandCheckoutLink";
@@ -9,7 +8,6 @@ import SalesImage from "../SalesImage";
 import Ticker from "../Ticker";
 import { HERO_IMAGE, LOGO_URL } from "../constants";
 import Image from "next/image";
-import { useLightExperience } from "@/hooks/use-light-experience";
 
 const navLinks = [
   { href: "#beneficios", label: "Benefícios" },
@@ -19,9 +17,6 @@ const navLinks = [
 ];
 
 export default function HeroSection() {
-  const light = useLightExperience();
-  const M = light ? "div" : motion.div;
-
   return (
     <section className="relative overflow-hidden bg-transparent">
       <div className="relative z-50 bg-red-600 border-b border-red-500">
@@ -45,6 +40,8 @@ export default function HeroSection() {
             width={160}
             height={48}
             priority
+            fetchPriority="high"
+            quality={65}
             className="h-12 w-auto opacity-95"
             sizes="160px"
           />
@@ -64,30 +61,14 @@ export default function HeroSection() {
       <div className="relative z-20 max-w-7xl mx-auto px-6 pt-10 pb-20 overflow-visible">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-start overflow-visible">
           <div>
-            <M
-              {...(!light && {
-                initial: { opacity: 0, y: 18 },
-                animate: { opacity: 1, y: 0 },
-                transition: { duration: 0.4 },
-              })}
-              data-motion="true"
-              className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 mb-8"
-            >
+            <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/10 px-4 py-2 mb-8">
               <Star className="w-4 h-4 text-primary fill-primary" />
               <span className={`${brandTypography.eyebrow} text-[11px]`}>
                 Método Validado + Comunidade Exclusiva
               </span>
-            </M>
+            </div>
 
-            <M
-              {...(!light && {
-                initial: { opacity: 0, y: 35 },
-                animate: { opacity: 1, y: 0 },
-                transition: { duration: 0.55 },
-              })}
-              data-motion="true"
-              className={brandTypography.h1}
-            >
+            <div className={brandTypography.h1}>
               <h1>
                 Aprenda A Construir Sua
                 <span className="block text-primary drop-shadow-[0_0_30px_rgba(255,184,0,0.35)]">
@@ -96,22 +77,14 @@ export default function HeroSection() {
                 Mesmo Começando
                 <span className="block">Do Zero</span>
               </h1>
-            </M>
+            </div>
 
-            <M
-              {...(!light && {
-                initial: { opacity: 0, y: 25 },
-                animate: { opacity: 1, y: 0 },
-                transition: { duration: 0.55, delay: 0.1 },
-              })}
-              data-motion="true"
-              className={`mt-8 max-w-xl ${brandTypography.body}`}
-            >
+            <div className={`mt-8 max-w-xl ${brandTypography.body}`}>
               <p>
                 Tenha acesso ao passo a passo, suporte próximo, networking ativo e estratégias
                 aplicadas por alunos que já estão faturando no digital.
               </p>
-            </M>
+            </div>
 
             <div className="mt-10 space-y-4">
               {[
@@ -148,7 +121,7 @@ export default function HeroSection() {
               >
                 <span className="relative z-10">Quero Entrar No Ascend Club</span>
                 <ArrowRight className="relative z-10 w-5 h-5 transition-transform group-hover:translate-x-1" />
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-120%] group-hover:translate-x-[120%] transition-transform duration-1000" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-120%] group-hover:translate-x-[120%] transition-transform duration-1000 max-lg:hidden" />
               </BrandCheckoutLink>
               <div className={`mt-5 flex flex-wrap items-center gap-5 ${brandTypography.micro}`}>
                 <div className="flex items-center gap-1.5">
@@ -186,24 +159,19 @@ export default function HeroSection() {
             </div>
           </div>
 
-          <M
-            {...(!light && {
-              initial: { opacity: 0, x: 60 },
-              animate: { opacity: 1, x: 0 },
-              transition: { duration: 0.7 },
-            })}
-            data-motion="true"
-            className="relative hidden lg:flex shrink-0 justify-center overflow-visible lg:mt-[calc(4.75rem+30px)]"
-          >
-            <div className="pointer-events-none absolute inset-0 -z-10 bg-primary/20 blur-[120px] rounded-full" />
+          <div className="relative hidden lg:flex shrink-0 justify-center overflow-visible lg:mt-[calc(4.75rem+30px)]">
+            <div className="pointer-events-none absolute inset-0 -z-10 bg-primary/20 blur-[120px] rounded-full max-lg:hidden" />
             <div className="relative w-full max-w-[520px] overflow-visible">
-              <div className="pointer-events-none absolute -inset-2 -z-10 rounded-[32px] bg-gradient-to-b from-primary/30 to-transparent blur-xl" />
+              <div className="pointer-events-none absolute -inset-2 -z-10 rounded-[32px] bg-gradient-to-b from-primary/30 to-transparent blur-xl max-lg:hidden" />
               <Image
                 src={HERO_IMAGE}
                 alt="Mentor Ascend Club"
                 width={520}
                 height={650}
                 priority
+                fetchPriority="high"
+                quality={55}
+                sizes="(min-width: 1024px) 520px, 0px"
                 className="relative z-[1] w-full max-w-[520px] h-auto rounded-[28px] border border-primary/20 shadow-[0_0_60px_rgba(255,184,0,0.12)] object-cover"
               />
               <div className="absolute z-20 bottom-3 -left-8 bg-black/90 border border-primary/20 rounded-2xl px-5 py-4 backdrop-blur-xl shadow-2xl">
@@ -221,7 +189,7 @@ export default function HeroSection() {
                 <p className="text-white/45 text-xs mt-1">suporte + direcionamento</p>
               </div>
             </div>
-          </M>
+          </div>
         </div>
       </div>
 

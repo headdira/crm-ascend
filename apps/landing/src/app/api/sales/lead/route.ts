@@ -1,3 +1,4 @@
+import "server-only";
 import { createServiceSupabase, type Json } from "@crm-ascend/db";
 import { hashEmail, hashPhone } from "@crm-ascend/validation";
 import { NextResponse } from "next/server";
