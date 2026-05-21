@@ -31,6 +31,68 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["staff_users"]["Row"]>;
         Relationships: TableRelationship[];
       };
+      landing_events: {
+        Row: {
+          id: string;
+          session_id: string;
+          event_name: string;
+          event_id: string;
+          ts: string;
+          page: string | null;
+          payload: Json;
+          meta_capi_status: string;
+          meta_capi_error: string | null;
+          ga4_status: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          session_id: string;
+          event_name: string;
+          event_id: string;
+          ts?: string;
+          page?: string | null;
+          payload?: Json;
+          meta_capi_status?: string;
+          meta_capi_error?: string | null;
+          ga4_status?: string;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["landing_events"]["Row"]>;
+        Relationships: TableRelationship[];
+      };
+      landing_sessions: {
+        Row: {
+          id: string;
+          first_seen: string;
+          last_seen: string;
+          ip_hash: string | null;
+          user_agent: string | null;
+          device: string | null;
+          os: string | null;
+          country: string | null;
+          city: string | null;
+          utm: Json;
+          referrer: string | null;
+          landing_path: string | null;
+        };
+        Insert: {
+          id: string;
+          first_seen?: string;
+          last_seen?: string;
+          ip_hash?: string | null;
+          user_agent?: string | null;
+          device?: string | null;
+          os?: string | null;
+          country?: string | null;
+          city?: string | null;
+          utm?: Json;
+          referrer?: string | null;
+          landing_path?: string | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["landing_sessions"]["Row"]>;
+        Relationships: TableRelationship[];
+      };
       leads: {
         Row: {
           id: string;
@@ -45,6 +107,9 @@ export type Database = {
           status: Database["public"]["Enums"]["lead_status"];
           owner_id: string | null;
           converted_student_id: string | null;
+          session_id: string | null;
+          reached_kiwify_at: string | null;
+          last_event_at: string | null;
           created_at: string;
           updated_at: string;
         };
@@ -61,6 +126,9 @@ export type Database = {
           status?: Database["public"]["Enums"]["lead_status"];
           owner_id?: string | null;
           converted_student_id?: string | null;
+          session_id?: string | null;
+          reached_kiwify_at?: string | null;
+          last_event_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };

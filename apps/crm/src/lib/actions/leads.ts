@@ -41,6 +41,35 @@ export async function getLead(id: string) {
   return data;
 }
 
+export async function getLeadTrackingContext(leadId: string) {
+  const lead = await getLead(leadId);
+  const supabase = await getSupabaseServer();
+
+  if (!lead.session_id) {
+    return { lead, session: null, events: [] };
+  }
+
+  const [{ data: session }, events] = await Promise.all([
+    supabase.from("landing_sessions").select("*").eq("id", lead.session_id).maybeSingle(),
+    listSessionEvents(lead.session_id),
+  ]);
+
+  return { lead, session, events };
+}
+
+async function listSessionEvents(sessionId: string) {
+  const supabase = await getSupabaseServer();
+  const { data, error } = await supabase
+    .from("landing_events")
+    .select("*")
+    .eq("session_id", sessionId)
+    .order("ts", { ascending: false })
+    .limit(100);
+
+  if (error) throw new ActionError(error.message, "DB_ERROR");
+  return data ?? [];
+}
+
 export async function createLead(input: unknown) {
   await requireStaff();
   const parsed = leadCreateSchema.parse(input);

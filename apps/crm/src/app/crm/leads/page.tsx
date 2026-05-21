@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { UserCheck, UserPlus } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -51,6 +52,7 @@ export default async function LeadsPage({
                 <TableHead>Nome</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Origem</TableHead>
+                <TableHead>Kiwify</TableHead>
                 <TableHead>Criado</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
               </TableRow>
@@ -67,6 +69,13 @@ export default async function LeadsPage({
                     <StatusBadge value={lead.status} />
                   </TableCell>
                   <TableCell>{lead.source}</TableCell>
+                  <TableCell>
+                    {lead.reached_kiwify_at ? (
+                      <Badge variant="secondary">Checkout</Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
+                  </TableCell>
                   <TableCell>{formatDate(lead.created_at)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
