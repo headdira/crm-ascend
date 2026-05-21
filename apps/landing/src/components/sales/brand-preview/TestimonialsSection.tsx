@@ -104,9 +104,8 @@ export default function TestimonialsSection() {
                     src={t.photo}
                     alt={`Foto de ${t.name}`}
                     fill
-                    sizes="112px"
-                    quality={55}
-                    loading="lazy"
+                    unoptimized
+                    sizes="224px"
                     className="object-cover object-center"
                   />
                 </div>

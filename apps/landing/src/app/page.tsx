@@ -1,37 +1,21 @@
 import type { Metadata } from "next";
 import dynamic from "next/dynamic";
 import HeroSection from "@/components/sales/brand-preview/HeroSection";
-import LazyWhenVisible from "@/components/sales/LazyWhenVisible";
 
-const BenefitsSection = dynamic(
-  () => import("@/components/sales/brand-preview/BenefitsSection"),
-  { loading: () => null },
-);
+const BenefitsSection = dynamic(() => import("@/components/sales/brand-preview/BenefitsSection"));
 const GamificationSection = dynamic(
   () => import("@/components/sales/brand-preview/GamificationSection"),
-  { loading: () => null },
 );
-const MentorsSection = dynamic(
-  () => import("@/components/sales/brand-preview/MentorsSection"),
-  { loading: () => null },
-);
+const MentorsSection = dynamic(() => import("@/components/sales/brand-preview/MentorsSection"));
 const TestimonialsSection = dynamic(
   () => import("@/components/sales/brand-preview/TestimonialsSection"),
-  { loading: () => null },
 );
 const ObjectionsSection = dynamic(
   () => import("@/components/sales/brand-preview/ObjectionsSection"),
-  { loading: () => null },
 );
-const PricingCTA = dynamic(() => import("@/components/sales/brand-preview/PricingCTA"), {
-  loading: () => null,
-});
-const FinalSection = dynamic(() => import("@/components/sales/brand-preview/FinalSection"), {
-  loading: () => null,
-});
-const FloatingCTA = dynamic(() => import("@/components/sales/brand-preview/FloatingCTA"), {
-  loading: () => null,
-});
+const PricingCTA = dynamic(() => import("@/components/sales/brand-preview/PricingCTA"));
+const FinalSection = dynamic(() => import("@/components/sales/brand-preview/FinalSection"));
+const FloatingCTA = dynamic(() => import("@/components/sales/brand-preview/FloatingCTA"));
 
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
@@ -58,30 +42,14 @@ export default function Home() {
   return (
     <>
       <HeroSection />
-      <LazyWhenVisible minHeight={360}>
-        <BenefitsSection />
-      </LazyWhenVisible>
-      <LazyWhenVisible minHeight={320}>
-        <GamificationSection />
-      </LazyWhenVisible>
-      <LazyWhenVisible minHeight={480}>
-        <MentorsSection />
-      </LazyWhenVisible>
-      <LazyWhenVisible minHeight={520}>
-        <TestimonialsSection />
-      </LazyWhenVisible>
-      <LazyWhenVisible minHeight={280}>
-        <ObjectionsSection />
-      </LazyWhenVisible>
-      <LazyWhenVisible minHeight={400}>
-        <PricingCTA />
-      </LazyWhenVisible>
-      <LazyWhenVisible minHeight={360}>
-        <FinalSection />
-      </LazyWhenVisible>
-      <LazyWhenVisible minHeight={0}>
-        <FloatingCTA />
-      </LazyWhenVisible>
+      <BenefitsSection />
+      <GamificationSection />
+      <MentorsSection />
+      <TestimonialsSection />
+      <ObjectionsSection />
+      <PricingCTA />
+      <FinalSection />
+      <FloatingCTA />
     </>
   );
 }

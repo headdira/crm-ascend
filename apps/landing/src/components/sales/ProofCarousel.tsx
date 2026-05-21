@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
 import LightImageGallery from "./LightImageGallery";
 
 const proofImages = [
@@ -80,24 +80,25 @@ export default function ProofCarousel() {
             visibleCount === 1 ? "grid-cols-1" : "grid-cols-3"
           }`}
         >
-          {getVisible().map((item) => (
-            <button
+          {getVisible().map((item, i) => (
+            <motion.button
               key={`${item.globalIndex}-${visibleCount}`}
               type="button"
               onClick={() => setLightboxIndex(item.globalIndex)}
-              className="relative w-full rounded-xl overflow-hidden border border-white/[0.07] aspect-[4/3] min-h-[280px] sm:min-h-[300px] cursor-zoom-in hover:border-primary/40 transition-colors text-left"
+              className="w-full rounded-xl overflow-hidden border border-white/[0.07] aspect-[4/3] min-h-[320px] sm:min-h-[300px] md:min-h-[320px] cursor-zoom-in hover:border-primary/40 transition-colors text-left"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
               aria-label={`Ampliar print ${item.globalIndex + 1}`}
             >
-              <Image
+              <img
                 src={item.src}
                 alt={`Prova social ${item.globalIndex + 1}`}
-                fill
-                sizes={visibleCount === 1 ? "(max-width: 640px) 100vw, 400px" : "(max-width: 640px) 100vw, 33vw"}
-                quality={50}
-                className="object-cover object-top pointer-events-none"
+                className="w-full h-full object-cover object-top pointer-events-none"
                 loading="lazy"
+                decoding="async"
               />
-            </button>
+            </motion.button>
           ))}
         </div>
 

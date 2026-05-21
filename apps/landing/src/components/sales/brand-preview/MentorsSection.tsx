@@ -69,8 +69,7 @@ export default function MentorsSection() {
                   src={m.img}
                   alt={`${m.name} — ${m.role} do Ascend Club`}
                   fill
-                  sizes="(max-width: 768px) 90vw, 420px"
-                  quality={50}
+                  sizes="(max-width: 768px) 100vw, 480px"
                   className="object-cover"
                   style={{ objectPosition: m.objectPosition }}
                 />
