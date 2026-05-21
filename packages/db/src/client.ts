@@ -1,12 +1,11 @@
 import { createBrowserClient, createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
+import { getSupabaseUrl, requireSupabasePublicEnv } from "./env";
 
 export function createBrowserSupabase() {
-  return createBrowserClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  );
+  const { url, anonKey } = requireSupabasePublicEnv();
+  return createBrowserClient<Database>(url, anonKey);
 }
 
 export async function createServerSupabase(cookieStore: {
@@ -14,9 +13,10 @@ export async function createServerSupabase(cookieStore: {
   set: (name: string, value: string, options?: Record<string, unknown>) => void;
   remove: (name: string, options?: Record<string, unknown>) => void;
 }) {
+  const { url, anonKey } = requireSupabasePublicEnv();
   return createServerClient<Database, "public">(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookies: {
         getAll: () => cookieStore.getAll(),
@@ -38,10 +38,10 @@ export async function createServerSupabase(cookieStore: {
 
 /** Service role — server-only (Route Handlers, privileged actions). */
 export function createServiceSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = getSupabaseUrl();
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
   if (!url || !key) {
-    throw new Error("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY");
+    throw new Error("Missing Supabase URL or SUPABASE_SERVICE_ROLE_KEY");
   }
   return createClient<Database, "public">(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },

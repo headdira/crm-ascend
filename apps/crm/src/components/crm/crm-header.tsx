@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 import type { Database } from "@crm-ascend/db";
+import { useSupabaseConfig } from "@/components/crm/supabase-config-provider";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Breadcrumb,
@@ -35,6 +36,7 @@ export function CrmHeader({
   staffEmail: string;
 }) {
   const router = useRouter();
+  const { url, anonKey } = useSupabaseConfig();
   const initials = staffName
     .split(" ")
     .map((n) => n[0])
@@ -43,10 +45,7 @@ export function CrmHeader({
     .toUpperCase();
 
   async function signOut() {
-    const supabase = createBrowserClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    );
+    const supabase = createBrowserClient<Database>(url, anonKey);
     await supabase.auth.signOut();
     router.push("/login");
     router.refresh();
