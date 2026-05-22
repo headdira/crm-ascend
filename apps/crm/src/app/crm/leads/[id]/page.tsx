@@ -7,6 +7,7 @@ import { StatusBadge } from "@/components/crm/status-badge";
 import { getCurrentStaff } from "@/lib/auth";
 import { getLeadTrackingContext } from "@/lib/actions/leads";
 import { formatDate } from "@/lib/utils";
+import { LeadJourneyEvent } from "@/components/crm/lead-journey-event";
 import { ConvertLeadDialog } from "./convert-lead-dialog";
 
 function utmLabel(utm: Record<string, unknown>): string | null {
@@ -217,25 +218,13 @@ export default async function LeadDetailPage({
                 ) : (
                   <ul className="flex flex-col gap-3">
                     {events.map((ev) => (
-                      <li
+                      <LeadJourneyEvent
                         key={ev.id}
-                        className="border-b border-border pb-3 text-sm last:border-0"
-                      >
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="font-medium">{ev.event_name}</span>
-                          <span className="text-muted-foreground text-xs">
-                            {formatDate(ev.ts)}
-                          </span>
-                          {ev.page && (
-                            <span className="text-muted-foreground text-xs">{ev.page}</span>
-                          )}
-                        </div>
-                        {ev.payload && Object.keys(ev.payload as object).length > 0 && (
-                          <pre className="text-muted-foreground mt-1 overflow-auto text-xs">
-                            {JSON.stringify(ev.payload, null, 2)}
-                          </pre>
-                        )}
-                      </li>
+                        eventName={ev.event_name}
+                        ts={ev.ts}
+                        page={ev.page}
+                        payload={(ev.payload ?? {}) as Record<string, unknown>}
+                      />
                     ))}
                   </ul>
                 )}
