@@ -1,9 +1,8 @@
 "use client";
 
-import Image from "next/image";
-
 type SalesImageProps = {
   src: string;
+  webpSrc?: string;
   alt: string;
   className?: string;
   priority?: boolean;
@@ -16,6 +15,7 @@ type SalesImageProps = {
 
 export default function SalesImage({
   src,
+  webpSrc,
   alt,
   className,
   priority = false,
@@ -27,23 +27,46 @@ export default function SalesImage({
 }: SalesImageProps) {
   if (!src) return null;
 
+  const imgProps = {
+    alt,
+    className,
+    sizes,
+    loading: (priority ? "eager" : "lazy") as "eager" | "lazy",
+    decoding: "async" as const,
+    fetchPriority: (priority ? "high" : "auto") as "high" | "auto",
+  };
+
   if (fill) {
+    const fillStyle = {
+      ...style,
+      objectFit: "cover" as const,
+      width: "100%",
+      height: "100%",
+      position: "absolute" as const,
+      inset: 0,
+    };
+    if (webpSrc) {
+      return (
+        <picture>
+          <source srcSet={webpSrc} type="image/webp" />
+          <img src={src} {...imgProps} style={fillStyle} />
+        </picture>
+      );
+    }
+    return <img src={src} {...imgProps} style={fillStyle} />;
+  }
+
+  if (webpSrc) {
     return (
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        className={className}
-        style={style}
-        sizes={sizes}
-        priority={priority}
-        quality={priority ? 75 : 60}
-      />
+      <picture>
+        <source srcSet={webpSrc} type="image/webp" />
+        <img src={src} width={width ?? 800} height={height ?? 600} {...imgProps} style={style} />
+      </picture>
     );
   }
 
   return (
-    <Image
+    <img
       src={src}
       alt={alt}
       width={width ?? 800}
@@ -51,9 +74,9 @@ export default function SalesImage({
       className={className}
       style={style}
       sizes={sizes}
-      priority={priority}
-      quality={priority ? 75 : 60}
-      loading={priority ? undefined : "lazy"}
+      loading={priority ? "eager" : "lazy"}
+      decoding="async"
+      fetchPriority={priority ? "high" : "auto"}
     />
   );
 }

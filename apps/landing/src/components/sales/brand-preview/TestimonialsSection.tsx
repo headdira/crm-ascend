@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Image from "next/image";
+import SalesImage from "../SalesImage";
 import { Star, Quote } from "lucide-react";
 import ProofCarousel from "../ProofCarousel";
 import { brandSurfaces, brandTypography } from "./tokens";
@@ -100,11 +100,10 @@ export default function TestimonialsSection() {
 
               <footer className="flex items-center gap-5 mt-8 pt-6 border-t border-white/[0.06]">
                 <div className="relative w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-2 border-white/15 shrink-0 bg-[#1a1a1a] ring-2 ring-primary/25">
-                  <Image
+                  <SalesImage
                     src={t.photo}
                     alt={`Foto de ${t.name}`}
                     fill
-                    unoptimized
                     sizes="224px"
                     className="object-cover object-center"
                   />

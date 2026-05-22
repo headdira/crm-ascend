@@ -1,0 +1,33 @@
+---
+export const prerender = true;
+
+import Layout from "@/layouts/Layout.astro";
+import HeroSection from "@/components/sales/brand-preview/HeroSection";
+import BenefitsSection from "@/components/sales/brand-preview/BenefitsSection";
+import GamificationSection from "@/components/sales/brand-preview/GamificationSection";
+import MentorsSection from "@/components/sales/brand-preview/MentorsSection";
+import TestimonialsSection from "@/components/sales/brand-preview/TestimonialsSection";
+import ObjectionsSection from "@/components/sales/brand-preview/ObjectionsSection";
+import PricingCTA from "@/components/sales/brand-preview/PricingCTA";
+import FinalSection from "@/components/sales/brand-preview/FinalSection";
+import FloatingCTA from "@/components/sales/brand-preview/FloatingCTA";
+import { getSiteUrl } from "@/lib/site-url";
+
+const siteUrl = getSiteUrl();
+---
+
+<Layout
+  title="Ascend Club — Aprenda a construir sua renda online"
+  description="Mentoria com suporte próximo, networking ativo e método validado. Entre no Ascend Club por R$197."
+  canonical={siteUrl}
+>
+  <HeroSection client:load />
+  <BenefitsSection client:load />
+  <GamificationSection client:load />
+  <MentorsSection client:load />
+  <TestimonialsSection client:load />
+  <ObjectionsSection client:load />
+  <PricingCTA client:load />
+  <FinalSection client:load />
+  <FloatingCTA client:load />
+</Layout>

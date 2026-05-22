@@ -1,0 +1,72 @@
+---
+import "../styles/globals.css";
+import SalesJsonLd from "@/components/sales/SalesJsonLd";
+import StarfieldBackground from "@/components/sales/StarfieldBackground.astro";
+import CookieConsent from "@/components/sales/CookieConsent";
+import ConsentScripts from "@/components/sales/ConsentScripts";
+import { getSiteUrl } from "@/lib/site-url";
+
+interface Props {
+  title?: string;
+  description?: string;
+  canonical?: string;
+  preloadImage?: string;
+}
+
+const {
+  title = "Ascend Club",
+  description = "Ascend Club — mentoria e comunidade para renda online",
+  canonical,
+  preloadImage,
+} = Astro.props;
+
+const siteUrl = getSiteUrl();
+const pageTitle = title === "Ascend Club" ? title : `${title} | Ascend Club`;
+---
+
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link
+      rel="canonical"
+      href={canonical ?? (Astro.url.pathname === "/" ? siteUrl : `${siteUrl}${Astro.url.pathname}`)}
+    />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={`${siteUrl}${Astro.url.pathname}`} />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:type" content="website" />
+    {preloadImage && (
+      <link rel="preload" as="image" href={preloadImage} fetchpriority="high" />
+    )}
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <style is:global>
+      :root {
+        --font-inter-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+      }
+    </style>
+  </head>
+  <body class="font-inter antialiased" style="font-family: var(--font-inter-family)">
+    <div class="sales-landing sales-landing-brand relative min-h-screen bg-[#0a0a0a] text-[#fafafa] overflow-x-hidden">
+      <StarfieldBackground />
+      <SalesJsonLd />
+      <div class="relative z-[1]">
+        <slot />
+      </div>
+      <CookieConsent client:idle />
+      <ConsentScripts client:idle />
+    </div>
+    <script>
+      import "@/scripts/site-init";
+    </script>
+  </body>
+</html>

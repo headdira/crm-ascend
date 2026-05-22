@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import {
   CONSENT_COOKIE,
   CONSENT_MAX_AGE,
@@ -22,10 +21,6 @@ export default function CookieConsent() {
   const [customize, setCustomize] = useState(false);
   const [analytics, setAnalytics] = useState(false);
   const [marketing, setMarketing] = useState(false);
-  const [leadOpen, setLeadOpen] = useState(false);
-  const [leadName, setLeadName] = useState("");
-  const [leadEmail, setLeadEmail] = useState("");
-  const [leadStatus, setLeadStatus] = useState<"idle" | "loading" | "ok" | "err">("idle");
 
   useEffect(() => {
     const existing = parseConsent(getClientCookie(CONSENT_COOKIE));
@@ -56,28 +51,6 @@ export default function CookieConsent() {
       updatedAt: new Date().toISOString(),
     });
 
-  const submitLead = async () => {
-    if (!marketing) return;
-    setLeadStatus("loading");
-    try {
-      const res = await fetch("/api/sales/lead", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          full_name: leadName,
-          email: leadEmail,
-          marketing_consent: true,
-        }),
-      });
-      if (!res.ok) throw new Error("fail");
-      setLeadStatus("ok");
-      setLeadName("");
-      setLeadEmail("");
-    } catch {
-      setLeadStatus("err");
-    }
-  };
-
   if (!open) return null;
 
   return (
@@ -90,9 +63,9 @@ export default function CookieConsent() {
         <p className="font-inter text-sm text-white/80 leading-relaxed">
           Usamos cookies necessários para atribuição de campanha (UTM) e, com seu consentimento,
           cookies de análise e marketing. Leia nossa{" "}
-          <Link href="/privacidade" className="text-primary underline underline-offset-2">
+          <a href="/privacidade" className="text-primary underline underline-offset-2">
             Política de Privacidade
-          </Link>
+          </a>
           .
         </p>
 
@@ -120,48 +93,6 @@ export default function CookieConsent() {
               />
               Marketing e remarketing
             </label>
-            {marketing && (
-              <div className="pt-2 border-t border-white/10">
-                <button
-                  type="button"
-                  className="text-primary text-xs font-bold uppercase tracking-wide"
-                  onClick={() => setLeadOpen((v) => !v)}
-                >
-                  {leadOpen ? "Ocultar" : "Quero receber informações por e-mail"}
-                </button>
-                {leadOpen && (
-                  <div className="mt-3 grid gap-2">
-                    <input
-                      className="rounded-lg bg-black/40 border border-white/10 px-3 py-2 text-white text-sm"
-                      placeholder="Seu nome"
-                      value={leadName}
-                      onChange={(e) => setLeadName(e.target.value)}
-                    />
-                    <input
-                      className="rounded-lg bg-black/40 border border-white/10 px-3 py-2 text-white text-sm"
-                      placeholder="Seu e-mail"
-                      type="email"
-                      value={leadEmail}
-                      onChange={(e) => setLeadEmail(e.target.value)}
-                    />
-                    <button
-                      type="button"
-                      onClick={submitLead}
-                      disabled={leadStatus === "loading" || !leadName || !leadEmail}
-                      className="rounded-lg bg-primary text-black font-bold text-xs uppercase py-2 disabled:opacity-50"
-                    >
-                      Enviar
-                    </button>
-                    {leadStatus === "ok" && (
-                      <p className="text-xs text-green-400">Recebemos seus dados. Obrigado!</p>
-                    )}
-                    {leadStatus === "err" && (
-                      <p className="text-xs text-red-400">Não foi possível enviar. Tente de novo.</p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         )}
 

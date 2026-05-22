@@ -1,14 +1,12 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { ArrowRight, CheckCircle2, Clock3, Flame, ShieldCheck, Star } from "lucide-react";
 import BrandCheckoutLink from "./BrandCheckoutLink";
 import { brandTypography } from "./tokens";
 import SalesImage from "../SalesImage";
 import Ticker from "../Ticker";
 import { HERO_IMAGE, LOGO_URL } from "../constants";
-import Image from "next/image";
 import { useLightExperience } from "@/hooks/use-light-experience";
 
 const navLinks = [
@@ -50,9 +48,9 @@ export default function HeroSection() {
           />
           <div className="hidden lg:flex items-center gap-6 text-xs font-bold uppercase tracking-wide text-white/50">
             {navLinks.map((l) => (
-              <Link key={l.href} href={l.href} className="hover:text-primary transition-colors">
+              <a key={l.href} href={l.href} className="hover:text-primary transition-colors">
                 {l.label}
-              </Link>
+              </a>
             ))}
           </div>
           <BrandCheckoutLink trackLabel="hero_nav" variant="nav" className="hidden md:inline-flex">
@@ -198,7 +196,7 @@ export default function HeroSection() {
             <div className="pointer-events-none absolute inset-0 -z-10 bg-primary/20 blur-[120px] rounded-full" />
             <div className="relative w-full max-w-[520px] overflow-visible">
               <div className="pointer-events-none absolute -inset-2 -z-10 rounded-[32px] bg-gradient-to-b from-primary/30 to-transparent blur-xl" />
-              <Image
+              <SalesImage
                 src={HERO_IMAGE}
                 alt="Mentor Ascend Club"
                 width={520}

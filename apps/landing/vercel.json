@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.com/vercel.json",
-  "framework": "nextjs",
+  "framework": "astro",
   "installCommand": "cd ../.. && pnpm install",
   "buildCommand": "cd ../.. && pnpm --filter @crm-ascend/landing build"
 }

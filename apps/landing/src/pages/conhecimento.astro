@@ -1,0 +1,110 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import {
+  CHECKOUT_URL,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  faq,
+  includes,
+  mentors,
+  offer,
+  summaryParagraph,
+  testimonialsText,
+} from "@/lib/sales/knowledge";
+import { getSiteUrl } from "@/lib/site-url";
+
+const siteUrl = getSiteUrl();
+---
+
+<Layout
+  title="Informações sobre o programa"
+  description={SITE_DESCRIPTION}
+  canonical={`${siteUrl}/conhecimento`}
+>
+  <main class="max-w-3xl mx-auto px-6 py-16 font-inter text-white/85 leading-relaxed">
+    <p class="text-primary text-xs font-bold uppercase tracking-[0.25em] mb-4">
+      Base de conhecimento · {SITE_NAME}
+    </p>
+    <h1 class="text-3xl sm:text-4xl font-black text-white mb-6">
+      {SITE_NAME} — mentoria para renda online (Brasil)
+    </h1>
+
+    <p class="mb-8 text-white/70">{summaryParagraph}</p>
+
+    <section class="mb-10" id="oferta">
+      <h2 class="text-xl font-black text-white mb-3">Oferta e preço</h2>
+      <ul class="list-disc pl-5 space-y-2 text-white/75">
+        <li>
+          Preço atual: <strong>R${offer.priceBrl}</strong> ({offer.billing}), antes R$
+          {offer.priceWasBrl}.
+        </li>
+        <li>Acesso: {offer.accessMonths} meses completos.</li>
+        <li>{offer.dailyCostNote}.</li>
+        <li>
+          Inscrição:{" "}
+          <a href={CHECKOUT_URL} class="text-primary underline">checkout oficial (Kiwify)</a>.
+        </li>
+      </ul>
+    </section>
+
+    <section class="mb-10" id="inclui">
+      <h2 class="text-xl font-black text-white mb-3">O que está incluído</h2>
+      <ul class="list-disc pl-5 space-y-2 text-white/75">
+        {includes.map((item) => (
+          <li>{item}</li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="mb-10" id="publico">
+      <h2 class="text-xl font-black text-white mb-3">Para quem é</h2>
+      <p class="text-white/75">
+        Iniciantes no digital que querem passo a passo, suporte próximo, networking e calls ao vivo
+        — sem precisar de experiência prévia.
+      </p>
+    </section>
+
+    <section class="mb-10" id="mentores">
+      <h2 class="text-xl font-black text-white mb-3">Mentores</h2>
+      {mentors.map((m) => (
+        <article class="mb-4">
+          <h3 class="font-bold text-white">{m.name}</h3>
+          <p class="text-sm text-primary">{m.role}</p>
+          <p class="text-white/70 text-sm mt-1">{m.bio}</p>
+        </article>
+      ))}
+    </section>
+
+    <section class="mb-10" id="resultados">
+      <h2 class="text-xl font-black text-white mb-3">Resultados citados por alunos</h2>
+      <ul class="list-disc pl-5 space-y-2 text-white/75">
+        {testimonialsText.map((t) => (
+          <li>
+            <strong>{t.name}:</strong> {t.result}
+          </li>
+        ))}
+      </ul>
+      <p class="text-xs text-white/40 mt-3">
+        Resultados individuais variam conforme dedicação e aplicação do método.
+      </p>
+    </section>
+
+    <section class="mb-10" id="faq">
+      <h2 class="text-xl font-black text-white mb-3">Perguntas frequentes</h2>
+      <dl class="space-y-6">
+        {faq.map((item) => (
+          <div>
+            <dt class="font-bold text-white">{item.question}</dt>
+            <dd class="text-white/75 mt-1">{item.answer}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
+
+    <p class="text-xs text-white/40">
+      Última atualização: maio de 2026.{" "}
+      <a href="/" class="text-primary underline">Voltar à página principal</a> ·{" "}
+      <a href="/privacidade" class="text-primary underline">Privacidade</a>
+    </p>
+  </main>
+</Layout>

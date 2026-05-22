@@ -1,8 +1,8 @@
 "use client";
 
-import type { ComponentProps } from "react";
+import { useState, type ComponentProps } from "react";
 import { useCheckoutUrl } from "@/hooks/use-checkout-url";
-import { trackEvent } from "@/lib/sales/track-client";
+import CheckoutLeadModal from "./CheckoutLeadModal";
 
 type Props = Omit<ComponentProps<"a">, "href"> & {
   trackLabel?: string;
@@ -10,30 +10,27 @@ type Props = Omit<ComponentProps<"a">, "href"> & {
 
 export default function CheckoutLink({ trackLabel, onClick, children, ...rest }: Props) {
   const href = useCheckoutUrl();
+  const [modalOpen, setModalOpen] = useState(false);
 
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      data-track={trackLabel}
-      onClick={(e) => {
-        if (typeof window !== "undefined") {
-          trackEvent("InitiateCheckout", {
-            label: trackLabel ?? "checkout",
-            checkout_url: href,
-          });
-          if (trackLabel) {
-            window.dispatchEvent(
-              new CustomEvent("ascend:cta_click", { detail: { label: trackLabel } }),
-            );
-          }
-        }
-        onClick?.(e);
-      }}
-      {...rest}
-    >
-      {children}
-    </a>
+    <>
+      <a
+        href={href}
+        onClick={(e) => {
+          e.preventDefault();
+          setModalOpen(true);
+          onClick?.(e);
+        }}
+        {...rest}
+      >
+        {children}
+      </a>
+      <CheckoutLeadModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        checkoutUrl={href}
+        trackLabel={trackLabel}
+      />
+    </>
   );
 }

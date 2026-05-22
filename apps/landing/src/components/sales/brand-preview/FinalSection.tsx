@@ -1,7 +1,6 @@
 "use client";
 
 import { motion } from "framer-motion";
-import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import BrandCheckoutLink from "./BrandCheckoutLink";
 import { brandSurfaces, brandTypography } from "./tokens";
@@ -73,12 +72,12 @@ export default function FinalSection() {
 
       <div className="py-8 text-center space-y-2">
         <p className="font-inter text-xs text-white/30 flex flex-wrap justify-center gap-x-4 gap-y-1">
-          <Link href="/conhecimento" className="hover:text-primary underline underline-offset-2">
+          <a href="/conhecimento" className="hover:text-primary underline underline-offset-2">
             Informações do programa
-          </Link>
-          <Link href="/privacidade" className="hover:text-primary underline underline-offset-2">
+          </a>
+          <a href="/privacidade" className="hover:text-primary underline underline-offset-2">
             Privacidade
-          </Link>
+          </a>
         </p>
         <p className="font-inter text-xs text-white/20">
           © {new Date().getFullYear()} Ascend Club. Todos os direitos reservados.

@@ -2,6 +2,8 @@
 
 Site público de vendas (landing, `/conhecimento`, `/privacidade`). **Deploy separado** do CRM interno.
 
+Stack: **Astro 5** + React islands (visual idêntico à versão Next).
+
 ## Dev
 
 ```bash
@@ -9,9 +11,13 @@ pnpm install
 pnpm --filter @crm-ascend/landing dev   # http://localhost:3000
 ```
 
+## Checkout / lead
+
+Ao clicar em qualquer CTA de compra, abre um formulário em **duas etapas** (e-mail → telefone). Após enviar, o lead é gravado via `POST /api/sales/lead` e o usuário segue para a Kiwify.
+
 ## Variáveis
 
-Copie `.env.example` para `.env.local`. As mesmas credenciais Supabase do CRM são usadas na rota `POST /api/sales/lead`.
+Copie `.env.example` para `.env.local`. Credenciais Supabase (`SUPABASE_SERVICE_ROLE_KEY`, `HASH_SALT`) na API de lead.
 
 ## CRM
 

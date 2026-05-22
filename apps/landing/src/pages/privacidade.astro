@@ -1,0 +1,46 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import { SITE_NAME } from "@/lib/sales/knowledge";
+---
+
+<Layout
+  title="Política de Privacidade"
+  description={`Como o ${SITE_NAME} trata cookies e dados pessoais.`}
+>
+  <main class="max-w-3xl mx-auto px-6 py-16 font-inter text-white/80 leading-relaxed">
+    <h1 class="text-3xl font-black text-white mb-6">Política de Privacidade</h1>
+    <p class="mb-4">
+      O {SITE_NAME} respeita sua privacidade conforme a Lei Geral de Proteção de Dados (LGPD — Lei
+      nº 13.709/2018).
+    </p>
+
+    <h2 class="text-lg font-bold text-white mt-8 mb-2">Cookies necessários</h2>
+    <p class="mb-4">
+      Usamos cookies essenciais para registrar preferências de consentimento e atribuição de
+      campanha (parâmetros UTM), sem identificar você diretamente nessa etapa.
+    </p>
+
+    <h2 class="text-lg font-bold text-white mt-8 mb-2">Cookies opcionais</h2>
+    <p class="mb-4">
+      Com seu consentimento, podemos usar cookies de análise (ex.: Google Analytics) e marketing.
+      Você pode aceitar, recusar ou personalizar no banner exibido na primeira visita.
+    </p>
+
+    <h2 class="text-lg font-bold text-white mt-8 mb-2">Dados que coletamos</h2>
+    <p class="mb-4">
+      Antes de ir ao checkout na Kiwify, solicitamos e-mail e telefone em etapas para contato e
+      suporte sobre o programa. Dados de pagamento são tratados pela plataforma Kiwify, não pelo site
+      diretamente.
+    </p>
+
+    <h2 class="text-lg font-bold text-white mt-8 mb-2">Seus direitos</h2>
+    <p class="mb-4">
+      Você pode solicitar acesso, correção ou exclusão dos seus dados entrando em contato pelo canal
+      oficial do {SITE_NAME}.
+    </p>
+
+    <p class="text-sm text-white/50 mt-10">
+      <a href="/" class="text-primary underline">Voltar à página inicial</a>
+    </p>
+  </main>
+</Layout>

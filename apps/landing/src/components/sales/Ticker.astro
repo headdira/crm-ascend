@@ -1,0 +1,33 @@
+---
+interface Props {
+  text?: string;
+  bgColor?: string;
+  textColor?: string;
+}
+
+const {
+  text = "ASCEND CLUB",
+  bgColor = "bg-primary",
+  textColor = "text-black",
+} = Astro.props;
+
+const items = Array.from({ length: 10 }, () => text);
+---
+
+<div class={`${bgColor} py-3 overflow-hidden w-full`} aria-hidden>
+  <div class="ticker-marquee flex w-max">
+    {
+      [0, 1].map((dup) => (
+        <div class="ticker-marquee-group flex shrink-0 items-center gap-8 pr-8">
+          {items.map((item, i) => (
+            <span
+              class={`${textColor} font-inter font-black text-sm tracking-[0.2em] uppercase shrink-0`}
+            >
+              ◆ {item}
+            </span>
+          ))}
+        </div>
+      ))
+    }
+  </div>
+</div>
