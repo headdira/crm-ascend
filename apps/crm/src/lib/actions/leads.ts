@@ -19,7 +19,11 @@ export async function listLeads(filters?: {
   q?: string;
 }) {
   const supabase = await getSupabaseServer();
-  let query = supabase.from("leads").select("*").order("created_at", { ascending: false });
+  let query = supabase
+    .from("leads")
+    .select("*")
+    .order("last_event_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
 
   if (filters?.status) {
     query = query.eq(

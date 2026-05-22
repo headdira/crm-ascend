@@ -16,7 +16,7 @@ export const leadUpdateSchema = leadCreateSchema
   .partial()
   .extend({
     status: z
-      .enum(["new", "contacted", "qualified", "disqualified", "converted"])
+      .enum(["new", "frio", "quente", "contacted", "qualified", "disqualified", "converted"])
       .optional(),
   });
 

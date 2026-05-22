@@ -29,6 +29,8 @@ export default async function LeadDetailPage({
   const quiz = (lead.quiz_answers ?? {}) as Record<string, unknown>;
   const campaign = utmLabel(utm);
   const abandoned = quiz.checkout_abandoned === true;
+  const isFrio = lead.status === "frio";
+  const isQuente = lead.status === "quente" || !!lead.reached_kiwify_at;
   const initialCta =
     typeof quiz.initial_cta_label === "string"
       ? quiz.initial_cta_label
@@ -53,11 +55,16 @@ export default async function LeadDetailPage({
             <h1 className="text-2xl font-semibold">{lead.full_name}</h1>
             <div className="flex flex-wrap items-center gap-2">
               <StatusBadge value={lead.status} />
+              {isFrio && <Badge variant="outline">Lead frio</Badge>}
+              {isQuente && <Badge>Lead quente</Badge>}
               {lead.reached_kiwify_at && (
                 <Badge variant="secondary">Foi ao checkout Kiwify</Badge>
               )}
               {abandoned && !lead.reached_kiwify_at && (
                 <Badge variant="destructive">Abandonou formulário</Badge>
+              )}
+              {!lead.session_id && (
+                <Badge variant="outline">Sem jornada vinculada</Badge>
               )}
               {initialCta && <Badge variant="outline">CTA: {initialCta}</Badge>}
               {campaign && <Badge variant="outline">Campanha: {campaign}</Badge>}
@@ -198,8 +205,15 @@ export default async function LeadDetailPage({
           <TabsContent value="historico">
             <Card>
               <CardContent className="pt-6">
-                {events.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">Nenhum evento registrado.</p>
+                {!lead.session_id ? (
+                  <p className="text-muted-foreground text-sm">
+                    Este lead não tem sessão da landing — a jornada só aparece para visitantes
+                    rastreados desde o primeiro acesso (lead frio).
+                  </p>
+                ) : events.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">
+                    Sessão vinculada, mas ainda sem eventos gravados.
+                  </p>
                 ) : (
                   <ul className="flex flex-col gap-3">
                     {events.map((ev) => (

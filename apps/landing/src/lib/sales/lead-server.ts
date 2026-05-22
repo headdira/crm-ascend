@@ -1,9 +1,11 @@
 import type { Json } from "@crm-ascend/db";
 import { createServiceSupabase } from "@crm-ascend/db";
-import { hashEmail, hashPhone } from "@crm-ascend/validation";
+import { hashEmail, hashPhone, hashIdentifier } from "@crm-ascend/validation";
 import { getHashSalt } from "@/lib/env";
 import { ctaLabel } from "@/lib/sales/cta-labels";
+import { LEAD_STATUS_FRIO, LEAD_STATUS_QUENTE } from "@/lib/sales/lead-temperature";
 import {
+  ensureColdLeadForSession,
   getSessionIdFromRequest,
   upsertIdentifiedLead,
   upsertLandingSession,
@@ -19,6 +21,7 @@ function buildQuizAnswers(
   extra: Record<string, unknown>,
 ): Json {
   return {
+    lead_temperature: "quente",
     marketing_consent: true,
     checkout_flow: true,
     initial_cta: tracking?.cta ?? null,
@@ -49,16 +52,26 @@ export async function upsertCheckoutLead(
     });
 
     const supabase = createServiceSupabase();
+    const { data: lead } = await supabase
+      .from("leads")
+      .select("quiz_answers")
+      .eq("id", id)
+      .single();
+
+    const prev = (lead?.quiz_answers ?? {}) as Record<string, unknown>;
+
     await supabase
       .from("leads")
       .update({
         utm: (input.utm ?? {}) as Json,
         quiz_answers: buildQuizAnswers(input.tracking, {
+          ...prev,
           checkout_completed: true,
           reached_kiwify: true,
         }),
         reached_kiwify_at: now,
         last_event_at: now,
+        status: LEAD_STATUS_QUENTE,
       })
       .eq("id", id);
 
@@ -90,6 +103,7 @@ export async function upsertCheckoutLead(
     }),
     last_event_at: now,
     reached_kiwify_at: now,
+    status: LEAD_STATUS_QUENTE,
   };
 
   if (existing) {
@@ -108,7 +122,6 @@ export async function upsertCheckoutLead(
     .insert({
       ...base,
       source: "landing",
-      status: "new",
     })
     .select("id")
     .single();
@@ -132,6 +145,8 @@ export async function upsertCheckoutAbandon(
   if (!sessionId) return null;
 
   await upsertLandingSession(request, sessionId);
+  await ensureColdLeadForSession(sessionId, { eventName: "checkout_modal_abandon" });
+
   const now = new Date().toISOString();
   const tracking: CheckoutTracking = {
     cta: input.cta,
@@ -139,9 +154,11 @@ export async function upsertCheckoutAbandon(
   };
 
   const partial: Record<string, unknown> = {
+    lead_temperature: "frio",
     checkout_abandoned: true,
     abandoned_at: now,
     abandoned_step: input.step,
+    modal_seen: true,
     filled_fields: [
       input.first_name ? "name" : null,
       input.email ? "email" : null,
@@ -154,25 +171,28 @@ export async function upsertCheckoutAbandon(
 
   const { data: sessionLead } = await supabase
     .from("leads")
-    .select("id, email_enc")
+    .select("id, quiz_answers, status")
     .eq("session_id", sessionId)
     .maybeSingle();
 
   if (input.email) {
     const email = input.email.trim().toLowerCase();
     const id = await upsertIdentifiedLead(request, sessionId, {
-      full_name: (input.first_name?.trim().split(/\s+/)[0] || "Visitante (site)").slice(0, 80),
+      full_name: (input.first_name?.trim().split(/\s+/)[0] || "Visitante — sem nome").slice(0, 80),
       email,
       phone: input.phone?.replace(/\D/g, "") || undefined,
     });
+
+    const prev = (sessionLead?.quiz_answers ?? {}) as Record<string, unknown>;
 
     await supabase
       .from("leads")
       .update({
         utm: (input.utm ?? {}) as Json,
-        quiz_answers: buildQuizAnswers(tracking, partial),
+        quiz_answers: { ...prev, ...buildQuizAnswers(tracking, partial) } as Json,
         last_event_at: now,
         reached_kiwify_at: null,
+        status: LEAD_STATUS_FRIO,
       })
       .eq("id", id);
 
@@ -180,27 +200,29 @@ export async function upsertCheckoutAbandon(
   }
 
   if (sessionLead) {
+    const prev = (sessionLead.quiz_answers ?? {}) as Record<string, unknown>;
     await supabase
       .from("leads")
       .update({
-        quiz_answers: buildQuizAnswers(tracking, partial),
+        quiz_answers: { ...prev, ...partial } as Json,
         last_event_at: now,
+        status: LEAD_STATUS_FRIO,
       })
       .eq("id", sessionLead.id);
     return sessionLead.id;
   }
 
-  const emailHash = hashEmail(`abandon:${sessionId}`, salt);
+  const emailHash = hashIdentifier(`abandon:${sessionId}`, salt);
   const { data, error } = await supabase
     .from("leads")
     .insert({
-      full_name: input.first_name?.trim().split(/\s+/)[0] || "Visitante (site)",
+      full_name: input.first_name?.trim().split(/\s+/)[0] || "Visitante — sem nome",
       email_hash: emailHash,
       source: "landing",
       session_id: sessionId,
       utm: (input.utm ?? {}) as Json,
-      quiz_answers: buildQuizAnswers(tracking, partial),
-      status: "new",
+      quiz_answers: { ...partial, ...tracking } as Json,
+      status: LEAD_STATUS_FRIO,
       last_event_at: now,
     })
     .select("id")

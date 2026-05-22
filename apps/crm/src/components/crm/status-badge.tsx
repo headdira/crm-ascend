@@ -1,7 +1,14 @@
 import { Badge } from "@/components/ui/badge";
 
+const labels: Record<string, string> = {
+  frio: "Lead frio",
+  quente: "Lead quente",
+};
+
 const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
   new: "default",
+  frio: "outline",
+  quente: "default",
   contacted: "secondary",
   qualified: "outline",
   disqualified: "destructive",
@@ -27,7 +34,7 @@ const variants: Record<string, "default" | "secondary" | "destructive" | "outlin
 export function StatusBadge({ value }: { value: string }) {
   return (
     <Badge variant={variants[value] ?? "outline"} className="capitalize">
-      {value.replace(/_/g, " ")}
+      {labels[value] ?? value.replace(/_/g, " ")}
     </Badge>
   );
 }

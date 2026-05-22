@@ -6,7 +6,7 @@ import { ATTRIBUTION_COOKIE } from "@/lib/sales/consent";
 import { ctaLabel } from "@/lib/sales/cta-labels";
 import { parseAttributionCookie, readAttributionFromDocument } from "@/lib/sales/utm";
 import { getClientCookie } from "@/lib/sales/utm";
-import { trackEvent } from "@/lib/sales/track-client";
+import { ensureLandingSession, trackEvent } from "@/lib/sales/track-client";
 import { brandCta, brandTypography } from "./brand-preview/tokens";
 import { cn } from "@/lib/utils";
 
@@ -118,9 +118,19 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
       has_phone: phone.length > 0,
     });
 
-    void fetch("/api/sales/lead", {
+    void ensureLandingSession().then(() =>
+      fetch("/api/sales/lead", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: (() => {
+        const h: Record<string, string> = { "Content-Type": "application/json" };
+        try {
+          const sid = sessionStorage.getItem("ascend_session_id");
+          if (sid) h["X-Ascend-Session"] = sid;
+        } catch {
+          /* ignore */
+        }
+        return h;
+      })(),
       credentials: "same-origin",
       keepalive: true,
       body: JSON.stringify({
@@ -132,7 +142,8 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
         phone: phoneDigits.length >= 8 ? phoneDigits : undefined,
         utm: readUtm(),
       }),
-    }).catch(() => undefined);
+      }),
+    ).catch(() => undefined);
   };
 
   const handleClose = () => {
@@ -163,9 +174,18 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
     setErrorMsg(null);
 
     try {
+      await ensureLandingSession();
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      try {
+        const sid = sessionStorage.getItem("ascend_session_id");
+        if (sid) headers["X-Ascend-Session"] = sid;
+      } catch {
+        /* ignore */
+      }
+
       const res = await fetch("/api/sales/lead", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         credentials: "same-origin",
         body: JSON.stringify({
           type: "complete",

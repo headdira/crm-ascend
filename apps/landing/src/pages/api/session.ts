@@ -1,6 +1,7 @@
 import type { APIRoute } from "astro";
 import { SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/sales/session-constants";
 import {
+  ensureColdLeadForSession,
   getSessionIdFromRequest,
   newSessionId,
   upsertLandingSession,
@@ -8,8 +9,7 @@ import {
 
 export const POST: APIRoute = async ({ request, cookies, url }) => {
   let sessionId = getSessionIdFromRequest(request);
-
-  const headers = new Headers({ "Content-Type": "application/json" });
+  const isNew = !sessionId;
 
   if (!sessionId) {
     sessionId = newSessionId();
@@ -23,16 +23,24 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
   }
 
   try {
-    const page = new URL(request.url).searchParams.get("page") ?? undefined;
+    const page =
+      new URL(request.url).searchParams.get("page") ??
+      request.headers.get("referer") ??
+      "/";
     await upsertLandingSession(request, sessionId, page);
+    await ensureColdLeadForSession(sessionId, {
+      eventName: isNew ? "session_start" : "session_ping",
+    });
+
     return new Response(JSON.stringify({ ok: true, session_id: sessionId }), {
       status: 200,
-      headers,
+      headers: { "Content-Type": "application/json" },
     });
-  } catch {
+  } catch (err) {
+    console.error("[api/session]", err);
     return new Response(JSON.stringify({ error: "Could not init session" }), {
       status: 500,
-      headers,
+      headers: { "Content-Type": "application/json" },
     });
   }
 };

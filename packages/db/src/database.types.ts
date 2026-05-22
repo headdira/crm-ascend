@@ -383,7 +383,14 @@ export type Database = {
     Views: {};
     Functions: {};
     Enums: {
-      lead_status: "new" | "contacted" | "qualified" | "disqualified" | "converted";
+      lead_status:
+        | "new"
+        | "frio"
+        | "quente"
+        | "contacted"
+        | "qualified"
+        | "disqualified"
+        | "converted";
       student_status: "prospect" | "active" | "inactive";
       product_type: "course" | "mentorship" | "addon" | "bundle" | "other";
       contract_status: "draft" | "active" | "suspended" | "ended" | "cancelled";

@@ -51,6 +51,7 @@ export default async function LeadsPage({
               <TableRow>
                 <TableHead>Nome</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Temperatura</TableHead>
                 <TableHead>Origem</TableHead>
                 <TableHead>Kiwify</TableHead>
                 <TableHead>Criado</TableHead>
@@ -67,6 +68,15 @@ export default async function LeadsPage({
                   </TableCell>
                   <TableCell>
                     <StatusBadge value={lead.status} />
+                  </TableCell>
+                  <TableCell>
+                    {lead.status === "quente" || lead.reached_kiwify_at ? (
+                      <Badge>Quente</Badge>
+                    ) : lead.status === "frio" ? (
+                      <Badge variant="outline">Frio</Badge>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
                   </TableCell>
                   <TableCell>{lead.source}</TableCell>
                   <TableCell>
