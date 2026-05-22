@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
+import { trackEvent } from "@/lib/sales/track-client";
 import LightImageGallery from "./LightImageGallery";
 
 const proofImages = [
@@ -84,7 +85,14 @@ export default function ProofCarousel() {
             <motion.button
               key={`${item.globalIndex}-${visibleCount}`}
               type="button"
-              onClick={() => setLightboxIndex(item.globalIndex)}
+              onClick={() => {
+                trackEvent("proof_image_click", {
+                  index: item.globalIndex + 1,
+                  label: gallerySlides[item.globalIndex]?.label,
+                  section: "depoimentos",
+                });
+                setLightboxIndex(item.globalIndex);
+              }}
               className="w-full rounded-xl overflow-hidden border border-white/[0.07] aspect-[4/3] min-h-[320px] sm:min-h-[300px] md:min-h-[320px] cursor-zoom-in hover:border-primary/40 transition-colors text-left"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}

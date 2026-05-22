@@ -1,15 +1,30 @@
 import type { APIRoute } from "astro";
 import { z } from "zod";
 import type { Json } from "@crm-ascend/db";
-import { upsertCheckoutLead } from "@/lib/sales/lead-server";
+import { ctaLabel } from "@/lib/sales/cta-labels";
+import { upsertCheckoutAbandon, upsertCheckoutLead } from "@/lib/sales/lead-server";
 
-const leadSchema = z.object({
+const completeSchema = z.object({
+  type: z.literal("complete"),
   full_name: z.string().min(2).max(80),
   email: z.string().email(),
   phone: z.string().min(10).max(20),
   marketing_consent: z.literal(true),
   utm: z.record(z.unknown()).optional(),
+  cta: z.string().max(64).optional(),
 });
+
+const abandonSchema = z.object({
+  type: z.literal("abandon"),
+  step: z.enum(["name", "email", "phone"]),
+  cta: z.string().max(64).optional(),
+  first_name: z.string().max(80).optional(),
+  email: z.string().email().optional(),
+  phone: z.string().max(20).optional(),
+  utm: z.record(z.unknown()).optional(),
+});
+
+const leadSchema = z.discriminatedUnion("type", [completeSchema, abandonSchema]);
 
 export const POST: APIRoute = async ({ request }) => {
   let body: unknown;
@@ -31,8 +46,27 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
-    const id = await upsertCheckoutLead({
-      full_name: parsed.data.full_name,
+    if (parsed.data.type === "complete") {
+      const id = await upsertCheckoutLead(request, {
+        full_name: parsed.data.full_name,
+        email: parsed.data.email,
+        phone: parsed.data.phone,
+        utm: (parsed.data.utm ?? {}) as Json,
+        tracking: {
+          cta: parsed.data.cta,
+          cta_label: ctaLabel(parsed.data.cta),
+        },
+      });
+      return new Response(JSON.stringify({ ok: true, id }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const id = await upsertCheckoutAbandon(request, {
+      step: parsed.data.step,
+      cta: parsed.data.cta,
+      first_name: parsed.data.first_name,
       email: parsed.data.email,
       phone: parsed.data.phone,
       utm: (parsed.data.utm ?? {}) as Json,

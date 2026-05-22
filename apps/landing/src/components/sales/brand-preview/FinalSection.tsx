@@ -17,7 +17,7 @@ const pillars = [
 
 export default function FinalSection() {
   return (
-    <section className={brandSurfaces.base}>
+    <section id="rodape" className={brandSurfaces.base}>
       <div className="py-24 px-6">
         <motion.div
           className="max-w-4xl mx-auto text-center"

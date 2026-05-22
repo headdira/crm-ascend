@@ -26,7 +26,15 @@ export default async function LeadDetailPage({
   const staff = await getCurrentStaff();
   const { lead, session, events } = await getLeadTrackingContext(id);
   const utm = (lead.utm ?? {}) as Record<string, unknown>;
+  const quiz = (lead.quiz_answers ?? {}) as Record<string, unknown>;
   const campaign = utmLabel(utm);
+  const abandoned = quiz.checkout_abandoned === true;
+  const initialCta =
+    typeof quiz.initial_cta_label === "string"
+      ? quiz.initial_cta_label
+      : typeof quiz.initial_cta === "string"
+        ? quiz.initial_cta
+        : null;
 
   return (
     <>
@@ -48,6 +56,10 @@ export default async function LeadDetailPage({
               {lead.reached_kiwify_at && (
                 <Badge variant="secondary">Foi ao checkout Kiwify</Badge>
               )}
+              {abandoned && !lead.reached_kiwify_at && (
+                <Badge variant="destructive">Abandonou formulário</Badge>
+              )}
+              {initialCta && <Badge variant="outline">CTA: {initialCta}</Badge>}
               {campaign && <Badge variant="outline">Campanha: {campaign}</Badge>}
             </div>
           </div>
@@ -114,6 +126,26 @@ export default async function LeadDetailPage({
                 {lead.phone_enc && (
                   <p>
                     <span className="text-muted-foreground">Telefone:</span> {lead.phone_enc}
+                  </p>
+                )}
+                {initialCta && (
+                  <p>
+                    <span className="text-muted-foreground">Botão clicado:</span> {initialCta}
+                  </p>
+                )}
+                {abandoned && (
+                  <p>
+                    <span className="text-muted-foreground">Abandonou em:</span>{" "}
+                    {String(quiz.abandoned_step ?? "—")}
+                    {Array.isArray(quiz.filled_fields) && quiz.filled_fields.length > 0 && (
+                      <> · preencheu: {(quiz.filled_fields as string[]).join(", ")}</>
+                    )}
+                  </p>
+                )}
+                {session?.user_agent && (
+                  <p className="sm:col-span-2">
+                    <span className="text-muted-foreground">Navegador:</span>{" "}
+                    <span className="break-all text-xs">{session.user_agent}</span>
                   </p>
                 )}
               </CardContent>

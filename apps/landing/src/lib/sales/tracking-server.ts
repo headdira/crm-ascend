@@ -1,8 +1,14 @@
-import "server-only";
 import { createServiceSupabase, type Json, type TablesUpdate } from "@crm-ascend/db";
 import { hashEmail, hashIdentifier, hashPhone } from "@crm-ascend/validation";
 import { getHashSalt } from "@/lib/env";
 import { SESSION_COOKIE } from "@/lib/sales/session-constants";
+
+export function newSessionId(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
 import { parseAttributionCookie } from "@/lib/sales/utm";
 
 const ANONYMOUS_LEAD_NAME = "Visitante (site)";

@@ -25,7 +25,7 @@ const objections = [
 
 export default function ObjectionsSection() {
   return (
-    <section className={`${brandSurfaces.base} py-24 px-6`}>
+    <section id="objecoes" className={`${brandSurfaces.base} py-24 px-6`}>
       <div className="max-w-3xl mx-auto">
         <motion.div
           className="text-center mb-16"

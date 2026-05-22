@@ -2,6 +2,8 @@
 
 import { useState, type ComponentProps } from "react";
 import { useCheckoutUrl } from "@/hooks/use-checkout-url";
+import { ctaLabel } from "@/lib/sales/cta-labels";
+import { trackEvent } from "@/lib/sales/track-client";
 import CheckoutLeadModal from "./CheckoutLeadModal";
 
 type Props = Omit<ComponentProps<"a">, "href"> & {
@@ -18,6 +20,10 @@ export default function CheckoutLink({ trackLabel, onClick, children, ...rest }:
         href={href}
         onClick={(e) => {
           e.preventDefault();
+          trackEvent("checkout_click", {
+            cta: trackLabel,
+            cta_label: ctaLabel(trackLabel),
+          });
           setModalOpen(true);
           onClick?.(e);
         }}

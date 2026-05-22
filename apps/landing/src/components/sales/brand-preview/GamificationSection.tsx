@@ -24,7 +24,7 @@ const rewards = [
 
 export default function GamificationSection() {
   return (
-    <section className={`${brandSurfaces.deep} py-24 px-6`}>
+    <section id="gamificacao" className={`${brandSurfaces.deep} py-24 px-6`}>
       <div className="max-w-5xl mx-auto">
         <motion.div
           className="text-center mb-16"

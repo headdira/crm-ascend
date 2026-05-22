@@ -1,10 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Loader2, X } from "lucide-react";
 import { ATTRIBUTION_COOKIE } from "@/lib/sales/consent";
+import { ctaLabel } from "@/lib/sales/cta-labels";
 import { parseAttributionCookie, readAttributionFromDocument } from "@/lib/sales/utm";
 import { getClientCookie } from "@/lib/sales/utm";
+import { trackEvent } from "@/lib/sales/track-client";
 import { brandCta, brandTypography } from "./brand-preview/tokens";
 import { cn } from "@/lib/utils";
 
@@ -21,6 +23,13 @@ type Props = {
 
 function normalizePhone(value: string): string {
   return value.replace(/\D/g, "");
+}
+
+function readUtm() {
+  const rawAttribution = getClientCookie(ATTRIBUTION_COOKIE);
+  const fromCookie = parseAttributionCookie(rawAttribution);
+  const utm = { ...readAttributionFromDocument(), ...(fromCookie ?? {}) };
+  return Object.keys(utm).length ? utm : undefined;
 }
 
 const stepCopy: Record<Step, { title: string; hint: string }> = {
@@ -45,6 +54,8 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
   const [phone, setPhone] = useState("");
   const [status, setStatus] = useState<"idle" | "loading" | "error">("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const completedRef = useRef(false);
+  const openedRef = useRef(false);
 
   const reset = useCallback(() => {
     setStep("name");
@@ -53,6 +64,8 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
     setPhone("");
     setStatus("idle");
     setErrorMsg(null);
+    completedRef.current = false;
+    openedRef.current = false;
   }, []);
 
   useEffect(() => {
@@ -68,6 +81,15 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  useEffect(() => {
+    if (!open || openedRef.current) return;
+    openedRef.current = true;
+    trackEvent("checkout_modal_open", {
+      cta: trackLabel,
+      cta_label: ctaLabel(trackLabel),
+    });
+  }, [open, trackLabel]);
+
   if (!open) return null;
 
   const stepIndex = STEP_ORDER.indexOf(step);
@@ -79,11 +101,42 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
 
   const goToKiwify = () => {
     window.open(checkoutUrl, "_blank", "noopener,noreferrer");
-    if (trackLabel) {
-      window.dispatchEvent(
-        new CustomEvent("ascend:cta_click", { detail: { label: trackLabel } }),
-      );
-    }
+    onClose();
+  };
+
+  const reportAbandon = () => {
+    if (completedRef.current) return;
+    const hasProgress = nameOk || emailOk || phone.length > 0;
+    if (!hasProgress) return;
+
+    trackEvent("checkout_modal_abandon", {
+      cta: trackLabel,
+      cta_label: ctaLabel(trackLabel),
+      step,
+      has_name: nameOk,
+      has_email: emailOk,
+      has_phone: phone.length > 0,
+    });
+
+    void fetch("/api/sales/lead", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      keepalive: true,
+      body: JSON.stringify({
+        type: "abandon",
+        step,
+        cta: trackLabel,
+        first_name: nameOk ? firstNameValue : undefined,
+        email: emailOk ? email.trim().toLowerCase() : undefined,
+        phone: phoneDigits.length >= 8 ? phoneDigits : undefined,
+        utm: readUtm(),
+      }),
+    }).catch(() => undefined);
+  };
+
+  const handleClose = () => {
+    reportAbandon();
     onClose();
   };
 
@@ -95,8 +148,13 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
 
   const goNext = () => {
     setErrorMsg(null);
-    if (step === "name" && nameOk) setStep("email");
-    else if (step === "email" && emailOk) setStep("phone");
+    if (step === "name" && nameOk) {
+      trackEvent("checkout_modal_step", { step: "name", next: "email", cta: trackLabel });
+      setStep("email");
+    } else if (step === "email" && emailOk) {
+      trackEvent("checkout_modal_step", { step: "email", next: "phone", cta: trackLabel });
+      setStep("phone");
+    }
   };
 
   const submitAndCheckout = async () => {
@@ -104,23 +162,27 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
     setStatus("loading");
     setErrorMsg(null);
 
-    const rawAttribution = getClientCookie(ATTRIBUTION_COOKIE);
-    const fromCookie = parseAttributionCookie(rawAttribution);
-    const utm = { ...readAttributionFromDocument(), ...(fromCookie ?? {}) };
-
     try {
       const res = await fetch("/api/sales/lead", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
         body: JSON.stringify({
+          type: "complete",
           full_name: firstNameValue,
           email: email.trim().toLowerCase(),
           phone: phoneDigits,
           marketing_consent: true,
-          utm: Object.keys(utm).length ? utm : undefined,
+          cta: trackLabel,
+          utm: readUtm(),
         }),
       });
       if (!res.ok) throw new Error("lead_failed");
+      completedRef.current = true;
+      trackEvent("checkout_completed", {
+        cta: trackLabel,
+        cta_label: ctaLabel(trackLabel),
+      });
       goToKiwify();
     } catch {
       setStatus("error");
@@ -145,12 +207,12 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
         type="button"
         className="absolute inset-0 bg-black/75 backdrop-blur-sm"
         aria-label="Fechar"
-        onClick={onClose}
+        onClick={handleClose}
       />
       <div className="relative w-full max-w-md rounded-2xl border border-white/10 bg-[#111] p-6 sm:p-8 shadow-2xl">
         <button
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
           aria-label="Fechar"
         >

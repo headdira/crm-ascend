@@ -39,9 +39,12 @@ function captureAttribution() {
   setCookie(ATTRIBUTION_COOKIE, encodeURIComponent(JSON.stringify(utm)), ATTRIBUTION_MAX_AGE);
 }
 
+import { ensureLandingSession } from "@/lib/sales/track-client";
+
 export function initSite() {
   initLightExperience();
   captureAttribution();
+  void ensureLandingSession();
 }
 
 initSite();
