@@ -1,5 +1,4 @@
 import type { BuilderCatalog } from "./types";
-import { getProvisionerUrl } from "./types";
 
 export async function fetchCatalog(): Promise<BuilderCatalog> {
   const res = await fetch("/api/catalog");
@@ -34,7 +33,7 @@ export async function submitBuilder(payload: unknown): Promise<{
 }
 
 export async function fetchOAuthSession(sessionId: string) {
-  const res = await fetch(`${getProvisionerUrl()}/oauth/session/${sessionId}`, {
+  const res = await fetch(`/api/oauth/session/${encodeURIComponent(sessionId)}`, {
     cache: "no-store",
     signal: AbortSignal.timeout(20_000),
   });
@@ -74,10 +73,11 @@ export async function registerThemeToken(oauthSessionId: string, themeToken: str
   return body as { ok: boolean; theme_authorized: boolean };
 }
 
+/** Legado CLI tema — fluxo atual usa só OAuth app + Scripts API. */
 export function themeAuthorizeStartUrl(oauthSessionId: string, returnUrl: string) {
-  const u = new URL(`${getProvisionerUrl()}/theme-auth/start`);
-  u.searchParams.set("oauth_session_id", oauthSessionId);
+  const u = new URL("/api/oauth/start", window.location.origin);
   u.searchParams.set("return_url", returnUrl);
+  void oauthSessionId;
   return u.toString();
 }
 

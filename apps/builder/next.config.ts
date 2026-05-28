@@ -12,8 +12,18 @@ const nextConfig: NextConfig = {
     ],
   },
   env: {
-    NEXT_PUBLIC_PROVISIONER_URL: process.env.PROVISIONER_URL ?? "http://localhost:4010",
-    NEXT_PUBLIC_CRM_URL: process.env.CRM_URL ?? process.env.NEXT_PUBLIC_CRM_URL ?? "http://localhost:3001",
+    NEXT_PUBLIC_PROVISIONER_URL:
+      process.env.PROVISIONER_URL ??
+      process.env.NEXT_PUBLIC_PROVISIONER_URL ??
+      (process.env.VERCEL_ENV === "production"
+        ? "https://ascend-nuvemshop-provisioner-api.vercel.app"
+        : "http://localhost:4010"),
+    NEXT_PUBLIC_CRM_URL:
+      process.env.CRM_URL ??
+      process.env.NEXT_PUBLIC_CRM_URL ??
+      (process.env.VERCEL_ENV === "production"
+        ? "https://crm-ascend-2c1l.vercel.app"
+        : "http://localhost:3001"),
   },
 };
 

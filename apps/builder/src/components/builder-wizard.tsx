@@ -17,7 +17,6 @@ import {
 } from "@/lib/api";
 import {
   emptyForm,
-  getProvisionerUrl,
   STEP_LABELS,
   STORAGE_KEY,
   type BuilderCatalog,
@@ -108,7 +107,7 @@ function StepNuvemshopConnect({
   const connected = Boolean(form.oauthSessionId && form.nuvemshopStoreId);
   const startOAuth = () => {
     const returnUrl = `${window.location.origin}${window.location.pathname}`;
-    const url = `${getProvisionerUrl()}/oauth/start?return_url=${encodeURIComponent(returnUrl)}`;
+    const url = `/api/oauth/start?return_url=${encodeURIComponent(returnUrl)}`;
     window.location.href = url;
   };
 

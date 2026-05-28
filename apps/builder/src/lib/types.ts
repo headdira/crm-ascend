@@ -47,8 +47,15 @@ export const STEP_LABELS = [
   "Concluído",
 ] as const;
 
+const PROVISIONER_PRODUCTION = "https://ascend-nuvemshop-provisioner-api.vercel.app";
+
 export function getProvisionerUrl() {
-  return process.env.NEXT_PUBLIC_PROVISIONER_URL ?? process.env.PROVISIONER_URL ?? "http://localhost:4010";
+  const fromEnv =
+    process.env.PROVISIONER_URL?.trim() ||
+    process.env.NEXT_PUBLIC_PROVISIONER_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  if (process.env.VERCEL_ENV === "production") return PROVISIONER_PRODUCTION;
+  return "http://localhost:4010";
 }
 
 export function emptyForm(): BuilderFormState {
@@ -72,6 +79,13 @@ export function emptyForm(): BuilderFormState {
   };
 }
 
+const CRM_PRODUCTION = "https://crm-ascend-2c1l.vercel.app";
+
 export function getCrmUrl() {
-  return process.env.CRM_URL ?? process.env.NEXT_PUBLIC_CRM_URL ?? "http://localhost:3001";
+  const fromEnv =
+    process.env.CRM_URL?.trim() ||
+    process.env.NEXT_PUBLIC_CRM_URL?.trim();
+  if (fromEnv) return fromEnv.replace(/\/$/, "");
+  if (process.env.VERCEL_ENV === "production") return CRM_PRODUCTION;
+  return "http://localhost:3001";
 }
