@@ -36,9 +36,12 @@ export async function submitBuilder(payload: unknown): Promise<{
 export async function fetchOAuthSession(sessionId: string) {
   const res = await fetch(`${getProvisionerUrl()}/oauth/session/${sessionId}`, {
     cache: "no-store",
+    signal: AbortSignal.timeout(20_000),
   });
   if (!res.ok) {
-    throw new Error("Sessão OAuth inválida");
+    const body = await res.json().catch(() => ({}));
+    const msg = typeof body.error === "string" ? body.error : "Sessão OAuth inválida";
+    throw new Error(msg);
   }
   return res.json() as Promise<{
     store_id: string;

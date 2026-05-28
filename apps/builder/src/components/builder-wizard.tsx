@@ -99,11 +99,13 @@ function StepVerify({
 function StepNuvemshopConnect({
   form,
   update,
+  oauthConnecting,
 }: {
   form: BuilderFormState;
   update: (key: keyof BuilderFormState, value: BuilderFormState[keyof BuilderFormState]) => void;
+  oauthConnecting?: boolean;
 }) {
-  const connected = Boolean(form.oauthSessionId);
+  const connected = Boolean(form.oauthSessionId && form.nuvemshopStoreId);
   const startOAuth = () => {
     const returnUrl = `${window.location.origin}${window.location.pathname}`;
     const url = `${getProvisionerUrl()}/oauth/start?return_url=${encodeURIComponent(returnUrl)}`;
@@ -130,7 +132,11 @@ function StepNuvemshopConnect({
           placeholder="loja@email.com"
         />
       </label>
-      {connected ? (
+      {oauthConnecting ? (
+        <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-300">
+          Validando conexão com a Nuvemshop…
+        </div>
+      ) : connected ? (
         <div className="rounded-lg border border-emerald-900/50 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-200">
           App conectado
           {form.nuvemshopStoreId ? ` (loja ${form.nuvemshopStoreId})` : ""}. Ao finalizar o wizard,
@@ -635,12 +641,17 @@ export function BuilderWizard() {
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [oauthConnecting, setOauthConnecting] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     const oauthId = params.get("oauth_session_id");
     if (!oauthId) return;
+
+    setOauthConnecting(true);
+    setError(null);
+    setForm((prev) => ({ ...prev, oauthSessionId: oauthId }));
 
     fetchOAuthSession(oauthId)
       .then((session) => {
@@ -656,7 +667,15 @@ export function BuilderWizard() {
         const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
         window.history.replaceState({}, "", next);
       })
-      .catch(() => setError("Não foi possível validar a conexão com a Nuvemshop."));
+      .catch((err) => {
+        setForm((prev) => ({ ...prev, oauthSessionId: "", nuvemshopStoreId: "" }));
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Não foi possível validar a conexão. Tente de novo ou verifique o provisioner na Vercel.",
+        );
+      })
+      .finally(() => setOauthConnecting(false));
   }, []);
 
   useEffect(() => {
@@ -887,7 +906,9 @@ export function BuilderWizard() {
           </div>
         )}
         {step === 1 && <StepVerify form={form} update={update} />}
-        {step === 2 && <StepNuvemshopConnect form={form} update={update} />}
+        {step === 2 && (
+          <StepNuvemshopConnect form={form} update={update} oauthConnecting={oauthConnecting} />
+        )}
         {step === 3 && (
           <StepPlan
             affiliate={catalog.affiliate_url}
