@@ -4,7 +4,6 @@ import {
   formatBuilderSubmitErrors,
   youtubeEmbedUrl,
 } from "@crm-ascend/validation";
-import { waitUntil } from "@vercel/functions";
 import { NextResponse } from "next/server";
 import { enqueueProvisionerJob } from "@/lib/provisioner";
 
@@ -80,39 +79,40 @@ export async function POST(request: Request) {
 
   const submission = { id: submissionId as string };
 
-  const enqueueTask = enqueueProvisionerJob({
-    submissionId: submission.id,
-    oauthSessionId: data.oauthSessionId,
-  })
-    .then(async (job) => {
-      await supabase.rpc("update_builder_submission_provision", {
-        p_id: submission.id,
-        p_provision_status: "queued",
-        p_provision_job_id: job.job_id,
-      });
-      return job.job_id;
-    })
-    .catch(async (e) => {
-      const provisionError =
-        e instanceof Error ? e.message : "Falha ao enfileirar provisionamento";
-      await supabase.rpc("update_builder_submission_provision", {
-        p_id: submission.id,
-        p_provision_status: "failed",
-        p_provision_error: provisionError,
-      });
-      return null;
-    });
+  let provisionStatus: "queued" | "failed" = "queued";
+  let provisionError: string | null = null;
+  let provisionJobId: string | null = null;
 
   try {
-    waitUntil(enqueueTask);
-  } catch {
-    void enqueueTask;
+    const job = await enqueueProvisionerJob({
+      submissionId: submission.id,
+      oauthSessionId: data.oauthSessionId,
+    });
+    provisionJobId = job.job_id;
+    await supabase.rpc("update_builder_submission_provision", {
+      p_id: submission.id,
+      p_provision_status: "queued",
+      p_provision_job_id: job.job_id,
+    });
+  } catch (e) {
+    provisionStatus = "failed";
+    provisionError =
+      e instanceof Error ? e.message : "Falha ao enfileirar provisionamento";
+    await supabase.rpc("update_builder_submission_provision", {
+      p_id: submission.id,
+      p_provision_status: "failed",
+      p_provision_error: provisionError,
+    });
   }
 
   return NextResponse.json({
     submission_id: submission.id,
-    provision_status: "queued",
+    provision_status: provisionStatus,
+    provision_error: provisionError,
+    provision_job_id: provisionJobId,
     message:
-      "Respostas salvas. A loja está sendo montada em segundo plano — acompanhe o status na próxima tela.",
+      provisionStatus === "queued"
+        ? "Respostas salvas. A loja está sendo montada em segundo plano — acompanhe o status na próxima tela."
+        : "Respostas salvas, mas o provisionamento não iniciou. Veja o erro na tela de status.",
   });
 }
