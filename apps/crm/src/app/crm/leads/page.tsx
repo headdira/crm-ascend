@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CrmTableLink } from "@/components/crm/crm-table-link";
 import { UserCheck, UserPlus } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,9 +63,9 @@ export default async function LeadsPage({
               {leads.map((lead) => (
                 <TableRow key={lead.id}>
                   <TableCell>
-                    <Link href={`/crm/leads/${lead.id}`} className="font-medium hover:underline">
+                    <CrmTableLink href={`/crm/leads/${lead.id}`} className="font-medium hover:underline">
                       {lead.full_name}
-                    </Link>
+                    </CrmTableLink>
                   </TableCell>
                   <TableCell>
                     <StatusBadge value={lead.status} />

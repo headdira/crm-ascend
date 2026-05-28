@@ -1,17 +1,18 @@
+import { cache } from "react";
 import type { Tables } from "@crm-ascend/db";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 export type StaffUser = Tables<"staff_users">;
 
-export async function getSessionUser() {
+export const getSessionUser = cache(async () => {
   const supabase = await getSupabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
   return user;
-}
+});
 
-export async function getCurrentStaff(): Promise<StaffUser | null> {
+export const getCurrentStaff = cache(async (): Promise<StaffUser | null> => {
   const supabase = await getSupabaseServer();
   const user = await getSessionUser();
   if (!user) return null;
@@ -23,7 +24,7 @@ export async function getCurrentStaff(): Promise<StaffUser | null> {
     .maybeSingle();
 
   return data;
-}
+});
 
 export async function requireStaff(): Promise<StaffUser> {
   const staff = await getCurrentStaff();

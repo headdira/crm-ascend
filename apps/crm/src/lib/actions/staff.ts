@@ -1,12 +1,13 @@
 "use server";
 
+import { cache } from "react";
 import { createServiceSupabase } from "@crm-ascend/db";
 import { revalidatePath } from "next/cache";
 import { getSessionUser } from "@/lib/auth";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 /** Garante registro em staff_users após login (admin pode promover role depois). */
-export async function syncStaffUser() {
+export const syncStaffUser = cache(async () => {
   const user = await getSessionUser();
   if (!user?.email) return null;
 
@@ -39,7 +40,7 @@ export async function syncStaffUser() {
 
   revalidatePath("/crm");
   return data;
-}
+});
 
 export async function listStaffUsers() {
   const supabase = await getSupabaseServer();

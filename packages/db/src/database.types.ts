@@ -379,9 +379,111 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["form_submissions"]["Row"]>;
         Relationships: TableRelationship[];
       };
+      builder_assets: {
+        Row: {
+          id: string;
+          asset_type: Database["public"]["Enums"]["builder_asset_type"];
+          name: string;
+          niche: string;
+          svg_content: string;
+          sort_order: number;
+          is_active: boolean;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          asset_type: Database["public"]["Enums"]["builder_asset_type"];
+          name: string;
+          niche: string;
+          svg_content: string;
+          sort_order?: number;
+          is_active?: boolean;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["builder_assets"]["Row"]>;
+        Relationships: TableRelationship[];
+      };
+      builder_settings: {
+        Row: {
+          id: number;
+          youtube_url: string | null;
+          affiliate_url: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          id: number;
+          youtube_url?: string | null;
+          affiliate_url?: string | null;
+          updated_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["builder_settings"]["Row"]>;
+        Relationships: TableRelationship[];
+      };
+      builder_submissions: {
+        Row: {
+          id: string;
+          payload: Json;
+          store_name: string | null;
+          niche: string | null;
+          course_email: string | null;
+          store_email: string | null;
+          oauth_session_id: string | null;
+          provision_status: Database["public"]["Enums"]["builder_provision_status"];
+          provision_job_id: string | null;
+          provision_error: string | null;
+          store_preview_url: string | null;
+          nuvemshop_store_id: string | null;
+          theme_assets: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          payload?: Json;
+          store_name?: string | null;
+          niche?: string | null;
+          course_email?: string | null;
+          store_email?: string | null;
+          oauth_session_id?: string | null;
+          provision_status?: Database["public"]["Enums"]["builder_provision_status"];
+          provision_job_id?: string | null;
+          provision_error?: string | null;
+          store_preview_url?: string | null;
+          nuvemshop_store_id?: string | null;
+          theme_assets?: Json | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["builder_submissions"]["Row"]>;
+        Relationships: TableRelationship[];
+      };
     };
     Views: {};
-    Functions: {};
+    Functions: {
+      insert_builder_submission: {
+        Args: {
+          p_store_name: string;
+          p_niche: string;
+          p_course_email: string | null;
+          p_store_email: string;
+          p_oauth_session_id: string;
+          p_payload: Json;
+        };
+        Returns: string;
+      };
+      update_builder_submission_provision: {
+        Args: {
+          p_id: string;
+          p_provision_status: Database["public"]["Enums"]["builder_provision_status"];
+          p_provision_job_id?: string | null;
+          p_provision_error?: string | null;
+          p_store_preview_url?: string | null;
+          p_nuvemshop_store_id?: string | null;
+          p_theme_assets?: Json | null;
+        };
+        Returns: undefined;
+      };
+    };
     Enums: {
       lead_status:
         | "new"
@@ -398,6 +500,13 @@ export type Database = {
       case_status: "new" | "in_progress" | "waiting_customer" | "resolved" | "closed";
       case_priority: "low" | "medium" | "high" | "critical";
       staff_role: "admin" | "sales" | "support" | "finance" | "read_only";
+      builder_asset_type: "logo" | "banner";
+      builder_provision_status:
+        | "pending"
+        | "queued"
+        | "running"
+        | "completed"
+        | "failed";
     };
   };
 };

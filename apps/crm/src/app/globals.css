@@ -99,3 +99,16 @@
     transparent 50%
   );
 }
+
+@keyframes crm-nav-progress {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.crm-nav-progress-bar {
+  animation: crm-nav-progress 1s ease-in-out infinite;
+}

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/crm/app-sidebar";
+import { CrmNavigationProvider } from "@/components/crm/crm-navigation";
 import { SupabaseConfigProvider } from "@/components/crm/supabase-config-provider";
 import { getCurrentStaff } from "@/lib/auth";
 import { syncStaffUser } from "@/lib/actions/staff";
@@ -24,7 +25,9 @@ export default async function CrmLayout({ children }: { children: React.ReactNod
       <div className="ascend-crm-shell">
         <SidebarProvider>
           <AppSidebar />
-          <SidebarInset className="min-w-0 bg-transparent">{children}</SidebarInset>
+          <SidebarInset className="min-w-0 bg-transparent">
+            <CrmNavigationProvider>{children}</CrmNavigationProvider>
+          </SidebarInset>
         </SidebarProvider>
       </div>
     </SupabaseConfigProvider>

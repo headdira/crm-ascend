@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { CrmNavLink } from "@/components/crm/crm-navigation";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
@@ -62,7 +63,7 @@ export function CrmHeader({
               <BreadcrumbItem>
                 {c.href ? (
                   <BreadcrumbLink asChild>
-                    <Link href={c.href}>{c.label}</Link>
+                    <CrmNavLink href={c.href}>{c.label}</CrmNavLink>
                   </BreadcrumbLink>
                 ) : (
                   <BreadcrumbPage>{c.label}</BreadcrumbPage>

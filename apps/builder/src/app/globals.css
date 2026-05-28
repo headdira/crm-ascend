@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-ascend-gold: #ffb800;
+  --font-dm-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-montserrat: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-playfair: "Playfair Display", ui-serif, Georgia, serif;
+}
+
+body {
+  font-family: var(--font-dm-sans);
+}

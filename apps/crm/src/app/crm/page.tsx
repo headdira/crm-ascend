@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { CrmNavLink } from "@/components/crm/crm-navigation";
 import {
   BadgeCheck,
   FileSignature,
@@ -59,7 +59,7 @@ export default async function CrmDashboardPage() {
           {cards.map((c) => {
             const Icon = c.icon;
             return (
-              <Link key={c.href} href={c.href}>
+              <CrmNavLink key={c.href} href={c.href}>
                 <Card className="border-border/80 transition-colors hover:border-primary/30 hover:bg-accent/40">
                   <CardHeader className="flex flex-row items-center justify-between">
                     <div className="flex flex-col gap-1">
@@ -69,7 +69,7 @@ export default async function CrmDashboardPage() {
                     <Icon className="text-muted-foreground size-5" />
                   </CardHeader>
                 </Card>
-              </Link>
+              </CrmNavLink>
             );
           })}
         </div>

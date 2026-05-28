@@ -36,13 +36,43 @@ export async function createServerSupabase(cookieStore: {
   );
 }
 
+function getServiceRoleKey(): string {
+  const key =
+    process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() ||
+    process.env.SUPABASE_SECRET_KEY?.trim();
+  if (!key) {
+    throw new Error(
+      "Missing SUPABASE_SERVICE_ROLE_KEY (ou SUPABASE_SECRET_KEY / sb_secret_...).",
+    );
+  }
+  return key;
+}
+
+function assertServiceRoleKey(key: string): void {
+  if (key.startsWith("sb_secret_")) return;
+  try {
+    const payloadPart = key.split(".")[1];
+    if (!payloadPart) return;
+    const json = Buffer.from(payloadPart, "base64url").toString("utf8");
+    const payload = JSON.parse(json) as { role?: string };
+    if (payload.role !== "service_role") {
+      throw new Error(
+        "SUPABASE_SERVICE_ROLE_KEY está com a chave anon/public. No Supabase: Settings → API → secret key ou service_role (legacy).",
+      );
+    }
+  } catch (e) {
+    if (e instanceof Error && e.message.includes("service_role")) throw e;
+  }
+}
+
 /** Service role — server-only (Route Handlers, privileged actions). */
 export function createServiceSupabase() {
   const url = getSupabaseUrl();
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!url || !key) {
-    throw new Error("Missing Supabase URL or SUPABASE_SERVICE_ROLE_KEY");
+  const key = getServiceRoleKey();
+  if (!url) {
+    throw new Error("Missing Supabase URL (SUPABASE_URL ou NEXT_PUBLIC_SUPABASE_URL)");
   }
+  assertServiceRoleKey(key);
   return createClient<Database, "public">(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
   });

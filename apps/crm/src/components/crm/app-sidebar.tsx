@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { CrmNavLink } from "@/components/crm/crm-navigation";
 import { usePathname } from "next/navigation";
 import {
   BadgeCheck,
@@ -9,6 +9,7 @@ import {
   GraduationCap,
   LifeBuoy,
   Package,
+  Palette,
   Settings,
   UserPlus,
   Wrench,
@@ -47,6 +48,7 @@ const nav = [
     items: [
       { href: "/crm/cases", label: "Casos", icon: LifeBuoy },
       { href: "/crm/services", label: "Serviços", icon: Wrench },
+      { href: "/crm/builder", label: "Builder", icon: Palette },
     ],
   },
 ];
@@ -57,7 +59,7 @@ export function AppSidebar() {
   return (
     <Sidebar className="border-sidebar-border">
       <SidebarHeader className="border-sidebar-border flex flex-col gap-3 border-b px-4 py-4">
-        <Link href="/crm" className="flex items-center gap-3">
+        <CrmNavLink href="/crm" className="flex items-center gap-3">
           <Image
             src={LOGO_URL}
             alt={SITE_NAME}
@@ -66,7 +68,7 @@ export function AppSidebar() {
             className="h-9 w-auto opacity-95"
             priority
           />
-        </Link>
+        </CrmNavLink>
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-primary">CRM interno</p>
           <p className="text-muted-foreground text-xs">Operação · Fase 1</p>
@@ -87,10 +89,10 @@ export function AppSidebar() {
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton asChild isActive={active}>
-                        <Link href={item.href}>
+                        <CrmNavLink href={item.href}>
                           <Icon data-icon="inline-start" />
                           <span>{item.label}</span>
-                        </Link>
+                        </CrmNavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
@@ -119,10 +121,10 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={pathname === "/crm"}>
-                  <Link href="/crm">
+                  <CrmNavLink href="/crm">
                     <Settings data-icon="inline-start" />
                     <span>Dashboard</span>
-                  </Link>
+                  </CrmNavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
