@@ -74,6 +74,7 @@ export function mergeSavedForm(saved: Partial<BuilderFormState> | undefined): Bu
 export const STEP_LABELS = [
   "Verificação",
   "Conectar Nuvemshop",
+  "Autorizar tema",
   "Plano",
   "Nome da loja",
   "Nicho",

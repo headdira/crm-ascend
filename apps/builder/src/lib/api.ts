@@ -43,9 +43,11 @@ export async function fetchOAuthSession(sessionId: string) {
     throw new Error(msg);
   }
   return res.json() as Promise<{
+    id: string;
     store_id: string;
     theme_authorized?: boolean;
     mock?: boolean;
+    connected?: boolean;
   }>;
 }
 
@@ -73,11 +75,10 @@ export async function registerThemeToken(oauthSessionId: string, themeToken: str
   return body as { ok: boolean; theme_authorized: boolean };
 }
 
-/** Legado CLI tema — fluxo atual usa só OAuth app + Scripts API. */
-export function themeAuthorizeStartUrl(oauthSessionId: string, returnUrl: string) {
-  const u = new URL("/api/oauth/start", window.location.origin);
-  u.searchParams.set("return_url", returnUrl);
-  void oauthSessionId;
+/** Abre /api/theme-auth-start em nova aba (proxy → brand-editor.tiendanube.com). */
+export function themeAuthorizeStartUrl(oauthSessionId: string) {
+  const u = new URL("/api/theme-auth-start", window.location.origin);
+  u.searchParams.set("oauth_session_id", oauthSessionId);
   return u.toString();
 }
 

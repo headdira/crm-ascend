@@ -13,6 +13,7 @@ import {
   fetchCatalog,
   fetchOAuthSession,
   fetchProvisionStatus,
+  registerThemeToken,
   submitBuilder,
 } from "@/lib/api";
 import {
@@ -194,6 +195,146 @@ function StepNuvemshopConnect({
         Se o app Ascend já estiver instalado, a Nuvemshop pode voltar em 1–2 segundos sem pedir de novo —
         isso é normal. Para ver a tela de permissões, desinstale o app no admin da loja antes de clicar.
       </p>
+    </div>
+  );
+}
+
+function StepThemeAuth({
+  form,
+  update,
+}: {
+  form: BuilderFormState;
+  update: (key: keyof BuilderFormState, value: BuilderFormState[keyof BuilderFormState]) => void;
+}) {
+  const [token, setToken] = useState("");
+  const [validating, setValidating] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  const oauthOk = Boolean(form.oauthSessionId);
+
+  const openAuthorize = () => {
+    if (!oauthOk) return;
+    const u = new URL("/api/theme-auth-start", window.location.origin);
+    u.searchParams.set("oauth_session_id", form.oauthSessionId);
+    window.open(u.toString(), "_blank", "noopener,noreferrer");
+  };
+
+  const validate = async () => {
+    if (!token.trim()) {
+      setAuthError("Cole o token Base64 que apareceu na página da Nuvemshop.");
+      return;
+    }
+    setAuthError(null);
+    setValidating(true);
+    try {
+      const res = await registerThemeToken(form.oauthSessionId, token.trim());
+      if (res.theme_authorized) {
+        update("themeAuthorized", true);
+        setToken("");
+      } else {
+        setAuthError("Token aceito mas a Nuvemshop não confirmou a autorização. Tente novamente.");
+      }
+    } catch (e) {
+      setAuthError(e instanceof Error ? e.message : "Token de tema inválido");
+    } finally {
+      setValidating(false);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h2 className="text-lg font-semibold text-zinc-100">Autorizar customização do tema</h2>
+        <p className="mt-1 text-sm text-zinc-400">
+          A Nuvemshop separa a customização do tema em uma segunda autorização. Em ~30 segundos
+          sua loja vai sair daqui com logo, banners e cores aplicados <strong>no tema real</strong>{" "}
+          (não em sobreposição). Isso é o que dá controle total do visual.
+        </p>
+      </div>
+
+      {!oauthOk && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
+          Conecte sua loja na etapa anterior antes de autorizar o tema.
+        </div>
+      )}
+
+      {form.themeAuthorized ? (
+        <div className="rounded-lg border border-emerald-900/50 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-200">
+          ✓ Tema autorizado para a loja {form.nuvemshopStoreId || "conectada"}. Pode seguir para o
+          próximo passo.
+        </div>
+      ) : (
+        <>
+          <ol className="space-y-3 text-sm text-zinc-300">
+            <li className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ascend-gold/20 text-xs font-semibold text-ascend-gold">
+                1
+              </span>
+              <div className="flex-1">
+                <p>Clique no botão abaixo. Uma nova aba abre na Nuvemshop.</p>
+                <p className="mt-1 text-xs text-zinc-500">
+                  Faça login na conta da loja se pedir.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ascend-gold/20 text-xs font-semibold text-ascend-gold">
+                2
+              </span>
+              <div className="flex-1">
+                <p>
+                  A página exibe um <strong>token longo (Base64)</strong>. Copie todo o texto com
+                  o botão da própria página.
+                </p>
+              </div>
+            </li>
+            <li className="flex gap-3">
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ascend-gold/20 text-xs font-semibold text-ascend-gold">
+                3
+              </span>
+              <div className="flex-1">
+                <p>Volte aqui e cole o token no campo abaixo. Clique em validar.</p>
+              </div>
+            </li>
+          </ol>
+
+          <button
+            type="button"
+            onClick={openAuthorize}
+            disabled={!oauthOk}
+            className="w-full rounded-lg border border-ascend-gold/50 bg-ascend-gold/10 px-4 py-3 text-sm font-semibold text-ascend-gold transition hover:bg-ascend-gold/20 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Abrir página de autorização da Nuvemshop ↗
+          </button>
+
+          <label className="block space-y-2">
+            <span className="text-sm text-zinc-300">Token Base64 da Nuvemshop</span>
+            <textarea
+              value={token}
+              onChange={(e) => setToken(e.target.value)}
+              rows={4}
+              spellCheck={false}
+              className="w-full rounded-lg border border-zinc-700 bg-black/40 px-4 py-3 font-mono text-xs text-zinc-100 outline-none ring-ascend-gold/40 placeholder:text-zinc-600 focus:border-ascend-gold focus:ring-2"
+              placeholder="eyJzdG9yZV9pZCI6..."
+            />
+          </label>
+
+          {authError && (
+            <div className="rounded-lg border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+              {authError}
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={validate}
+            disabled={validating || !oauthOk || token.trim().length < 20}
+            className="w-full rounded-lg bg-ascend-gold px-4 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {validating ? "Validando…" : "Validar e salvar token"}
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -757,7 +898,7 @@ export function BuilderWizard() {
             ...prev,
             oauthSessionId: oauthId,
             nuvemshopStoreId: session.store_id,
-            themeAuthorized: false,
+            themeAuthorized: Boolean(session.theme_authorized),
           }));
           params.delete("oauth_session_id");
           params.delete("oauth_mock");
@@ -830,15 +971,20 @@ export function BuilderWizard() {
         if (!form.oauthSessionId) return "Autorize o app no admin da sua loja antes de continuar.";
         return null;
       case 3:
-        if (!form.planWatchedInfo) return "Confirme que assistiu ou revisou o vídeo explicativo.";
+        if (!form.themeAuthorized) {
+          return "Autorize o tema na Nuvemshop e cole o token Base64 antes de continuar.";
+        }
         return null;
       case 4:
-        if (form.storeName.trim().length < 2) return "Nome da loja muito curto.";
+        if (!form.planWatchedInfo) return "Confirme que assistiu ou revisou o vídeo explicativo.";
         return null;
       case 5:
-        if (!form.niche) return "Selecione um nicho.";
+        if (form.storeName.trim().length < 2) return "Nome da loja muito curto.";
         return null;
       case 6:
+        if (!form.niche) return "Selecione um nicho.";
+        return null;
+      case 7:
         if (form.bannerIds.length !== 3) {
           const available = (catalog?.banners ?? []).filter(
             (b) => b.niche === form.niche || b.niche === "Genérico",
@@ -849,10 +995,10 @@ export function BuilderWizard() {
           return "Escolha exatamente 3 banners.";
         }
         return null;
-      case 7:
+      case 8:
         if (!form.fontId) return "Escolha uma fonte.";
         return null;
-      case 8:
+      case 9:
         if (!form.logoId) return "Escolha uma logo.";
         return null;
       default:
@@ -867,7 +1013,7 @@ export function BuilderWizard() {
       return;
     }
 
-    if (step === 9 && catalog) {
+    if (step === 10 && catalog) {
       startTransition(async () => {
         try {
           const logo = catalog.logos.find((l) => l.id === form.logoId);
@@ -906,7 +1052,7 @@ export function BuilderWizard() {
             ),
           });
           setSubmissionId(result.submission_id);
-          setStep(10);
+          setStep(11);
           setError(result.provision_error ?? null);
         } catch (err) {
           setError(err instanceof Error ? err.message : "Erro ao enviar");
@@ -1002,7 +1148,8 @@ export function BuilderWizard() {
             onClearOAuth={clearOAuth}
           />
         )}
-        {step === 3 && (
+        {step === 3 && <StepThemeAuth form={form} update={update} />}
+        {step === 4 && (
           <StepPlan
             affiliate={catalog.affiliate_url}
             youtubeEmbedUrl={catalog.youtube_embed_url}
@@ -1010,18 +1157,18 @@ export function BuilderWizard() {
             update={update}
           />
         )}
-        {step === 4 && <StepStoreName form={form} update={update} />}
-        {step === 5 && <StepNiche form={form} onSelectNiche={selectNiche} />}
-        {step === 6 && (
+        {step === 5 && <StepStoreName form={form} update={update} />}
+        {step === 6 && <StepNiche form={form} onSelectNiche={selectNiche} />}
+        {step === 7 && (
           <StepBanners form={form} catalog={catalog} toggleBanner={toggleBanner} update={update} />
         )}
-        {step === 7 && <StepFonts form={form} update={update} />}
-        {step === 8 && <StepLogo form={form} catalog={catalog} update={update} />}
-        {step === 9 && <StepReview form={form} catalog={catalog} />}
-        {step === 10 && <StepDone form={form} submissionId={submissionId} />}
+        {step === 8 && <StepFonts form={form} update={update} />}
+        {step === 9 && <StepLogo form={form} catalog={catalog} update={update} />}
+        {step === 10 && <StepReview form={form} catalog={catalog} />}
+        {step === 11 && <StepDone form={form} submissionId={submissionId} />}
       </div>
 
-      {step < 10 && (
+      {step < 11 && (
         <nav className="mt-6 flex flex-wrap items-center justify-between gap-3">
           <button
             type="button"
@@ -1045,13 +1192,13 @@ export function BuilderWizard() {
               disabled={isPending}
               className="rounded-lg bg-ascend-gold px-6 py-2.5 text-sm font-semibold text-black transition hover:bg-yellow-400 disabled:opacity-60"
             >
-              {step === 9 ? (isPending ? "Enviando…" : "Enviar") : "Continuar"}
+              {step === 10 ? (isPending ? "Enviando…" : "Enviar") : "Continuar"}
             </button>
           </div>
         </nav>
       )}
 
-      {step === 10 && (
+      {step === 11 && (
         <div className="mt-6 flex justify-center">
           <button
             type="button"
