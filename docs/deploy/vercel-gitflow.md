@@ -1,6 +1,6 @@
-# Deploy — GitFlow + Vercel (landing e CRM separados)
+# Deploy — GitFlow + Vercel (landing, CRM e Builder separados)
 
-Dois projetos Vercel no **mesmo repositório**, com **Root Directory** diferente. Pipeline nativo da Vercel (zero config extra no repo além dos `vercel.json` em cada app).
+Três projetos Vercel no **mesmo repositório**, com **Root Directory** diferente. Pipeline nativo da Vercel (zero config extra no repo além dos `vercel.json` em cada app).
 
 ## Pipeline
 
@@ -25,6 +25,7 @@ Dois projetos Vercel no **mesmo repositório**, com **Root Directory** diferente
 |----------------|----------------|---------------------------|-----------|
 | **ascend-landing** | `apps/landing` | `ascendclub.com.br` (e `www`) | `:3000` |
 | **ascend-crm** | `apps/crm` | `crm.ascendclub.com.br` (sugestão) | `:3001` |
+| **ascend-builder** | `apps/builder` | `ascend-builder.vercel.app` (sugestão) | `:3002` |
 
 ### Criar os projetos (uma vez)
 
@@ -37,16 +38,21 @@ Dois projetos Vercel no **mesmo repositório**, com **Root Directory** diferente
 3. Repetir import do **mesmo repo** para **Projeto 2 — CRM**
    - Nome: `ascend-crm`
    - Root Directory: **`apps/crm`**
+4. Repetir import para **Projeto 3 — Builder**
+   - Nome: `ascend-builder`
+   - Root Directory: **`apps/builder`**
+   - Env: copiar de `apps/builder/vercel-env.import.env.example` (CRM + provisioner em produção)
+   - Depois do 1º deploy: no **provisioner** Vercel, `BUILDER_URL` e `CORS_ORIGINS` = URL do builder
 
 Cada pasta já contém `vercel.json` com install/build no monorepo (`pnpm install` na raiz + `--filter` no pacote certo).
 
 ## Branches → ambiente
 
-| Git | Landing | CRM |
-|-----|---------|-----|
-| `main` | Produção `ascendclub.com.br` | Produção `crm.*` |
-| `feature/*` | Preview da branch | Preview da branch |
-| Pull Request | Preview do PR (URL única) | Preview do PR |
+| Git | Landing | CRM | Builder |
+|-----|---------|-----|---------|
+| `main` | Produção `ascendclub.com.br` | Produção `crm.*` | Produção builder |
+| `feature/*` | Preview da branch | Preview da branch | Preview da branch |
+| Pull Request | Preview do PR | Preview do PR | Preview do PR |
 
 Configuração padrão Vercel: **Production Branch** = `main`; previews automáticos em PR e branches ligadas ao projeto.
 
@@ -88,7 +94,17 @@ Use **Environment** na Vercel: Production / Preview / Development para não vaza
 pnpm install
 pnpm --filter @crm-ascend/landing build
 pnpm --filter @crm-ascend/crm build
+pnpm --filter @crm-ascend/builder build
 ```
+
+### `ascend-builder` (`apps/builder`)
+
+| Variável | Valor (produção) |
+|----------|------------------|
+| `CRM_URL` / `NEXT_PUBLIC_CRM_URL` | `https://crm-ascend-2c1l.vercel.app` |
+| `PROVISIONER_URL` / `NEXT_PUBLIC_PROVISIONER_URL` | `https://ascend-nuvemshop-provisioner-api.vercel.app` |
+
+Ver também [`builder-nuvemshop-integration.md`](../builder-nuvemshop-integration.md).
 
 ## Fluxo de trabalho sugerido
 
