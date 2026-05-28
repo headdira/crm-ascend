@@ -21,6 +21,7 @@ import {
   STORAGE_KEY,
   formForLocalStorage,
   mergeSavedForm,
+  normalizeStoreAdminHost,
   type BuilderCatalog,
   type BuilderFormState,
 } from "@/lib/types";
@@ -109,11 +110,26 @@ function StepNuvemshopConnect({
   onClearOAuth: () => void;
 }) {
   const connected = Boolean(form.oauthSessionId && form.nuvemshopStoreId);
+  const storeHost = normalizeStoreAdminHost(form.storeAdminHost);
+
   const startOAuth = () => {
+    const host = normalizeStoreAdminHost(form.storeAdminHost);
+    if (!host) return;
+
     onClearOAuth();
-    const returnUrl = `${window.location.origin}${window.location.pathname}`;
-    const url = `/api/oauth/start?return_url=${encodeURIComponent(returnUrl)}&force=1`;
-    window.location.href = url;
+    try {
+      sessionStorage.setItem("ascend_oauth_pending", "1");
+    } catch {
+      /* ignore */
+    }
+
+    const returnUrl = `${window.location.origin}${window.location.pathname}?oauth_return=1`;
+    const params = new URLSearchParams({
+      return_url: returnUrl,
+      force: "1",
+      store_host: host,
+    });
+    window.location.replace(`/api/oauth/start?${params.toString()}`);
   };
 
   return (
@@ -136,6 +152,25 @@ function StepNuvemshopConnect({
           placeholder="loja@email.com"
         />
       </label>
+      <label className="block space-y-2">
+        <span className="text-sm text-zinc-300">Endereço da sua loja no admin Nuvemshop</span>
+        <input
+          type="text"
+          value={form.storeAdminHost}
+          onChange={(e) => update("storeAdminHost", e.target.value)}
+          className="w-full rounded-lg border border-zinc-700 bg-black/40 px-4 py-3 text-zinc-100 outline-none focus:border-ascend-gold focus:ring-2 focus:ring-ascend-gold/40"
+          placeholder="sualoja.lojavirtualnuvem.com.br"
+          autoComplete="off"
+        />
+        <span className="text-xs text-zinc-500">
+          O mesmo domínio em que você entra no painel (ex.{" "}
+          <span className="text-zinc-400">aestheticwrld.lojavirtualnuvem.com.br</span>). O OAuth abre
+          lá, não em nuvemshop.com.br genérico.
+        </span>
+        {form.storeAdminHost.trim() && !storeHost && (
+          <span className="text-xs text-red-400">Domínio inválido — use o host do admin da loja.</span>
+        )}
+      </label>
       {oauthConnecting ? (
         <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-300">
           Validando conexão com a Nuvemshop…
@@ -150,14 +185,14 @@ function StepNuvemshopConnect({
       <button
         type="button"
         onClick={startOAuth}
-        disabled={oauthConnecting}
+        disabled={oauthConnecting || !storeHost}
         className="w-full rounded-lg bg-ascend-gold px-4 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
       >
-        {connected ? "Autorizar novamente na Nuvemshop" : "Conectar com Nuvemshop"}
+        {connected ? "Autorizar novamente no admin da loja" : "Abrir autorização no admin da loja"}
       </button>
       <p className="text-xs text-zinc-500">
-        Sempre abre a Nuvemshop para autorizar o app. Se a tela não aparecer, desinstale o app Ascend no
-        admin da loja e clique de novo.
+        Se o app Ascend já estiver instalado, a Nuvemshop pode voltar em 1–2 segundos sem pedir de novo —
+        isso é normal. Para ver a tela de permissões, desinstale o app no admin da loja antes de clicar.
       </p>
     </div>
   );
@@ -690,7 +725,28 @@ export function BuilderWizard() {
     }
 
     const oauthId = params.get("oauth_session_id");
-    if (oauthId) {
+    const oauthReturn =
+      params.get("oauth_return") === "1" ||
+      (typeof sessionStorage !== "undefined" &&
+        sessionStorage.getItem("ascend_oauth_pending") === "1");
+
+    if (oauthId && !oauthReturn) {
+      params.delete("oauth_session_id");
+      params.delete("oauth_mock");
+      const qs = params.toString();
+      window.history.replaceState(
+        {},
+        "",
+        `${window.location.pathname}${qs ? `?${qs}` : ""}`,
+      );
+    }
+
+    if (oauthId && oauthReturn) {
+      try {
+        sessionStorage.removeItem("ascend_oauth_pending");
+      } catch {
+        /* ignore */
+      }
       setOauthConnecting(true);
       setError(null);
       setForm((prev) => ({ ...prev, oauthSessionId: oauthId }));
@@ -705,6 +761,7 @@ export function BuilderWizard() {
           }));
           params.delete("oauth_session_id");
           params.delete("oauth_mock");
+          params.delete("oauth_return");
           const qs = params.toString();
           const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
           window.history.replaceState({}, "", next);
@@ -767,7 +824,10 @@ export function BuilderWizard() {
         return null;
       case 2:
         if (!isEmail(form.storeEmail)) return "Informe um e-mail válido para a loja.";
-        if (!form.oauthSessionId) return "Conecte sua loja Nuvemshop antes de continuar.";
+        if (!normalizeStoreAdminHost(form.storeAdminHost)) {
+          return "Informe o domínio do admin da loja (ex. sualoja.lojavirtualnuvem.com.br).";
+        }
+        if (!form.oauthSessionId) return "Autorize o app no admin da sua loja antes de continuar.";
         return null;
       case 3:
         if (!form.planWatchedInfo) return "Confirme que assistiu ou revisou o vídeo explicativo.";

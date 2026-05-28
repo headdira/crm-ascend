@@ -19,6 +19,8 @@ export type BuilderFormState = {
   courseEmail: string;
   cpf: string;
   storeEmail: string;
+  /** Ex.: aestheticwrld.lojavirtualnuvem.com.br — OAuth abre o admin da loja */
+  storeAdminHost: string;
   oauthSessionId: string;
   nuvemshopStoreId: string;
   themeAuthorized: boolean;
@@ -33,7 +35,26 @@ export type BuilderFormState = {
   fontId: string;
 };
 
-export const STORAGE_KEY = "ascend-builder-v2";
+export const STORAGE_KEY = "ascend-builder-v3";
+
+/** Host da loja para /admin/apps/{id}/authorize (tela de permissões no admin). */
+export function normalizeStoreAdminHost(input: string): string | null {
+  const raw = input.trim();
+  if (!raw) return null;
+  try {
+    const url = /^https?:\/\//i.test(raw) ? new URL(raw) : new URL(`https://${raw}`);
+    const host = url.hostname.toLowerCase();
+    if (
+      !/\.(lojavirtualnuvem\.com\.br|nuvemshop\.com\.br|tiendanube\.com)$/i.test(host) &&
+      !host.endsWith(".nuvemshop.com.br")
+    ) {
+      return null;
+    }
+    return host;
+  } catch {
+    return null;
+  }
+}
 
 export function formForLocalStorage(form: BuilderFormState): BuilderFormState {
   return {
@@ -95,6 +116,7 @@ export function emptyForm(): BuilderFormState {
     courseEmail: "",
     cpf: "",
     storeEmail: "",
+    storeAdminHost: "",
     oauthSessionId: "",
     nuvemshopStoreId: "",
     themeAuthorized: false,
