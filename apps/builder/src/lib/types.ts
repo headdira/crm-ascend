@@ -49,11 +49,26 @@ export const STEP_LABELS = [
 
 const PROVISIONER_PRODUCTION = "https://ascend-nuvemshop-provisioner-api.vercel.app";
 
+function isLocalhostUrl(url: string) {
+  return /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?/i.test(url);
+}
+
+/** Provisioner: na Vercel nunca usa localhost (env de dev costuma vazar no dashboard). */
 export function getProvisionerUrl() {
-  const fromEnv =
+  const fromEnv = (
     process.env.PROVISIONER_URL?.trim() ||
-    process.env.NEXT_PUBLIC_PROVISIONER_URL?.trim();
-  if (fromEnv) return fromEnv.replace(/\/$/, "");
+    process.env.NEXT_PUBLIC_PROVISIONER_URL?.trim() ||
+    ""
+  ).replace(/\/$/, "");
+
+  if (process.env.VERCEL) {
+    if (fromEnv && fromEnv.startsWith("https://") && !isLocalhostUrl(fromEnv)) {
+      return fromEnv;
+    }
+    return PROVISIONER_PRODUCTION;
+  }
+
+  if (fromEnv) return fromEnv;
   if (process.env.VERCEL_ENV === "production") return PROVISIONER_PRODUCTION;
   return "http://localhost:4010";
 }
