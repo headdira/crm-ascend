@@ -10,7 +10,8 @@
     "login:vercel": "vercel login",
     "login:supabase": "supabase login",
     "link:vercel:landing": "vercel link --cwd apps/landing",
-    "link:vercel:crm": "vercel link --cwd apps/crm"
+    "link:vercel:crm": "vercel link --cwd apps/crm",
+    "link:vercel:builder": "vercel link --cwd apps/builder"
   },
   "devDependencies": {
     "prettier": "^3.5.3",

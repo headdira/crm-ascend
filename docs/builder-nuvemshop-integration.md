@@ -50,6 +50,13 @@ CRM_WEBHOOK_SECRET=dev-secret
 
 Doc: [`nuvemshop-api-recursos-ecommerce-ascend.md`](./nuvemshop-api-recursos-ecommerce-ascend.md)
 
+## Deploy Builder (Vercel)
+
+1. Novo projeto no mesmo repo `crm-ascend` → **Root Directory:** `apps/builder`
+2. Importar env de `apps/builder/vercel-env.import.env.example`
+3. Deploy → URL pública (ex. `https://ascend-builder.vercel.app`)
+4. No **provisioner** (Vercel): `BUILDER_URL` + `CORS_ORIGINS` = URL do builder
+
 ## Fluxo local
 
 ```bash
@@ -66,7 +73,7 @@ pnpm --filter @crm-ascend/crm dev
 pnpm --filter @crm-ascend/builder dev
 ```
 
-Redirect OAuth: `http://localhost:4010/oauth/callback`
+Redirect OAuth: `https://ascend-nuvemshop-provisioner-api.vercel.app/oauth/callback`
 
 ## Catálogo
 
