@@ -22,7 +22,13 @@ export async function submitBuilder(payload: unknown): Promise<{
   });
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
-    throw new Error(body.error ?? "Falha ao enviar respostas.");
+    throw new Error(
+      typeof body.message === "string"
+        ? body.message
+        : typeof body.error === "string"
+          ? body.error
+          : "Falha ao enviar respostas.",
+    );
   }
   return res.json();
 }

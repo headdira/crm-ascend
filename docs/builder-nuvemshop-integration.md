@@ -5,7 +5,7 @@
 | Repo | Função |
 |------|--------|
 | `crm-ascend` | Builder (`:3002`), CRM (`:3001`), `storefront-config`, `ascend-vitrine.js` |
-| `ascend-nuvemshop-provisioner` | OAuth, jobs, **POST /scripts** |
+| `ascend-nuvemshop-provisioner` | OAuth, jobs, **POST /scripts** — deploy Vercel (`apps/api`) |
 | `ascend-nuvemshop-provisioner/apps/catalog-api` | Produtos por nicho (`:4011`) |
 
 ## Vitrine: só API Scripts (sem CLI)

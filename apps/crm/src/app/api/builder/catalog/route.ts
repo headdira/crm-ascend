@@ -1,5 +1,9 @@
 import { createServiceSupabase, type Json } from "@crm-ascend/db";
-import { builderSubmitSchema, youtubeEmbedUrl } from "@crm-ascend/validation";
+import {
+  builderSubmitSchema,
+  formatBuilderSubmitErrors,
+  youtubeEmbedUrl,
+} from "@crm-ascend/validation";
 import { NextResponse } from "next/server";
 import { buildVisualFromSubmit, enqueueProvisionerJob } from "@/lib/provisioner";
 
@@ -42,7 +46,11 @@ export async function POST(request: Request) {
 
   const parsed = builderSubmitSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+    const flat = parsed.error.flatten();
+    return NextResponse.json(
+      { error: flat, message: formatBuilderSubmitErrors(flat) },
+      { status: 400 },
+    );
   }
 
   const supabase = createServiceSupabase();

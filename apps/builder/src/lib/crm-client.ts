@@ -1,3 +1,4 @@
+import { formatBuilderSubmitErrors } from "@crm-ascend/validation";
 import type { BuilderCatalog } from "./types";
 import { getCrmUrl } from "./types";
 
@@ -19,7 +20,9 @@ export async function submitToCrm(payload: unknown): Promise<{ submission_id: st
     const body = await res.json().catch(() => ({}));
     const err = body.error;
     if (typeof err === "string") throw new Error(err);
-    if (err?.fieldErrors) throw new Error("Dados inválidos. Revise o formulário.");
+    if (err?.fieldErrors || err?.formErrors) {
+      throw new Error(formatBuilderSubmitErrors(err));
+    }
     throw new Error("Falha ao enviar respostas.");
   }
   return res.json();

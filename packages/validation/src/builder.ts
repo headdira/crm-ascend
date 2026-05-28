@@ -121,6 +121,40 @@ export const builderSubmitSchema = z.object({
   planWatchedInfo: z.boolean(),
   planWillSubscribe: z.boolean(),
   oauthSessionId: z.string().uuid(),
-  logoSvg: z.string().min(10).max(100000),
-  bannerSvgs: z.array(z.string().min(10).max(100000)).length(3),
+  /** Raster recolorido vira SVG com JPEG embutido — pode passar de 100 KB. */
+  logoSvg: z.string().min(10).max(2_000_000),
+  bannerSvgs: z.array(z.string().min(10).max(2_000_000)).length(3),
 });
+
+const BUILDER_SUBMIT_FIELD_LABELS: Record<string, string> = {
+  verifyTab: "Verificação",
+  courseEmail: "E-mail do curso",
+  cpf: "CPF",
+  storeEmail: "E-mail da loja",
+  storeName: "Nome da loja",
+  niche: "Nicho",
+  bannerIds: "Banners",
+  logoId: "Logo",
+  primaryColor: "Cor principal",
+  secondaryColor: "Cor de apoio",
+  fontId: "Fonte",
+  planWatchedInfo: "Plano (vídeo)",
+  planWillSubscribe: "Plano (assinatura)",
+  oauthSessionId: "Sessão Nuvemshop",
+  logoSvg: "Logo (arquivo)",
+  bannerSvgs: "Banners (arquivos)",
+};
+
+/** Mensagem legível a partir de safeParse().error.flatten() do submit. */
+export function formatBuilderSubmitErrors(flat: {
+  formErrors: string[];
+  fieldErrors: Record<string, string[] | undefined>;
+}): string {
+  const parts: string[] = [...flat.formErrors];
+  for (const [key, msgs] of Object.entries(flat.fieldErrors)) {
+    if (!msgs?.length) continue;
+    const label = BUILDER_SUBMIT_FIELD_LABELS[key] ?? key;
+    parts.push(`${label}: ${msgs.join(", ")}`);
+  }
+  return parts.length > 0 ? parts.join(" · ") : "Dados inválidos. Revise o formulário.";
+}
