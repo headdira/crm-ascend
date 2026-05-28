@@ -4,15 +4,37 @@ import {
   rasterDataUrlToSvg,
   recolorSvg,
 } from "@crm-ascend/validation";
+import { rasterAssetUrlCandidates } from "./raster-url";
 
-function loadImage(src: string): Promise<HTMLImageElement> {
+function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    if (typeof window !== "undefined") {
+      try {
+        if (new URL(url).origin !== window.location.origin) {
+          img.crossOrigin = "anonymous";
+        }
+      } catch {
+        /* ignore */
+      }
+    }
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Não foi possível carregar a imagem: ${src}`));
-    img.src = src;
+    img.onerror = () => reject(new Error(`Não foi possível carregar a imagem: ${url}`));
+    img.src = url;
   });
+}
+
+async function loadRasterImage(src: string): Promise<HTMLImageElement> {
+  const candidates = rasterAssetUrlCandidates(src);
+  let lastError: Error | null = null;
+  for (const url of candidates) {
+    try {
+      return await loadImage(url);
+    } catch (e) {
+      lastError = e instanceof Error ? e : new Error(String(e));
+    }
+  }
+  throw lastError ?? new Error(`Não foi possível carregar a imagem: ${src}`);
 }
 
 /**
@@ -23,7 +45,7 @@ export async function recolorRasterToDataUrl(
   primary: string,
   secondary: string,
 ): Promise<{ dataUrl: string; width: number; height: number }> {
-  const img = await loadImage(src);
+  const img = await loadRasterImage(src);
   const canvas = document.createElement("canvas");
   canvas.width = img.naturalWidth;
   canvas.height = img.naturalHeight;

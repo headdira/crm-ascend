@@ -5,13 +5,30 @@ import {
   recolorSvg,
 } from "@crm-ascend/validation";
 
+function resolveRasterAssetUrl(src: string): string {
+  const path = src.startsWith("/") ? src : `/${src.replace(/^\//, "")}`;
+  if (typeof window !== "undefined") {
+    return new URL(path, window.location.origin).href;
+  }
+  return path;
+}
+
 function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
+    const url = resolveRasterAssetUrl(src);
     const img = new Image();
-    img.crossOrigin = "anonymous";
+    if (typeof window !== "undefined") {
+      try {
+        if (new URL(url).origin !== window.location.origin) {
+          img.crossOrigin = "anonymous";
+        }
+      } catch {
+        /* ignore */
+      }
+    }
     img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Não foi possível carregar a imagem: ${src}`));
-    img.src = src;
+    img.onerror = () => reject(new Error(`Não foi possível carregar a imagem: ${url}`));
+    img.src = url;
   });
 }
 

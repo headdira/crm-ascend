@@ -13,6 +13,7 @@ const nextConfig: NextConfig = {
   },
   env: {
     NEXT_PUBLIC_PROVISIONER_URL: process.env.PROVISIONER_URL ?? "http://localhost:4010",
+    NEXT_PUBLIC_CRM_URL: process.env.CRM_URL ?? process.env.NEXT_PUBLIC_CRM_URL ?? "http://localhost:3001",
   },
 };
 
