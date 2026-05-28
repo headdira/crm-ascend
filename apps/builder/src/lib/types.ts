@@ -34,6 +34,22 @@ export type BuilderFormState = {
 };
 
 export const STORAGE_KEY = "ascend-builder-v2";
+
+export function formForLocalStorage(form: BuilderFormState): BuilderFormState {
+  return {
+    ...form,
+    oauthSessionId: "",
+    nuvemshopStoreId: "",
+    themeAuthorized: false,
+  };
+}
+
+export function mergeSavedForm(saved: Partial<BuilderFormState> | undefined): BuilderFormState {
+  const base = emptyForm();
+  if (!saved) return base;
+  const { oauthSessionId: _o, nuvemshopStoreId: _n, themeAuthorized: _t, ...rest } = saved;
+  return { ...base, ...rest };
+}
 export const STEP_LABELS = [
   "Verificação",
   "Conectar Nuvemshop",

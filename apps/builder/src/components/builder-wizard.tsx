@@ -19,6 +19,8 @@ import {
   emptyForm,
   STEP_LABELS,
   STORAGE_KEY,
+  formForLocalStorage,
+  mergeSavedForm,
   type BuilderCatalog,
   type BuilderFormState,
 } from "@/lib/types";
@@ -99,15 +101,18 @@ function StepNuvemshopConnect({
   form,
   update,
   oauthConnecting,
+  onClearOAuth,
 }: {
   form: BuilderFormState;
   update: (key: keyof BuilderFormState, value: BuilderFormState[keyof BuilderFormState]) => void;
   oauthConnecting?: boolean;
+  onClearOAuth: () => void;
 }) {
   const connected = Boolean(form.oauthSessionId && form.nuvemshopStoreId);
   const startOAuth = () => {
+    onClearOAuth();
     const returnUrl = `${window.location.origin}${window.location.pathname}`;
-    const url = `/api/oauth/start?return_url=${encodeURIComponent(returnUrl)}`;
+    const url = `/api/oauth/start?return_url=${encodeURIComponent(returnUrl)}&force=1`;
     window.location.href = url;
   };
 
@@ -135,21 +140,25 @@ function StepNuvemshopConnect({
         <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-300">
           Validando conexão com a Nuvemshop…
         </div>
-      ) : connected ? (
+      ) : null}
+      {connected && !oauthConnecting && (
         <div className="rounded-lg border border-emerald-900/50 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-200">
-          App conectado
-          {form.nuvemshopStoreId ? ` (loja ${form.nuvemshopStoreId})` : ""}. Ao finalizar o wizard,
+          Autorização desta sessão: loja {form.nuvemshopStoreId || "conectada"}. Ao finalizar o wizard,
           associamos o script da vitrine com suas cores e banners.
         </div>
-      ) : (
-        <button
-          type="button"
-          onClick={startOAuth}
-          className="w-full rounded-lg bg-ascend-gold px-4 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400"
-        >
-          Conectar com Nuvemshop
-        </button>
       )}
+      <button
+        type="button"
+        onClick={startOAuth}
+        disabled={oauthConnecting}
+        className="w-full rounded-lg bg-ascend-gold px-4 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {connected ? "Autorizar novamente na Nuvemshop" : "Conectar com Nuvemshop"}
+      </button>
+      <p className="text-xs text-zinc-500">
+        Sempre abre a Nuvemshop para autorizar o app. Se a tela não aparecer, desinstale o app Ascend no
+        admin da loja e clique de novo.
+      </p>
     </div>
   );
 }
@@ -642,8 +651,35 @@ export function BuilderWizard() {
   const [submissionId, setSubmissionId] = useState<string | null>(null);
   const [oauthConnecting, setOauthConnecting] = useState(false);
 
+  const clearOAuth = useCallback(() => {
+    setForm((prev) => ({
+      ...prev,
+      oauthSessionId: "",
+      nuvemshopStoreId: "",
+      themeAuthorized: false,
+    }));
+  }, []);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
+
+    fetchCatalog()
+      .then(setCatalog)
+      .catch((err) => setCatalogError(err instanceof Error ? err.message : "Erro ao carregar"));
+
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as { step: number; form: Partial<BuilderFormState> };
+        setForm(mergeSavedForm(parsed.form));
+        if (parsed.step) {
+          setStep(Math.min(Math.max(parsed.step, 1), STEP_LABELS.length));
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+
     const params = new URLSearchParams(window.location.search);
 
     const code = params.get("code");
@@ -654,60 +690,45 @@ export function BuilderWizard() {
     }
 
     const oauthId = params.get("oauth_session_id");
-    if (!oauthId) return;
+    if (oauthId) {
+      setOauthConnecting(true);
+      setError(null);
+      setForm((prev) => ({ ...prev, oauthSessionId: oauthId }));
 
-    setOauthConnecting(true);
-    setError(null);
-    setForm((prev) => ({ ...prev, oauthSessionId: oauthId }));
-
-    fetchOAuthSession(oauthId)
-      .then((session) => {
-        setForm((prev) => ({
-          ...prev,
-          oauthSessionId: oauthId,
-          nuvemshopStoreId: session.store_id,
-          themeAuthorized: false,
-        }));
-        params.delete("oauth_session_id");
-        params.delete("oauth_mock");
-        const qs = params.toString();
-        const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
-        window.history.replaceState({}, "", next);
-      })
-      .catch((err) => {
-        setForm((prev) => ({ ...prev, oauthSessionId: "", nuvemshopStoreId: "" }));
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Não foi possível validar a conexão. Tente de novo ou verifique o provisioner na Vercel.",
-        );
-      })
-      .finally(() => setOauthConnecting(false));
-  }, []);
-
-  useEffect(() => {
-    fetchCatalog()
-      .then(setCatalog)
-      .catch((err) => setCatalogError(err instanceof Error ? err.message : "Erro ao carregar"));
-
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved) as { step: number; form: BuilderFormState };
-        if (parsed.form) {
-          setForm({ ...emptyForm(), ...parsed.form });
-          setStep(Math.min(Math.max(parsed.step, 1), STEP_LABELS.length));
-        }
-      } catch {
-        /* ignore */
-      }
+      fetchOAuthSession(oauthId)
+        .then((session) => {
+          setForm((prev) => ({
+            ...prev,
+            oauthSessionId: oauthId,
+            nuvemshopStoreId: session.store_id,
+            themeAuthorized: false,
+          }));
+          params.delete("oauth_session_id");
+          params.delete("oauth_mock");
+          const qs = params.toString();
+          const next = `${window.location.pathname}${qs ? `?${qs}` : ""}`;
+          window.history.replaceState({}, "", next);
+        })
+        .catch((err) => {
+          clearOAuth();
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Não foi possível validar a conexão. Tente de novo ou verifique o provisioner na Vercel.",
+          );
+        })
+        .finally(() => setOauthConnecting(false));
     }
+
     setReady(true);
-  }, []);
+  }, [clearOAuth]);
 
   useEffect(() => {
     if (ready) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, form }));
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ step, form: formForLocalStorage(form) }),
+      );
     }
   }, [step, form, ready]);
 
@@ -914,7 +935,12 @@ export function BuilderWizard() {
         )}
         {step === 1 && <StepVerify form={form} update={update} />}
         {step === 2 && (
-          <StepNuvemshopConnect form={form} update={update} oauthConnecting={oauthConnecting} />
+          <StepNuvemshopConnect
+            form={form}
+            update={update}
+            oauthConnecting={oauthConnecting}
+            onClearOAuth={clearOAuth}
+          />
         )}
         {step === 3 && (
           <StepPlan

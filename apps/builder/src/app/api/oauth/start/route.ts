@@ -11,6 +11,9 @@ export async function GET(request: Request) {
   const provisionerBase = getProvisionerUrl();
   const target = new URL(`${provisionerBase}/oauth/start`);
   target.searchParams.set("return_url", returnUrl);
+  if (new URL(request.url).searchParams.get("force") === "1") {
+    target.searchParams.set("force", "1");
+  }
   return NextResponse.redirect(target.toString(), {
     headers: { "X-Ascend-Provisioner": provisionerBase },
   });
