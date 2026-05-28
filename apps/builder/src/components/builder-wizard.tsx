@@ -645,6 +645,14 @@ export function BuilderWizard() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
+
+    const code = params.get("code");
+    if (code && params.get("state")) {
+      const qs = params.toString();
+      window.location.replace(`/api/oauth/callback?${qs}`);
+      return;
+    }
+
     const oauthId = params.get("oauth_session_id");
     if (!oauthId) return;
 
