@@ -4,8 +4,11 @@ import {
   formatBuilderSubmitErrors,
   youtubeEmbedUrl,
 } from "@crm-ascend/validation";
+import { waitUntil } from "@vercel/functions";
 import { NextResponse } from "next/server";
-import { buildVisualFromSubmit, enqueueProvisionerJob } from "@/lib/provisioner";
+import { enqueueProvisionerJob } from "@/lib/provisioner";
+
+export const maxDuration = 60;
 
 export async function GET() {
   const supabase = createServiceSupabase();
@@ -77,42 +80,39 @@ export async function POST(request: Request) {
 
   const submission = { id: submissionId as string };
 
-  let jobId: string | null = null;
-  let provisionError: string | null = null;
+  const enqueueTask = enqueueProvisionerJob({
+    submissionId: submission.id,
+    oauthSessionId: data.oauthSessionId,
+  })
+    .then(async (job) => {
+      await supabase.rpc("update_builder_submission_provision", {
+        p_id: submission.id,
+        p_provision_status: "queued",
+        p_provision_job_id: job.job_id,
+      });
+      return job.job_id;
+    })
+    .catch(async (e) => {
+      const provisionError =
+        e instanceof Error ? e.message : "Falha ao enfileirar provisionamento";
+      await supabase.rpc("update_builder_submission_provision", {
+        p_id: submission.id,
+        p_provision_status: "failed",
+        p_provision_error: provisionError,
+      });
+      return null;
+    });
 
   try {
-    const visual = buildVisualFromSubmit({
-      storeName: data.storeName,
-      niche: data.niche,
-      primaryColor: data.primaryColor,
-      secondaryColor: data.secondaryColor,
-      fontId: data.fontId,
-      logoSvg: data.logoSvg,
-      bannerSvgs: data.bannerSvgs,
-    });
-    const job = await enqueueProvisionerJob({
-      submissionId: submission.id,
-      oauthSessionId: data.oauthSessionId,
-      visual,
-    });
-    jobId = job.job_id;
-    await supabase.rpc("update_builder_submission_provision", {
-      p_id: submission.id,
-      p_provision_status: "queued",
-      p_provision_job_id: job.job_id,
-    });
-  } catch (e) {
-    provisionError = e instanceof Error ? e.message : "Falha ao enfileirar provisionamento";
-    await supabase.rpc("update_builder_submission_provision", {
-      p_id: submission.id,
-      p_provision_status: "failed",
-      p_provision_error: provisionError,
-    });
+    waitUntil(enqueueTask);
+  } catch {
+    void enqueueTask;
   }
 
   return NextResponse.json({
     submission_id: submission.id,
-    provision_job_id: jobId,
-    provision_error: provisionError,
+    provision_status: "queued",
+    message:
+      "Respostas salvas. A loja está sendo montada em segundo plano — acompanhe o status na próxima tela.",
   });
 }

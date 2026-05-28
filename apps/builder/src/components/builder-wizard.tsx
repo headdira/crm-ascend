@@ -799,7 +799,6 @@ export function BuilderWizard() {
             ),
           });
           setSubmissionId(result.submission_id);
-          if (result.provision_error) setError(result.provision_error);
           setStep(10);
           setError(result.provision_error ?? null);
         } catch (err) {

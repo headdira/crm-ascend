@@ -13,7 +13,6 @@ export type ProvisionerVisual = {
 export async function enqueueProvisionerJob(params: {
   submissionId: string;
   oauthSessionId: string;
-  visual: ProvisionerVisual;
   themeOnly?: boolean;
 }) {
   const baseUrl = process.env.PROVISIONER_API_URL ?? "http://localhost:4010";
@@ -25,11 +24,10 @@ export async function enqueueProvisionerJob(params: {
       "Content-Type": "application/json",
       "x-api-key": apiKey,
     },
-    signal: AbortSignal.timeout(30_000),
+    signal: AbortSignal.timeout(60_000),
     body: JSON.stringify({
       submission_id: params.submissionId,
       oauth_session_id: params.oauthSessionId,
-      visual: params.visual,
       theme_only: params.themeOnly === true,
     }),
   });

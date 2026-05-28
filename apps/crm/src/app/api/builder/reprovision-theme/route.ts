@@ -1,6 +1,6 @@
 import { createServiceSupabase } from "@crm-ascend/db";
 import { NextResponse } from "next/server";
-import { buildVisualFromSubmit, enqueueProvisionerJob } from "@/lib/provisioner";
+import { enqueueProvisionerJob } from "@/lib/provisioner";
 
 /**
  * Reenfileira só a vitrine via Scripts API (theme_only) — sem CLI de tema.
@@ -47,21 +47,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Payload sem logo/banners SVG" }, { status: 400 });
   }
 
-  const visual = buildVisualFromSubmit({
-    storeName,
-    niche,
-    primaryColor,
-    secondaryColor,
-    fontId,
-    logoSvg,
-    bannerSvgs,
-  });
-
   try {
     const job = await enqueueProvisionerJob({
       submissionId: row.id,
       oauthSessionId: body.oauth_session_id,
-      visual,
       themeOnly: true,
     });
 
