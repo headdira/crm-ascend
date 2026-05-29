@@ -2,34 +2,20 @@
 
 import { motion } from "framer-motion";
 import { Award } from "lucide-react";
+import { useLightExperience } from "@/hooks/use-light-experience";
+import { mentorProfiles } from "@/lib/sales/mentors";
 import SalesImage from "../SalesImage";
 import Ticker from "../Ticker";
 import { brandSurfaces, brandTypography } from "./tokens";
 
-const KELVIN_IMG =
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/bfbd13f93_WhatsAppImage2026-04-29at091311.jpeg";
-const ERICK_IMG =
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/8abe8cf1e_ChatGPTImage5demaide202610_21_16.png";
-
-const mentors = [
-  {
-    name: "Kelvin Martins",
-    role: "Co-fundador do Ascend Club",
-    img: KELVIN_IMG,
-    /** Foco no rosto — foto com pessoa mais alta no quadro */
-    objectPosition: "50% 12%",
-    desc: "Empreendedor digital com anos de experiência, ajudou centenas de alunos a construírem suas primeiras fontes de renda online com estratégias simples e replicáveis.",
-  },
-  {
-    name: "Erick Vinicius",
-    role: "Co-fundador do Ascend Club",
-    img: ERICK_IMG,
-    objectPosition: "50% 8%",
-    desc: "Especialista em vendas digitais e construção de audiência. Referência no mercado pelo método direto ao ponto e pelos resultados consistentes dos seus mentorados.",
-  },
-];
+/** Altura estável no mobile — evita colapso com aspect-ratio + max-height em Safari. */
+const mentorPhotoFrameClass =
+  "relative w-full overflow-hidden min-h-[320px] aspect-[3/4] sm:min-h-[360px] md:aspect-[4/5] md:min-h-0 md:max-h-[480px] lg:max-h-[520px]";
 
 export default function MentorsSection() {
+  const light = useLightExperience();
+  const M = light ? "div" : motion.div;
+
   return (
     <section id="mentores" className={brandSurfaces.base}>
       <Ticker
@@ -37,36 +23,39 @@ export default function MentorsSection() {
         bgColor="bg-primary"
         textColor="text-black"
       />
-      <div className="py-24 px-6 max-w-5xl mx-auto">
-        <motion.div
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
+      <div className="py-16 sm:py-24 px-4 sm:px-6 max-w-5xl mx-auto">
+        <M
+          className="text-center mb-12 sm:mb-16"
+          {...(!light && {
+            initial: { opacity: 0, y: 30 },
+            whileInView: { opacity: 1, y: 0 },
+            viewport: { once: true, margin: "-40px" },
+          })}
+          data-motion="true"
         >
-          <p className={`${brandTypography.eyebrow} mb-4`}>
-            Quem vai te guiar
-          </p>
+          <p className={`${brandTypography.eyebrow} mb-4`}>Quem vai te guiar</p>
           <h2 className={brandTypography.h2}>
             CONHEÇA SEUS <span className="text-primary">MENTORES</span>
           </h2>
-        </motion.div>
+        </M>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {mentors.map((m, i) => (
-            <motion.div
+        <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
+          {mentorProfiles.map((m, i) => (
+            <M
               key={m.name}
-              className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.06] hover:border-primary/30 transition-all"
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.2 }}
+              className="rounded-2xl overflow-hidden bg-white/[0.03] border border-white/[0.06] hover:border-primary/30 transition-colors"
+              {...(!light && {
+                initial: { opacity: 0, y: 40 },
+                whileInView: { opacity: 1, y: 0 },
+                viewport: { once: true, margin: "-40px" },
+                transition: { delay: i * 0.15 },
+              })}
+              data-motion="true"
             >
-              <div
-                className={`relative w-full overflow-hidden ${brandSurfaces.elevated} aspect-[3/4] max-h-[min(92vw,520px)] sm:max-h-[560px] md:aspect-[4/5] md:max-h-[480px] lg:max-h-[520px]`}
-              >
+              <div className={`${mentorPhotoFrameClass} ${brandSurfaces.elevated}`}>
                 <SalesImage
                   src={m.img}
+                  webpSrc={m.webpSrc}
                   alt={`${m.name} — ${m.role} do Ascend Club`}
                   fill
                   sizes="(max-width: 768px) 100vw, 480px"
@@ -75,17 +64,19 @@ export default function MentorsSection() {
                 />
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[38%] bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/40 to-transparent" />
               </div>
-              <div className="p-8 -mt-4 relative">
+              <div className="p-6 sm:p-8 -mt-4 relative">
                 <div className="inline-flex items-center gap-2 mb-3">
-                  <Award className="w-4 h-4 text-primary" />
+                  <Award className="w-4 h-4 text-primary shrink-0" />
                   <span className="font-inter text-primary text-xs font-bold uppercase tracking-widest">
                     {m.role}
                   </span>
                 </div>
-                <h3 className="font-inter font-black text-2xl uppercase text-white mb-3">{m.name}</h3>
-                <p className="text-white/65 text-sm leading-relaxed">{m.desc}</p>
+                <h3 className="font-inter font-black text-xl sm:text-2xl uppercase text-white mb-3">
+                  {m.name}
+                </h3>
+                <p className="text-white/65 text-sm sm:text-[15px] leading-relaxed">{m.desc}</p>
               </div>
-            </motion.div>
+            </M>
           ))}
         </div>
       </div>

@@ -5,7 +5,9 @@ export const HERO_IMAGE_WEBP = "/media/hero-mentor.webp";
 export const HERO_IMAGE = "/media/hero-mentor.png";
 
 export const MENTOR_KELVIN_IMAGE = "/media/mentor-kelvin.jpeg";
-export const MENTOR_ERICK_IMAGE = "/media/mentor-erick.png";
+export const MENTOR_KELVIN_WEBP = "/media/mentor-kelvin.webp";
+export const MENTOR_ERICK_IMAGE = "/media/mentor-erick.jpeg";
+export const MENTOR_ERICK_WEBP = "/media/mentor-erick.webp";
 
 export const PROOF_IMAGES = [
   "/media/proof/proof-01.jpeg",

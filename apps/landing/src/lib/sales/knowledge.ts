@@ -36,7 +36,7 @@ export const mentors = [
   {
     name: "Erick Vinicius",
     role: "Co-fundador do Ascend Club",
-    bio: "Especialista em vendas digitais e construção de audiência. Referência pelo método direto e pelos resultados consistentes dos mentorados.",
+    bio: "Empreendedor digital com anos atuando em vendas online, funis e construção de audiência. No Ascend Club, traduz o que funciona no mercado em passos claros — do primeiro conteúdo à primeira venda — com o mesmo método direto que já orientou dezenas de mentorados a resultados consistentes.",
   },
 ];
 

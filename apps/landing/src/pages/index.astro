@@ -23,13 +23,13 @@ const siteUrl = getSiteUrl();
   canonical={siteUrl}
 >
   <HeroSection client:load />
-  <BenefitsSection client:load />
-  <GamificationSection client:load />
-  <MentorsSection client:load />
-  <TestimonialsSection client:load />
-  <ObjectionsSection client:load />
-  <PricingCTA client:load />
-  <FinalSection client:load />
-  <FloatingCTA client:load />
-  <LandingTracker client:load />
+  <BenefitsSection client:visible />
+  <GamificationSection client:visible />
+  <MentorsSection client:visible />
+  <TestimonialsSection client:visible />
+  <ObjectionsSection client:visible />
+  <PricingCTA client:visible />
+  <FinalSection client:visible />
+  <FloatingCTA client:visible />
+  <LandingTracker client:idle />
 </Layout>
