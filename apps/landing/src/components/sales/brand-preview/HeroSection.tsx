@@ -46,14 +46,14 @@ function HeroVisual({ className = "", light, Motion }: HeroVisualProps) {
           sizes="(max-width: 1024px) 92vw, 520px"
           className="relative z-[1] w-full h-auto rounded-[28px] border border-primary/20 shadow-[0_0_60px_rgba(255,184,0,0.12)] object-cover"
         />
-        <div className="absolute z-20 bottom-3 left-2 sm:-left-8 bg-black/90 border border-primary/20 rounded-2xl px-4 py-3 sm:px-5 sm:py-4 backdrop-blur-xl shadow-2xl">
+        <div className="hero-badge-float absolute z-20 bottom-3 left-2 sm:-left-8 bg-black/90 border border-primary/20 rounded-2xl px-4 py-3 sm:px-5 sm:py-4 backdrop-blur-xl shadow-2xl">
           <p className="text-primary text-[10px] sm:text-xs uppercase tracking-widest font-bold mb-1">
             Resultado Real
           </p>
           <h3 className="text-white font-black text-xl sm:text-2xl">+500 alunos</h3>
           <p className="text-white/45 text-[10px] sm:text-xs mt-1">aplicando o método Ascend</p>
         </div>
-        <div className="absolute z-20 top-2 right-2 sm:-right-24 lg:-right-28 bg-black/90 border border-primary/20 rounded-2xl px-4 py-3 sm:px-5 sm:py-4 backdrop-blur-xl shadow-2xl">
+        <div className="hero-badge-float hero-badge-float--alt absolute z-20 top-2 right-2 sm:-right-24 lg:-right-28 bg-black/90 border border-primary/20 rounded-2xl px-4 py-3 sm:px-5 sm:py-4 backdrop-blur-xl shadow-2xl">
           <p className="text-primary text-[10px] sm:text-xs uppercase tracking-widest font-bold mb-1">
             Comunidade
           </p>
@@ -85,15 +85,15 @@ export default function HeroSection() {
       </div>
 
       <nav className="relative z-40 border-b border-white/5">
-        <div className="max-w-7xl mx-auto px-6 py-5 flex items-center justify-between gap-4">
+        <div className="max-w-7xl mx-auto px-6 py-4 lg:py-5 flex items-center justify-center lg:justify-between gap-4">
           <SalesImage
             src={LOGO_URL}
             alt="Ascend Club"
-            width={160}
-            height={48}
+            width={200}
+            height={60}
             priority
-            className="h-12 w-auto opacity-95"
-            sizes="160px"
+            className="h-14 sm:h-[3.75rem] lg:h-12 w-auto opacity-95"
+            sizes="(max-width: 1024px) 200px, 160px"
           />
           <div className="hidden lg:flex items-center gap-6 text-xs font-bold uppercase tracking-wide text-white/50">
             {navLinks.map((l) => (

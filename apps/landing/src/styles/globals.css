@@ -108,6 +108,36 @@ html[data-light="true"] [data-motion="true"] {
   opacity: 1 !important;
 }
 
+@keyframes hero-badge-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+.hero-badge-float {
+  animation: hero-badge-float 4.5s ease-in-out infinite;
+  will-change: transform;
+}
+
+.hero-badge-float--alt {
+  animation-duration: 5.2s;
+  animation-delay: -1.4s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-badge-float {
+    animation: none;
+  }
+}
+
+html[data-light="true"] .hero-badge-float {
+  animation: none;
+}
+
 @keyframes sales-star-twinkle {
   0%,
   100% {
