@@ -6,7 +6,7 @@ import BrandCheckoutLink from "./BrandCheckoutLink";
 import { brandTypography } from "./tokens";
 import SalesImage from "../SalesImage";
 import Ticker from "../Ticker";
-import { HERO_IMAGE, LOGO_URL } from "../constants";
+import { HERO_IMAGE, HERO_IMAGE_WEBP, LOGO_URL } from "../constants";
 import { useLightExperience } from "@/hooks/use-light-experience";
 
 const navLinks = [
@@ -15,6 +15,55 @@ const navLinks = [
   { href: "#depoimentos", label: "Resultados" },
   { href: "#preco", label: "Preço" },
 ];
+
+type HeroVisualProps = {
+  className?: string;
+  light: boolean;
+  Motion: typeof motion.div | "div";
+};
+
+function HeroVisual({ className = "", light, Motion }: HeroVisualProps) {
+  return (
+    <Motion
+      {...(!light && {
+        initial: { opacity: 0, x: 40 },
+        animate: { opacity: 1, x: 0 },
+        transition: { duration: 0.7 },
+      })}
+      data-motion="true"
+      className={`relative flex shrink-0 justify-center overflow-visible mx-auto w-full max-w-[min(92vw,360px)] sm:max-w-[420px] lg:max-w-none ${className}`}
+    >
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-primary/20 blur-[120px] rounded-full" />
+      <div className="relative w-full max-w-[520px] overflow-visible mx-auto">
+        <div className="pointer-events-none absolute -inset-2 -z-10 rounded-[32px] bg-gradient-to-b from-primary/30 to-transparent blur-xl" />
+        <SalesImage
+          src={HERO_IMAGE}
+          webpSrc={HERO_IMAGE_WEBP}
+          alt="Mentor Ascend Club"
+          width={520}
+          height={650}
+          priority
+          sizes="(max-width: 1024px) 92vw, 520px"
+          className="relative z-[1] w-full h-auto rounded-[28px] border border-primary/20 shadow-[0_0_60px_rgba(255,184,0,0.12)] object-cover"
+        />
+        <div className="absolute z-20 bottom-3 left-2 sm:-left-8 bg-black/90 border border-primary/20 rounded-2xl px-4 py-3 sm:px-5 sm:py-4 backdrop-blur-xl shadow-2xl">
+          <p className="text-primary text-[10px] sm:text-xs uppercase tracking-widest font-bold mb-1">
+            Resultado Real
+          </p>
+          <h3 className="text-white font-black text-xl sm:text-2xl">+500 alunos</h3>
+          <p className="text-white/45 text-[10px] sm:text-xs mt-1">aplicando o método Ascend</p>
+        </div>
+        <div className="absolute z-20 top-2 right-2 sm:-right-24 lg:-right-28 bg-black/90 border border-primary/20 rounded-2xl px-4 py-3 sm:px-5 sm:py-4 backdrop-blur-xl shadow-2xl">
+          <p className="text-primary text-[10px] sm:text-xs uppercase tracking-widest font-bold mb-1">
+            Comunidade
+          </p>
+          <h3 className="text-white font-black text-xl sm:text-2xl">Networking</h3>
+          <p className="text-white/45 text-[10px] sm:text-xs mt-1">suporte + direcionamento</p>
+        </div>
+      </div>
+    </Motion>
+  );
+}
 
 export default function HeroSection() {
   const light = useLightExperience();
@@ -111,6 +160,8 @@ export default function HeroSection() {
               </p>
             </M>
 
+            <HeroVisual className="mt-8 lg:hidden" light={light} Motion={M} />
+
             <div className="mt-10 space-y-4">
               {[
                 "Método criado para iniciantes",
@@ -184,42 +235,11 @@ export default function HeroSection() {
             </div>
           </div>
 
-          <M
-            {...(!light && {
-              initial: { opacity: 0, x: 60 },
-              animate: { opacity: 1, x: 0 },
-              transition: { duration: 0.7 },
-            })}
-            data-motion="true"
-            className="relative hidden lg:flex shrink-0 justify-center overflow-visible lg:mt-[calc(4.75rem+30px)]"
-          >
-            <div className="pointer-events-none absolute inset-0 -z-10 bg-primary/20 blur-[120px] rounded-full" />
-            <div className="relative w-full max-w-[520px] overflow-visible">
-              <div className="pointer-events-none absolute -inset-2 -z-10 rounded-[32px] bg-gradient-to-b from-primary/30 to-transparent blur-xl" />
-              <SalesImage
-                src={HERO_IMAGE}
-                alt="Mentor Ascend Club"
-                width={520}
-                height={650}
-                priority
-                className="relative z-[1] w-full max-w-[520px] h-auto rounded-[28px] border border-primary/20 shadow-[0_0_60px_rgba(255,184,0,0.12)] object-cover"
-              />
-              <div className="absolute z-20 bottom-3 -left-8 bg-black/90 border border-primary/20 rounded-2xl px-5 py-4 backdrop-blur-xl shadow-2xl">
-                <p className="text-primary text-xs uppercase tracking-widest font-bold mb-1">
-                  Resultado Real
-                </p>
-                <h3 className="text-white font-black text-2xl">+500 alunos</h3>
-                <p className="text-white/45 text-xs mt-1">aplicando o método Ascend</p>
-              </div>
-              <div className="absolute z-20 top-2 -right-24 lg:-right-28 bg-black/90 border border-primary/20 rounded-2xl px-5 py-4 backdrop-blur-xl shadow-2xl">
-                <p className="text-primary text-xs uppercase tracking-widest font-bold mb-1">
-                  Comunidade
-                </p>
-                <h3 className="text-white font-black text-2xl">Networking</h3>
-                <p className="text-white/45 text-xs mt-1">suporte + direcionamento</p>
-              </div>
-            </div>
-          </M>
+          <HeroVisual
+            className="hidden lg:flex lg:mt-[calc(4.75rem+30px)]"
+            light={light}
+            Motion={M}
+          />
         </div>
       </div>
 
