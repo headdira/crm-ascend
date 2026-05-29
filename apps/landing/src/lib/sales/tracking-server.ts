@@ -2,6 +2,12 @@ import { createServiceSupabase, type Json, type TablesUpdate } from "@crm-ascend
 import { hashEmail, hashIdentifier, hashPhone } from "@crm-ascend/validation";
 import { getHashSalt } from "@/lib/env";
 import { COLD_LEAD_NAME, LEAD_STATUS_FRIO, LEAD_STATUS_QUENTE } from "@/lib/sales/lead-temperature";
+import { isMetaCapiConfigured } from "@/lib/sales/meta-config";
+import {
+  clientContextFromRequest,
+  metaEventNameForInternal,
+  sendMetaCapiEvent,
+} from "@/lib/sales/meta-capi";
 import { SESSION_COOKIE } from "@/lib/sales/session-constants";
 import { parseAttributionCookie } from "@/lib/sales/utm";
 
@@ -100,7 +106,58 @@ export async function upsertLandingSession(request: Request, sessionId: string, 
 }
 
 function metaCapiStatus(): string {
-  return process.env.META_CAPI_ACCESS_TOKEN && process.env.META_PIXEL_ID ? "pending" : "skipped";
+  return isMetaCapiConfigured() ? "pending" : "skipped";
+}
+
+/** Dispara CAPI para eventos de funil (Lead é enviado em lead-server). */
+export async function processMetaCapiForLandingEvent(
+  request: Request,
+  sessionId: string,
+  input: {
+    event_name: string;
+    event_id: string;
+    payload?: Record<string, unknown>;
+  },
+): Promise<void> {
+  if (!isMetaCapiConfigured()) return;
+
+  const metaName = metaEventNameForInternal(input.event_name);
+  if (!metaName || metaName === "Lead") return;
+
+  const metaPayload = (input.payload?.meta ?? {}) as { fbp?: string; fbc?: string };
+  const { ip, userAgent } = clientContextFromRequest(request);
+  const utm = readAttributionFromRequest(request) as Record<string, string | undefined>;
+
+  const result = await sendMetaCapiEvent({
+    eventName: metaName,
+    eventId: input.event_id,
+    eventSourceUrl: request.headers.get("referer") ?? undefined,
+    userData: {
+      clientIp: ip,
+      clientUserAgent: userAgent,
+      fbp: metaPayload.fbp ?? null,
+      fbc: metaPayload.fbc ?? null,
+      externalId: sessionId,
+    },
+    customData: {
+      currency: "BRL",
+      value: 197,
+      content_name: "Ascend Club",
+      cta: typeof input.payload?.cta === "string" ? input.payload.cta : undefined,
+      utm_source: utm.utm_source,
+      utm_campaign: utm.utm_campaign,
+    },
+  });
+
+  const supabase = createServiceSupabase();
+  await supabase
+    .from("landing_events")
+    .update({
+      meta_capi_status: result.ok ? "sent" : result.skipped ? "skipped" : "failed",
+      meta_capi_error: result.ok || result.skipped ? null : result.error,
+    })
+    .eq("session_id", sessionId)
+    .eq("event_id", input.event_id);
 }
 
 export async function insertLandingEvent(

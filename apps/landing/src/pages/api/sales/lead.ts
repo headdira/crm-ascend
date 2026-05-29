@@ -4,6 +4,12 @@ import type { Json } from "@crm-ascend/db";
 import { ctaLabel } from "@/lib/sales/cta-labels";
 import { upsertCheckoutAbandon, upsertCheckoutLead } from "@/lib/sales/lead-server";
 
+const metaSchema = z.object({
+  event_id: z.string().uuid(),
+  fbp: z.string().max(256).optional(),
+  fbc: z.string().max(256).optional(),
+});
+
 const completeSchema = z.object({
   type: z.literal("complete"),
   full_name: z.string().min(2).max(80),
@@ -12,6 +18,7 @@ const completeSchema = z.object({
   marketing_consent: z.literal(true),
   utm: z.record(z.unknown()).optional(),
   cta: z.string().max(64).optional(),
+  meta: metaSchema.optional(),
 });
 
 const abandonSchema = z.object({
@@ -56,6 +63,7 @@ export const POST: APIRoute = async ({ request }) => {
           cta: parsed.data.cta,
           cta_label: ctaLabel(parsed.data.cta),
         },
+        meta: parsed.data.meta,
       });
       return new Response(JSON.stringify({ ok: true, id }), {
         status: 200,

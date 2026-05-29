@@ -1,5 +1,7 @@
 "use client";
 
+import { getMetaBrowserIds } from "./meta-attribution";
+
 export type TrackPayload = Record<string, unknown>;
 
 const SESSION_STORAGE_KEY = "ascend_session_id";
@@ -61,6 +63,7 @@ export function trackEvent(eventName: string, payload?: TrackPayload) {
       payload: {
         ...payload,
         browser: getBrowserSnapshot(),
+        meta: getMetaBrowserIds(),
       },
     });
 

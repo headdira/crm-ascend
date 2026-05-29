@@ -3,6 +3,7 @@
 import { useState, type ComponentProps } from "react";
 import { useCheckoutUrl } from "@/hooks/use-checkout-url";
 import { ctaLabel } from "@/lib/sales/cta-labels";
+import { trackMetaInitiateCheckout } from "@/lib/sales/meta-pixel-client";
 import { trackEvent } from "@/lib/sales/track-client";
 import CheckoutLeadModal from "./CheckoutLeadModal";
 
@@ -20,10 +21,13 @@ export default function CheckoutLink({ trackLabel, onClick, children, ...rest }:
         href={href}
         onClick={(e) => {
           e.preventDefault();
+          const eventId = crypto.randomUUID();
           trackEvent("checkout_click", {
             cta: trackLabel,
             cta_label: ctaLabel(trackLabel),
+            meta_event_id: eventId,
           });
+          trackMetaInitiateCheckout(eventId, trackLabel);
           setModalOpen(true);
           onClick?.(e);
         }}

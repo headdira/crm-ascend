@@ -3,9 +3,16 @@
 import { useEffect } from "react";
 import { parseConsent } from "@/lib/sales/consent";
 import { CONSENT_COOKIE } from "@/lib/sales/consent";
+import { getMetaPixelId } from "@/lib/sales/meta-config";
+import { initMetaPixel } from "@/lib/sales/meta-pixel-client";
 import { getClientCookie } from "@/lib/sales/utm";
 
-const GA_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+const GA_ID =
+  import.meta.env.PUBLIC_GA_MEASUREMENT_ID ??
+  import.meta.env.NEXT_PUBLIC_GA_MEASUREMENT_ID ??
+  (typeof process !== "undefined"
+    ? process.env.PUBLIC_GA_MEASUREMENT_ID ?? process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+    : undefined);
 
 function loadWhenIdle(fn: () => void) {
   if (typeof window.requestIdleCallback === "function") {
@@ -17,7 +24,7 @@ function loadWhenIdle(fn: () => void) {
 
 export default function ConsentScripts() {
   useEffect(() => {
-    const run = () => {
+    const runGa = () => {
       const consent = parseConsent(getClientCookie(CONSENT_COOKIE));
       if (!consent?.analytics || !GA_ID) return;
 
@@ -42,9 +49,24 @@ export default function ConsentScripts() {
       return () => window.removeEventListener("ascend:cta_click", onCta);
     };
 
-    const onConsent = () => loadWhenIdle(run);
+    const runMeta = () => {
+      const consent = parseConsent(getClientCookie(CONSENT_COOKIE));
+      if (!consent?.marketing || !getMetaPixelId()) return;
+      initMetaPixel();
+    };
+
+    const onConsent = () => {
+      loadWhenIdle(() => {
+        runGa();
+        runMeta();
+      });
+    };
+
     window.addEventListener("ascend:consent_change", onConsent);
-    loadWhenIdle(run);
+    loadWhenIdle(() => {
+      runGa();
+      runMeta();
+    });
 
     return () => window.removeEventListener("ascend:consent_change", onConsent);
   }, []);

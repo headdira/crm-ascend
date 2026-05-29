@@ -5,16 +5,81 @@ import { getHashSalt } from "@/lib/env";
 import { ctaLabel } from "@/lib/sales/cta-labels";
 import { LEAD_STATUS_FRIO, LEAD_STATUS_QUENTE } from "@/lib/sales/lead-temperature";
 import {
+  clientContextFromRequest,
+  sendMetaLeadEvent,
+} from "@/lib/sales/meta-capi";
+import {
   ensureColdLeadForSession,
   getSessionIdFromRequest,
   upsertIdentifiedLead,
   upsertLandingSession,
 } from "@/lib/sales/tracking-server";
 
+export type CheckoutMeta = {
+  event_id: string;
+  fbp?: string;
+  fbc?: string;
+};
+
 export type CheckoutTracking = {
   cta?: string;
   cta_label?: string;
 };
+
+function metaQuizFields(meta: CheckoutMeta | undefined): Record<string, unknown> {
+  if (!meta) return {};
+  return {
+    meta_event_id: meta.event_id,
+    meta_fbp: meta.fbp ?? null,
+    meta_fbc: meta.fbc ?? null,
+  };
+}
+
+async function sendLeadToMetaCapi(
+  request: Request,
+  input: {
+    full_name: string;
+    email: string;
+    phone: string;
+    utm?: Json;
+    tracking?: CheckoutTracking;
+    meta?: CheckoutMeta;
+    leadId: string;
+    sessionId: string | null;
+  },
+) {
+  if (!input.meta?.event_id) return;
+
+  const { ip, userAgent } = clientContextFromRequest(request);
+  const utm = (input.utm ?? {}) as Record<string, string | undefined>;
+  const firstName = input.full_name.trim().split(/\s+/)[0] ?? input.full_name;
+
+  const result = await sendMetaLeadEvent({
+    eventId: input.meta.event_id,
+    eventSourceUrl: request.headers.get("referer") ?? undefined,
+    userData: {
+      email: input.email,
+      phone: input.phone,
+      firstName,
+      clientIp: ip,
+      clientUserAgent: userAgent,
+      fbp: input.meta.fbp ?? null,
+      fbc: input.meta.fbc ?? null,
+      externalId: input.sessionId ?? input.leadId,
+    },
+    customData: {
+      cta: input.tracking?.cta,
+      utm_source: utm.utm_source,
+      utm_campaign: utm.utm_campaign,
+      utm_medium: utm.utm_medium,
+      lead_id: input.leadId,
+    },
+  });
+
+  if (!result.ok && !result.skipped) {
+    console.error("[lead-server] Meta CAPI Lead failed:", result.error);
+  }
+}
 
 function buildQuizAnswers(
   tracking: CheckoutTracking | undefined,
@@ -38,10 +103,12 @@ export async function upsertCheckoutLead(
     phone: string;
     utm?: Json;
     tracking?: CheckoutTracking;
+    meta?: CheckoutMeta;
   },
 ) {
   const sessionId = getSessionIdFromRequest(request);
   const now = new Date().toISOString();
+  const metaFields = metaQuizFields(input.meta);
 
   if (sessionId) {
     await upsertLandingSession(request, sessionId);
@@ -66,6 +133,7 @@ export async function upsertCheckoutLead(
         utm: (input.utm ?? {}) as Json,
         quiz_answers: buildQuizAnswers(input.tracking, {
           ...prev,
+          ...metaFields,
           checkout_completed: true,
           reached_kiwify: true,
         }),
@@ -74,6 +142,12 @@ export async function upsertCheckoutLead(
         status: LEAD_STATUS_QUENTE,
       })
       .eq("id", id);
+
+    await sendLeadToMetaCapi(request, {
+      ...input,
+      leadId: id,
+      sessionId,
+    });
 
     return id;
   }
@@ -98,6 +172,7 @@ export async function upsertCheckoutLead(
     phone_enc: input.phone.trim(),
     utm: (input.utm ?? {}) as Json,
     quiz_answers: buildQuizAnswers(input.tracking, {
+      ...metaFields,
       checkout_completed: true,
       reached_kiwify: true,
     }),
@@ -114,6 +189,11 @@ export async function upsertCheckoutLead(
       .select("id")
       .single();
     if (error) throw error;
+    await sendLeadToMetaCapi(request, {
+      ...input,
+      leadId: data.id,
+      sessionId: null,
+    });
     return data.id;
   }
 
@@ -127,6 +207,13 @@ export async function upsertCheckoutLead(
     .single();
 
   if (error) throw error;
+
+  await sendLeadToMetaCapi(request, {
+    ...input,
+    leadId: data.id,
+    sessionId: null,
+  });
+
   return data.id;
 }
 

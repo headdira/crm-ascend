@@ -37,8 +37,11 @@ function captureAttribution() {
   utm.landing_path = window.location.pathname;
   utm.captured_at = new Date().toISOString();
   setCookie(ATTRIBUTION_COOKIE, encodeURIComponent(JSON.stringify(utm)), ATTRIBUTION_MAX_AGE);
+
+  if (utm.fbclid) ensureFbcCookieFromFbclid(utm.fbclid);
 }
 
+import { ensureFbcCookieFromFbclid } from "@/lib/sales/meta-attribution";
 import { ensureLandingSession } from "@/lib/sales/track-client";
 
 export function initSite() {

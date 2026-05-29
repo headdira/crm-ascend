@@ -6,6 +6,8 @@ import { ATTRIBUTION_COOKIE } from "@/lib/sales/consent";
 import { ctaLabel } from "@/lib/sales/cta-labels";
 import { parseAttributionCookie, readAttributionFromDocument } from "@/lib/sales/utm";
 import { getClientCookie } from "@/lib/sales/utm";
+import { getMetaBrowserIds } from "@/lib/sales/meta-attribution";
+import { trackMetaLead } from "@/lib/sales/meta-pixel-client";
 import { ensureLandingSession, trackEvent } from "@/lib/sales/track-client";
 import { brandCta, brandTypography } from "./brand-preview/tokens";
 import { cn } from "@/lib/utils";
@@ -175,6 +177,8 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
 
     try {
       await ensureLandingSession();
+      const leadEventId = crypto.randomUUID();
+      const metaIds = getMetaBrowserIds();
       const headers: Record<string, string> = { "Content-Type": "application/json" };
       try {
         const sid = sessionStorage.getItem("ascend_session_id");
@@ -195,13 +199,19 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
           marketing_consent: true,
           cta: trackLabel,
           utm: readUtm(),
+          meta: {
+            event_id: leadEventId,
+            ...metaIds,
+          },
         }),
       });
       if (!res.ok) throw new Error("lead_failed");
       completedRef.current = true;
+      trackMetaLead(leadEventId, trackLabel);
       trackEvent("checkout_completed", {
         cta: trackLabel,
         cta_label: ctaLabel(trackLabel),
+        meta_event_id: leadEventId,
       });
       goToKiwify();
     } catch {

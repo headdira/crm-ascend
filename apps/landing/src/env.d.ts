@@ -8,6 +8,12 @@ interface ImportMetaEnv {
   readonly SUPABASE_SERVICE_ROLE_KEY?: string;
   readonly NEXT_PUBLIC_SUPABASE_URL?: string;
   readonly NEXT_PUBLIC_SUPABASE_ANON_KEY?: string;
+  readonly PUBLIC_META_PIXEL_ID?: string;
+  readonly META_PIXEL_ID?: string;
+  readonly META_CAPI_ACCESS_TOKEN?: string;
+  readonly META_TEST_EVENT_CODE?: string;
+  readonly PUBLIC_GA_MEASUREMENT_ID?: string;
+  readonly NEXT_PUBLIC_GA_MEASUREMENT_ID?: string;
 }
 
 interface ImportMeta {

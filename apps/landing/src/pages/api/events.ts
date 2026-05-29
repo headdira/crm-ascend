@@ -5,6 +5,7 @@ import {
   ensureColdLeadForSession,
   getSessionIdFromRequest,
   insertLandingEvent,
+  processMetaCapiForLandingEvent,
   upsertLandingSession,
 } from "@/lib/sales/tracking-server";
 
@@ -56,6 +57,13 @@ export const POST: APIRoute = async ({ request }) => {
       lastEventAt: new Date().toISOString(),
       eventName: parsed.data.event_name,
     });
+
+    const payload = (parsed.data.payload ?? {}) as Record<string, unknown>;
+    void processMetaCapiForLandingEvent(request, sessionId, {
+      event_name: parsed.data.event_name,
+      event_id: parsed.data.event_id,
+      payload,
+    }).catch((err) => console.error("[api/events] meta capi", err));
 
     return new Response(
       JSON.stringify({
