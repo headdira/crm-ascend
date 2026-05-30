@@ -71,14 +71,6 @@ export default function HeroSection() {
 
   return (
     <section className="relative overflow-hidden bg-transparent">
-      <div className="relative z-50 bg-red-600 border-b border-red-500">
-        <div className="max-w-7xl mx-auto px-4 py-2 text-center">
-          <p className="text-white font-black uppercase tracking-wide text-[11px] sm:text-sm">
-            ⚠️ RESTAM APENAS 12 VAGAS DISPONÍVEIS PARA ESSA TURMA
-          </p>
-        </div>
-      </div>
-
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,184,0,0.12),transparent_45%)]" />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/10 to-black" />

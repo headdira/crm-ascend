@@ -12,6 +12,7 @@ import PricingCTA from "@/components/sales/brand-preview/PricingCTA";
 import FinalSection from "@/components/sales/brand-preview/FinalSection";
 import FloatingCTA from "@/components/sales/brand-preview/FloatingCTA";
 import LandingTracker from "@/components/sales/LandingTracker";
+import ScarcityBanner from "@/components/sales/ScarcityBanner";
 import { getSiteUrl } from "@/lib/site-url";
 
 const siteUrl = getSiteUrl();
@@ -22,6 +23,7 @@ const siteUrl = getSiteUrl();
   description="Mentoria com suporte próximo, networking ativo e método validado. Entre no Ascend Club por R$197."
   canonical={siteUrl}
 >
+  <ScarcityBanner client:load />
   <HeroSection client:load />
   <BenefitsSection client:visible />
   <GamificationSection client:visible />
