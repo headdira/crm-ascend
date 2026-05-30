@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CrmHeader } from "@/components/crm/crm-header";
@@ -36,6 +37,14 @@ export default async function CaseDetailPage({
             <StatusBadge value={caseRow.status} />
             <StatusBadge value={caseRow.priority} />
           </div>
+          {"builder_submission_id" in caseRow && caseRow.builder_submission_id ? (
+            <Link
+              href={`/crm/builder/submissions/${caseRow.builder_submission_id}`}
+              className="text-primary text-sm underline"
+            >
+              Ver resposta do builder
+            </Link>
+          ) : null}
         </div>
 
         <CaseDetailForm

@@ -23,7 +23,9 @@ export type BuilderFormState = {
   storeAdminHost: string;
   oauthSessionId: string;
   nuvemshopStoreId: string;
-  themeAuthorized: boolean;
+  /** E-mail e senha para login no admin Nuvemshop (customização manual pelo time). */
+  nuvemshopLoginEmail: string;
+  nuvemshopLoginPassword: string;
   planWatchedInfo: boolean;
   planWillSubscribe: boolean;
   storeName: string;
@@ -35,7 +37,7 @@ export type BuilderFormState = {
   fontId: string;
 };
 
-export const STORAGE_KEY = "ascend-builder-v3";
+export const STORAGE_KEY = "ascend-builder-v4";
 
 /** Host da loja para /admin/apps/{id}/authorize (tela de permissões no admin). */
 export function normalizeStoreAdminHost(input: string): string | null {
@@ -61,20 +63,26 @@ export function formForLocalStorage(form: BuilderFormState): BuilderFormState {
     ...form,
     oauthSessionId: "",
     nuvemshopStoreId: "",
-    themeAuthorized: false,
+    nuvemshopLoginPassword: "",
   };
 }
 
 export function mergeSavedForm(saved: Partial<BuilderFormState> | undefined): BuilderFormState {
   const base = emptyForm();
   if (!saved) return base;
-  const { oauthSessionId: _o, nuvemshopStoreId: _n, themeAuthorized: _t, ...rest } = saved;
+  const {
+    oauthSessionId: _o,
+    nuvemshopStoreId: _n,
+    nuvemshopLoginPassword: _p,
+    themeAuthorized: _t,
+    ...rest
+  } = saved as Partial<BuilderFormState> & { themeAuthorized?: boolean };
   return { ...base, ...rest };
 }
 export const STEP_LABELS = [
   "Verificação",
   "Conectar Nuvemshop",
-  "Autorizar tema",
+  "Acesso ao admin",
   "Plano",
   "Nome da loja",
   "Nicho",
@@ -120,15 +128,16 @@ export function emptyForm(): BuilderFormState {
     storeAdminHost: "",
     oauthSessionId: "",
     nuvemshopStoreId: "",
-    themeAuthorized: false,
+    nuvemshopLoginEmail: "",
+    nuvemshopLoginPassword: "",
     planWatchedInfo: false,
     planWillSubscribe: false,
     storeName: "",
     niche: "",
     bannerIds: [],
     logoId: "",
-    primaryColor: "#d4af37",
-    secondaryColor: "#0a0a0a",
+    primaryColor: "#0a0a0a",
+    secondaryColor: "#d4af37",
     fontId: "",
   };
 }

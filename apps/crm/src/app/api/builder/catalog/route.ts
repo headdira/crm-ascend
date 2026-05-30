@@ -7,6 +7,7 @@ import {
 } from "@crm-ascend/validation";
 import { NextResponse } from "next/server";
 import { enqueueProvisionerJob } from "@/lib/provisioner";
+import { createBuilderCustomizationCase } from "@/lib/builder-case";
 
 type ProvisionPatch = {
   id: string;
@@ -167,14 +168,34 @@ export async function POST(request: Request) {
     });
   }
 
+  let caseId: string | null = null;
+  try {
+    caseId = await createBuilderCustomizationCase({
+      submissionId: submission.id,
+      storeName: data.storeName,
+      niche: data.niche,
+      storeEmail: data.storeEmail,
+      courseEmail: data.courseEmail,
+      primaryColor: data.primaryColor,
+      secondaryColor: data.secondaryColor,
+      nuvemshopLoginEmail: data.nuvemshopLoginEmail,
+    });
+  } catch (e) {
+    console.error(
+      `[builder/catalog] Falha ao criar caso para submission ${submission.id}:`,
+      e instanceof Error ? e.message : e,
+    );
+  }
+
   return NextResponse.json({
     submission_id: submission.id,
+    case_id: caseId,
     provision_status: provisionStatus,
     provision_error: provisionError,
     provision_job_id: provisionJobId,
     message:
       provisionStatus === "queued"
-        ? "Respostas salvas. A loja está sendo montada em segundo plano — acompanhe o status na próxima tela."
-        : "Respostas salvas, mas o provisionamento não iniciou. Veja o erro na tela de status.",
+        ? "Respostas salvas. Nossa equipe vai personalizar sua loja em até 72 horas."
+        : "Respostas salvas. Nossa equipe foi notificada para a customização manual.",
   });
 }

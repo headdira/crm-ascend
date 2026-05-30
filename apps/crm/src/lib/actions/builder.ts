@@ -37,6 +37,11 @@ export type BuilderSubmission = {
   course_email: string | null;
   store_email: string | null;
   created_at: string;
+  provision_status?: string | null;
+  store_preview_url?: string | null;
+  nuvemshop_store_id?: string | null;
+  theme_assets?: Record<string, unknown> | null;
+  case_id?: string | null;
 };
 
 export async function listBuilderAssets(type?: "logo" | "banner") {

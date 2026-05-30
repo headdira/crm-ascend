@@ -134,13 +134,14 @@ export default async function BuilderAdminPage() {
                   <TableHead>Loja</TableHead>
                   <TableHead>Nicho</TableHead>
                   <TableHead>E-mail loja</TableHead>
+                  <TableHead>Caso</TableHead>
                   <TableHead />
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {submissions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-muted-foreground text-center">
+                    <TableCell colSpan={6} className="text-muted-foreground text-center">
                       Nenhuma resposta ainda.
                     </TableCell>
                   </TableRow>
@@ -153,6 +154,18 @@ export default async function BuilderAdminPage() {
                       <TableCell>{s.store_name ?? "—"}</TableCell>
                       <TableCell>{s.niche ?? "—"}</TableCell>
                       <TableCell>{s.store_email ?? "—"}</TableCell>
+                      <TableCell>
+                        {"case_id" in s && s.case_id ? (
+                          <Link
+                            href={`/crm/cases/${s.case_id}`}
+                            className="text-primary text-sm hover:underline"
+                          >
+                            Abrir
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                      </TableCell>
                       <TableCell>
                         <Link
                           href={`/crm/builder/submissions/${s.id}`}

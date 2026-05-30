@@ -13,7 +13,6 @@ import {
   fetchCatalog,
   fetchOAuthSession,
   fetchProvisionStatus,
-  registerThemeToken,
   submitBuilder,
 } from "@/lib/api";
 import {
@@ -199,142 +198,62 @@ function StepNuvemshopConnect({
   );
 }
 
-function StepThemeAuth({
+function StepNuvemshopCredentials({
   form,
   update,
 }: {
   form: BuilderFormState;
   update: (key: keyof BuilderFormState, value: BuilderFormState[keyof BuilderFormState]) => void;
 }) {
-  const [token, setToken] = useState("");
-  const [validating, setValidating] = useState(false);
-  const [authError, setAuthError] = useState<string | null>(null);
-
   const oauthOk = Boolean(form.oauthSessionId);
-
-  const openAuthorize = () => {
-    if (!oauthOk) return;
-    const u = new URL("/api/theme-auth-start", window.location.origin);
-    u.searchParams.set("oauth_session_id", form.oauthSessionId);
-    window.open(u.toString(), "_blank", "noopener,noreferrer");
-  };
-
-  const validate = async () => {
-    if (!token.trim()) {
-      setAuthError("Cole o token Base64 que apareceu na página da Nuvemshop.");
-      return;
-    }
-    setAuthError(null);
-    setValidating(true);
-    try {
-      const res = await registerThemeToken(form.oauthSessionId, token.trim());
-      if (res.theme_authorized) {
-        update("themeAuthorized", true);
-        setToken("");
-      } else {
-        setAuthError("Token aceito mas a Nuvemshop não confirmou a autorização. Tente novamente.");
-      }
-    } catch (e) {
-      setAuthError(e instanceof Error ? e.message : "Token de tema inválido");
-    } finally {
-      setValidating(false);
-    }
-  };
 
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-semibold text-zinc-100">Autorizar customização do tema</h2>
+        <h2 className="text-lg font-semibold text-zinc-100">Acesso ao admin da loja</h2>
         <p className="mt-1 text-sm text-zinc-400">
-          A Nuvemshop separa a customização do tema em uma segunda autorização. Em ~30 segundos
-          sua loja vai sair daqui com logo, banners e cores aplicados <strong>no tema real</strong>{" "}
-          (não em sobreposição). Isso é o que dá controle total do visual.
+          Informe o e-mail e a senha que você usa para entrar no painel Nuvemshop da sua loja.
+          Nossa equipe usa esses dados para aplicar manualmente as cores e banners que você
+          escolher — com segurança e apenas para a customização.
         </p>
       </div>
 
       {!oauthOk && (
         <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
-          Conecte sua loja na etapa anterior antes de autorizar o tema.
+          Conecte sua loja na etapa anterior antes de informar o acesso.
         </div>
       )}
 
-      {form.themeAuthorized ? (
-        <div className="rounded-lg border border-emerald-900/50 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-200">
-          ✓ Tema autorizado para a loja {form.nuvemshopStoreId || "conectada"}. Pode seguir para o
-          próximo passo.
-        </div>
-      ) : (
-        <>
-          <ol className="space-y-3 text-sm text-zinc-300">
-            <li className="flex gap-3">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ascend-gold/20 text-xs font-semibold text-ascend-gold">
-                1
-              </span>
-              <div className="flex-1">
-                <p>Clique no botão abaixo. Uma nova aba abre na Nuvemshop.</p>
-                <p className="mt-1 text-xs text-zinc-500">
-                  Faça login na conta da loja se pedir.
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ascend-gold/20 text-xs font-semibold text-ascend-gold">
-                2
-              </span>
-              <div className="flex-1">
-                <p>
-                  A página exibe um <strong>token longo (Base64)</strong>. Copie todo o texto com
-                  o botão da própria página.
-                </p>
-              </div>
-            </li>
-            <li className="flex gap-3">
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-ascend-gold/20 text-xs font-semibold text-ascend-gold">
-                3
-              </span>
-              <div className="flex-1">
-                <p>Volte aqui e cole o token no campo abaixo. Clique em validar.</p>
-              </div>
-            </li>
-          </ol>
+      <label className="block space-y-2">
+        <span className="text-sm text-zinc-300">E-mail de login Nuvemshop</span>
+        <input
+          type="email"
+          autoComplete="username"
+          value={form.nuvemshopLoginEmail}
+          onChange={(e) => update("nuvemshopLoginEmail", e.target.value)}
+          className="w-full rounded-lg border border-zinc-700 bg-black/40 px-4 py-3 text-zinc-100 outline-none focus:border-ascend-gold focus:ring-2 focus:ring-ascend-gold/40"
+          placeholder="seu@email.com"
+        />
+        <span className="text-xs text-zinc-500">
+          O mesmo e-mail que você digita na tela de login do admin da loja.
+        </span>
+      </label>
 
-          <button
-            type="button"
-            onClick={openAuthorize}
-            disabled={!oauthOk}
-            className="w-full rounded-lg border border-ascend-gold/50 bg-ascend-gold/10 px-4 py-3 text-sm font-semibold text-ascend-gold transition hover:bg-ascend-gold/20 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Abrir página de autorização da Nuvemshop ↗
-          </button>
-
-          <label className="block space-y-2">
-            <span className="text-sm text-zinc-300">Token Base64 da Nuvemshop</span>
-            <textarea
-              value={token}
-              onChange={(e) => setToken(e.target.value)}
-              rows={4}
-              spellCheck={false}
-              className="w-full rounded-lg border border-zinc-700 bg-black/40 px-4 py-3 font-mono text-xs text-zinc-100 outline-none ring-ascend-gold/40 placeholder:text-zinc-600 focus:border-ascend-gold focus:ring-2"
-              placeholder="eyJzdG9yZV9pZCI6..."
-            />
-          </label>
-
-          {authError && (
-            <div className="rounded-lg border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200">
-              {authError}
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={validate}
-            disabled={validating || !oauthOk || token.trim().length < 20}
-            className="w-full rounded-lg bg-ascend-gold px-4 py-3 text-sm font-semibold text-black transition hover:bg-yellow-400 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {validating ? "Validando…" : "Validar e salvar token"}
-          </button>
-        </>
-      )}
+      <label className="block space-y-2">
+        <span className="text-sm text-zinc-300">Senha de login Nuvemshop</span>
+        <input
+          type="password"
+          autoComplete="current-password"
+          value={form.nuvemshopLoginPassword}
+          onChange={(e) => update("nuvemshopLoginPassword", e.target.value)}
+          className="w-full rounded-lg border border-zinc-700 bg-black/40 px-4 py-3 text-zinc-100 outline-none focus:border-ascend-gold focus:ring-2 focus:ring-ascend-gold/40"
+          placeholder="••••••••"
+        />
+        <span className="text-xs text-zinc-500">
+          Não salvamos a senha no seu navegador — você precisará informá-la novamente se
+          recarregar a página antes de enviar.
+        </span>
+      </label>
     </div>
   );
 }
@@ -495,8 +414,26 @@ function StepBanners({
         <h2 className="text-lg font-semibold text-zinc-100">Personalização — banners e cores</h2>
         <p className="mt-1 text-sm text-zinc-400">
           Escolha <strong className="text-zinc-200">3 banners</strong> do seu nicho. As cores
-          escolhidas são aplicadas automaticamente nas artes.
+          abaixo são aplicadas automaticamente nas artes.
         </p>
+      </div>
+      <div className="rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-3 text-sm text-zinc-300">
+        <p className="font-medium text-zinc-100">Como funcionam as cores nos banners</p>
+        <ul className="mt-2 list-inside list-disc space-y-1 text-xs text-zinc-400">
+          <li>
+            <strong className="text-zinc-300">Cor dos objetos</strong> — textos, ícones e formas
+            escuras do banner. Recomendamos <strong className="text-zinc-200">preto (#0a0a0a)</strong>{" "}
+            para melhor contraste com qualquer fundo.
+          </li>
+          <li>
+            <strong className="text-zinc-300">Cor de fundo/destaque</strong> — áreas claras e
+            fundo. Use a cor da sua marca (ex.: dourado, azul, verde).
+          </li>
+          <li>
+            Cores muito claras nos objetos ou muito escuras no fundo podem deixar a arte difícil
+            de ler — confira sempre a prévia abaixo antes de avançar.
+          </li>
+        </ul>
       </div>
       <p className="text-xs text-zinc-500">
         Selecionados: {form.bannerIds.length}/3 · Disponíveis: {banners.length}
@@ -544,22 +481,26 @@ function StepBanners({
       )}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="space-y-2">
-          <span className="text-sm text-zinc-300">Cor principal</span>
+          <span className="text-sm text-zinc-300">Cor dos objetos e textos</span>
           <input
             type="color"
             value={form.primaryColor}
             onChange={(e) => update("primaryColor", e.target.value)}
             className="h-12 w-full cursor-pointer rounded-lg border border-zinc-700 bg-zinc-900"
           />
+          <span className="text-xs text-zinc-500">
+            Padrão preto — melhor legibilidade. Valor: {form.primaryColor}
+          </span>
         </label>
         <label className="space-y-2">
-          <span className="text-sm text-zinc-300">Cor de apoio</span>
+          <span className="text-sm text-zinc-300">Cor de fundo e destaque</span>
           <input
             type="color"
             value={form.secondaryColor}
             onChange={(e) => update("secondaryColor", e.target.value)}
             className="h-12 w-full cursor-pointer rounded-lg border border-zinc-700 bg-zinc-900"
           />
+          <span className="text-xs text-zinc-500">Cor da marca — fundo e áreas claras. Valor: {form.secondaryColor}</span>
         </label>
       </div>
     </div>
@@ -700,7 +641,11 @@ function StepReview({ form, catalog }: { form: BuilderFormState; catalog: Builde
         <ReviewRow label="Verificação" value={verify || "—"} />
         <ReviewRow label="E-mail da loja" value={form.storeEmail || "—"} />
         <ReviewRow
-          label="Nuvemshop"
+          label="Login Nuvemshop"
+          value={form.nuvemshopLoginEmail ? `${form.nuvemshopLoginEmail} · senha informada` : "—"}
+        />
+        <ReviewRow
+          label="Nuvemshop OAuth"
           value={form.oauthSessionId ? `Conectada (${form.nuvemshopStoreId || "ok"})` : "Não conectada"}
         />
         <ReviewRow
@@ -712,7 +657,7 @@ function StepReview({ form, catalog }: { form: BuilderFormState; catalog: Builde
         <ReviewRow label="Banners" value={bannerNames || "—"} />
         <ReviewRow
           label="Cores"
-          value={`Principal ${form.primaryColor} · Apoio ${form.secondaryColor}`}
+          value={`Objetos ${form.primaryColor} · Fundo ${form.secondaryColor}`}
         />
         <ReviewRow label="Fonte" value={fontTitle} />
         <ReviewRow label="Logo" value={logoName} />
@@ -759,28 +704,31 @@ function StepDone({
 
   const statusLabel =
     status === "completed"
-      ? "Loja montada com sucesso"
+      ? "Produtos enviados — customização em andamento"
       : status === "failed"
-        ? "Falha ao montar a loja"
-        : "Montando sua loja…";
+        ? "Envio parcial — nossa equipe vai acompanhar"
+        : "Preparando sua loja…";
 
   return (
     <div className="space-y-6 text-center">
       <div className="text-5xl" aria-hidden>
-        {status === "completed" ? "✅" : status === "failed" ? "⚠️" : "⏳"}
+        🎉
       </div>
       <div>
-        <h2 className="text-xl font-semibold text-zinc-100">{statusLabel}</h2>
+        <h2 className="text-xl font-semibold text-zinc-100">Tudo certo, {form.storeName || "Aluno"}!</h2>
+        <p className="mt-3 text-base leading-relaxed text-zinc-200">
+          Sua loja ficará pronta em até{" "}
+          <strong className="text-ascend-gold">72 horas</strong>.
+        </p>
         <p className="mt-2 text-sm text-zinc-400">
-          Obrigado, <strong className="text-zinc-200">{form.storeName || "Aluno"}</strong>!
-          {form.niche === "Pet"
-            ? " Estamos aplicando o pacote Pet (produtos + visual)."
-            : ` Nicho ${form.niche}: apenas Pet está automatizado no piloto.`}
+          Os produtos já estão sendo preparados. Nossa equipe vai aplicar manualmente as cores e
+          banners que você escolheu no painel da Nuvemshop.
         </p>
       </div>
       {provisionError && (
-        <p className="rounded-lg border border-red-900/50 bg-red-950/40 px-4 py-3 text-sm text-red-200">
-          {provisionError}
+        <p className="rounded-lg border border-amber-900/50 bg-amber-950/40 px-4 py-3 text-sm text-amber-200">
+          Aviso técnico: {provisionError}. Isso não impede a customização manual — nossa equipe
+          foi notificada.
         </p>
       )}
       <div className="flex flex-wrap items-center justify-center gap-3">
@@ -791,26 +739,31 @@ function StepDone({
             rel="noopener noreferrer"
             className="inline-flex rounded-lg border border-ascend-gold/60 px-5 py-2.5 text-sm font-semibold text-ascend-gold hover:bg-ascend-gold/10"
           >
-            Ver prévia local (logo e banners)
+            Ver prévia das artes escolhidas
           </a>
         )}
         {previewUrl && status === "completed" && (
-            <a
-              href={previewUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex rounded-lg bg-ascend-gold px-5 py-2.5 text-sm font-semibold text-black hover:bg-yellow-400"
-            >
-              Abrir loja na Nuvemshop
-            </a>
-          )}
+          <a
+            href={previewUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex rounded-lg bg-ascend-gold px-5 py-2.5 text-sm font-semibold text-black hover:bg-yellow-400"
+          >
+            Abrir loja na Nuvemshop
+          </a>
+        )}
       </div>
       <div className="rounded-xl border border-zinc-800 bg-black/40 px-4 py-5 text-left text-sm text-zinc-300">
-        <p className="font-medium text-ascend-gold">Status</p>
-        <p className="mt-2 capitalize">{status}</p>
+        <p className="font-medium text-ascend-gold">Próximos passos</p>
+        <ul className="mt-2 list-inside list-disc space-y-1 text-zinc-400">
+          <li>Em até 72h sua loja estará com visual personalizado.</li>
+          <li>Você receberá acesso quando a customização estiver concluída.</li>
+          <li>Dúvidas? Entre em contato com o suporte Ascend.</li>
+        </ul>
         {submissionId && (
-          <p className="mt-1 text-xs text-zinc-500">Ref: {submissionId.slice(0, 8)}…</p>
+          <p className="mt-3 text-xs text-zinc-500">Referência: {submissionId.slice(0, 8)}…</p>
         )}
+        <p className="mt-1 text-xs capitalize text-zinc-600">Status técnico: {statusLabel}</p>
       </div>
     </div>
   );
@@ -822,6 +775,7 @@ export function BuilderWizard() {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [catalog, setCatalog] = useState<BuilderCatalog | null>(null);
+  const [catalogLoading, setCatalogLoading] = useState(true);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [submissionId, setSubmissionId] = useState<string | null>(null);
@@ -832,16 +786,17 @@ export function BuilderWizard() {
       ...prev,
       oauthSessionId: "",
       nuvemshopStoreId: "",
-      themeAuthorized: false,
     }));
   }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    setCatalogLoading(true);
     fetchCatalog()
       .then(setCatalog)
-      .catch((err) => setCatalogError(err instanceof Error ? err.message : "Erro ao carregar"));
+      .catch((err) => setCatalogError(err instanceof Error ? err.message : "Erro ao carregar"))
+      .finally(() => setCatalogLoading(false));
 
     const saved = localStorage.getItem(STORAGE_KEY);
     if (saved) {
@@ -898,7 +853,6 @@ export function BuilderWizard() {
             ...prev,
             oauthSessionId: oauthId,
             nuvemshopStoreId: session.store_id,
-            themeAuthorized: Boolean(session.theme_authorized),
           }));
           params.delete("oauth_session_id");
           params.delete("oauth_mock");
@@ -971,8 +925,11 @@ export function BuilderWizard() {
         if (!form.oauthSessionId) return "Autorize o app no admin da sua loja antes de continuar.";
         return null;
       case 3:
-        if (!form.themeAuthorized) {
-          return "Autorize o tema na Nuvemshop e cole o token Base64 antes de continuar.";
+        if (!isEmail(form.nuvemshopLoginEmail)) {
+          return "Informe o e-mail de login que você usa no admin Nuvemshop.";
+        }
+        if (form.nuvemshopLoginPassword.trim().length < 4) {
+          return "Informe a senha de login do admin Nuvemshop.";
         }
         return null;
       case 4:
@@ -1040,6 +997,8 @@ export function BuilderWizard() {
             planWatchedInfo: form.planWatchedInfo,
             planWillSubscribe: form.planWillSubscribe,
             oauthSessionId: form.oauthSessionId,
+            nuvemshopLoginEmail: form.nuvemshopLoginEmail,
+            nuvemshopLoginPassword: form.nuvemshopLoginPassword,
             logoSvg: await exportRecoloredAsset(
               logo.svg_content,
               form.primaryColor,
@@ -1080,7 +1039,7 @@ export function BuilderWizard() {
 
   const progress = Math.round((step / STEP_LABELS.length) * 100);
 
-  if (!ready) {
+  if (!ready || catalogLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center text-zinc-400">Carregando…</div>
     );
@@ -1148,7 +1107,7 @@ export function BuilderWizard() {
             onClearOAuth={clearOAuth}
           />
         )}
-        {step === 3 && <StepThemeAuth form={form} update={update} />}
+        {step === 3 && <StepNuvemshopCredentials form={form} update={update} />}
         {step === 4 && (
           <StepPlan
             affiliate={catalog.affiliate_url}

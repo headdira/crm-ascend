@@ -302,6 +302,7 @@ export type Database = {
           status: Database["public"]["Enums"]["case_status"];
           priority: Database["public"]["Enums"]["case_priority"];
           owner_id: string | null;
+          builder_submission_id: string | null;
           created_at: string;
           updated_at: string;
           resolved_at: string | null;
@@ -316,6 +317,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["case_status"];
           priority?: Database["public"]["Enums"]["case_priority"];
           owner_id?: string | null;
+          builder_submission_id?: string | null;
           created_at?: string;
           updated_at?: string;
           resolved_at?: string | null;
@@ -436,6 +438,7 @@ export type Database = {
           store_preview_url: string | null;
           nuvemshop_store_id: string | null;
           theme_assets: Json | null;
+          case_id: string | null;
           created_at: string;
         };
         Insert: {

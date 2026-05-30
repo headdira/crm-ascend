@@ -121,6 +121,9 @@ export const builderSubmitSchema = z.object({
   planWatchedInfo: z.boolean(),
   planWillSubscribe: z.boolean(),
   oauthSessionId: z.string().uuid(),
+  /** E-mail e senha usados para entrar no admin Nuvemshop (customização manual). */
+  nuvemshopLoginEmail: z.string().email(),
+  nuvemshopLoginPassword: z.string().min(4).max(200),
   /** Raster recolorido vira SVG com JPEG embutido — pode passar de 100 KB. */
   logoSvg: z.string().min(10).max(2_000_000),
   bannerSvgs: z.array(z.string().min(10).max(2_000_000)).length(3),
@@ -141,6 +144,8 @@ const BUILDER_SUBMIT_FIELD_LABELS: Record<string, string> = {
   planWatchedInfo: "Plano (vídeo)",
   planWillSubscribe: "Plano (assinatura)",
   oauthSessionId: "Sessão Nuvemshop",
+  nuvemshopLoginEmail: "E-mail de login Nuvemshop",
+  nuvemshopLoginPassword: "Senha de login Nuvemshop",
   logoSvg: "Logo (arquivo)",
   bannerSvgs: "Banners (arquivos)",
 };
