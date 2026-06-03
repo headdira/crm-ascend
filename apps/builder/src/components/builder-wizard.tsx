@@ -1,7 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import {
   BUILDER_FONT_OPTIONS,
   BUILDER_NICHES,
@@ -9,6 +17,11 @@ import {
 import { AscendLogoMark } from "@/components/colored-svg";
 import { ColoredAsset } from "@/components/colored-asset";
 import { exportRecoloredAsset } from "@/lib/recolor-raster";
+import {
+  fallbackCatalogLogoId,
+  generateLogoVariants,
+  generatedLogoVariantLabel,
+} from "@/lib/generate-logo-variants";
 import { BUILDER_RASTER_PREVIEW_MAX_WIDTH } from "@/lib/raster-template";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import {
@@ -556,14 +569,24 @@ function StepFonts({
 function StepLogo({
   form,
   catalog,
-  update,
+  setForm,
 }: {
   form: BuilderFormState;
   catalog: BuilderCatalog;
-  update: (key: keyof BuilderFormState, value: BuilderFormState[keyof BuilderFormState]) => void;
+  setForm: Dispatch<SetStateAction<BuilderFormState>>;
 }) {
   const previewPrimary = useDebouncedValue(form.primaryColor, 80);
   const previewSecondary = useDebouncedValue(form.secondaryColor, 80);
+
+  const generatedVariants = useMemo(
+    () =>
+      generateLogoVariants({
+        storeName: form.storeName,
+        niche: form.niche,
+        fontId: form.fontId || "dm-sans",
+      }),
+    [form.storeName, form.niche, form.fontId],
+  );
 
   const logos = useMemo(() => {
     return catalog.logos.filter(
@@ -571,51 +594,113 @@ function StepLogo({
     );
   }, [catalog.logos, form.niche]);
 
+  const selectCatalogLogo = (id: string) => {
+    setForm((prev) => ({
+      ...prev,
+      logoSource: "catalog",
+      logoId: id,
+      generatedLogoVariant: "",
+    }));
+  };
+
+  const selectGeneratedLogo = (variantId: string) => {
+    setForm((prev) => ({
+      ...prev,
+      logoSource: "generated",
+      logoId: "",
+      generatedLogoVariant: variantId,
+    }));
+  };
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       <div>
         <h2 className="text-lg font-semibold text-zinc-100">Escolha sua logo</h2>
         <p className="mt-1 text-sm text-zinc-400">
-          Logos do nicho <strong className="text-zinc-200">{form.niche || "—"}</strong>.
-          Elas serão recoloridas com a paleta escolhida.
+          Use o <strong className="text-zinc-200">nome da sua loja</strong> com ícone do nicho{" "}
+          <strong className="text-zinc-200">{form.niche || "—"}</strong>, ou escolha um modelo do
+          catálogo.
         </p>
       </div>
-      {logos.length === 0 ? (
-        <p className="text-sm text-zinc-400">
-          Nenhuma logo para este nicho. Adicione logos no CRM ou volte e escolha outro nicho.
-        </p>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {logos.map((logo) => {
-            const selected = form.logoId === logo.id;
-            return (
-              <button
-                key={logo.id}
-                type="button"
-                onClick={() => update("logoId", logo.id)}
-                className={`rounded-xl border-2 p-4 transition ${
-                  selected
-                    ? "border-ascend-gold bg-ascend-gold/10 ring-2 ring-ascend-gold/30"
-                    : "border-zinc-800 hover:border-zinc-600"
-                }`}
-              >
-                <ColoredAsset
-                  content={logo.svg_content}
-                  primary={previewPrimary}
-                  secondary={previewSecondary}
-                  previewMaxWidth={480}
-                  alt={logo.name}
-                  className="mx-auto h-20 w-20 [&_img]:h-full [&_img]:w-full [&_svg]:h-full [&_svg]:w-full"
-                />
-                <p className="mt-2 text-center text-xs text-zinc-400">{logo.name}</p>
-                {logo.niche !== form.niche && (
-                  <p className="mt-0.5 text-center text-[10px] text-zinc-500">{logo.niche}</p>
-                )}
-              </button>
-            );
-          })}
+
+      {form.storeName.trim().length >= 2 ? (
+        <div className="space-y-3">
+          <p className="text-sm font-medium text-zinc-200">
+            Logos com &ldquo;{form.storeName.trim()}&rdquo;
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {generatedVariants.map((variant) => {
+              const selected =
+                form.logoSource === "generated" && form.generatedLogoVariant === variant.id;
+              return (
+                <button
+                  key={variant.id}
+                  type="button"
+                  onClick={() => selectGeneratedLogo(variant.id)}
+                  className={`rounded-xl border-2 p-4 transition ${
+                    selected
+                      ? "border-ascend-gold bg-ascend-gold/10 ring-2 ring-ascend-gold/30"
+                      : "border-zinc-800 hover:border-zinc-600"
+                  }`}
+                >
+                  <ColoredAsset
+                    content={variant.svg}
+                    primary={previewPrimary}
+                    secondary={previewSecondary}
+                    alt={variant.label}
+                    className="mx-auto h-20 w-full max-w-[140px] [&_img]:h-full [&_img]:w-full [&_svg]:h-full [&_svg]:w-full"
+                  />
+                  <p className="mt-2 text-center text-xs text-zinc-400">{variant.label}</p>
+                </button>
+              );
+            })}
+          </div>
         </div>
+      ) : (
+        <p className="rounded-lg border border-zinc-800 bg-zinc-900/40 px-4 py-3 text-sm text-zinc-400">
+          Informe o nome da loja (etapa anterior) para ver logos personalizadas com o nome da marca.
+        </p>
       )}
+
+      <div className="space-y-3">
+        <p className="text-sm font-medium text-zinc-200">Modelos do catálogo</p>
+        {logos.length === 0 ? (
+          <p className="text-sm text-zinc-400">
+            Nenhuma logo neste nicho. Use as opções com o nome da loja acima.
+          </p>
+        ) : (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {logos.map((logo) => {
+              const selected = form.logoSource === "catalog" && form.logoId === logo.id;
+              return (
+                <button
+                  key={logo.id}
+                  type="button"
+                  onClick={() => selectCatalogLogo(logo.id)}
+                  className={`rounded-xl border-2 p-4 transition ${
+                    selected
+                      ? "border-ascend-gold bg-ascend-gold/10 ring-2 ring-ascend-gold/30"
+                      : "border-zinc-800 hover:border-zinc-600"
+                  }`}
+                >
+                  <ColoredAsset
+                    content={logo.svg_content}
+                    primary={previewPrimary}
+                    secondary={previewSecondary}
+                    previewMaxWidth={480}
+                    alt={logo.name}
+                    className="mx-auto h-20 w-20 [&_img]:h-full [&_img]:w-full [&_svg]:h-full [&_svg]:w-full"
+                  />
+                  <p className="mt-2 text-center text-xs text-zinc-400">{logo.name}</p>
+                  {logo.niche !== form.niche && (
+                    <p className="mt-0.5 text-center text-[10px] text-zinc-500">{logo.niche}</p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -634,7 +719,10 @@ function StepReview({ form, catalog }: { form: BuilderFormState; catalog: Builde
     form.verifyTab === "email" ? form.courseEmail : `${digitsOnly(form.cpf)} (CPF)`;
   const fontTitle =
     BUILDER_FONT_OPTIONS.find((f) => f.id === form.fontId)?.title ?? "—";
-  const logoName = catalog.logos.find((l) => l.id === form.logoId)?.name ?? "—";
+  const logoName =
+    form.logoSource === "generated"
+      ? `${form.storeName.trim()} (${generatedLogoVariantLabel(form.generatedLogoVariant)})`
+      : (catalog.logos.find((l) => l.id === form.logoId)?.name ?? "—");
   const bannerNames = form.bannerIds
     .map((id) => catalog.banners.find((b) => b.id === id)?.name ?? id)
     .join(", ");
@@ -903,7 +991,14 @@ export function BuilderWizard() {
   );
 
   const selectNiche = useCallback((niche: string) => {
-    setForm((prev) => ({ ...prev, niche, bannerIds: [], logoId: "" }));
+    setForm((prev) => ({
+      ...prev,
+      niche,
+      bannerIds: [],
+      logoId: "",
+      logoSource: "catalog",
+      generatedLogoVariant: "",
+    }));
     setError(null);
   }, []);
 
@@ -966,7 +1061,11 @@ export function BuilderWizard() {
         if (!form.fontId) return "Escolha uma fonte.";
         return null;
       case 9:
-        if (!form.logoId) return "Escolha uma logo.";
+        if (form.logoSource === "generated") {
+          if (!form.generatedLogoVariant) return "Escolha uma logo com o nome da sua loja.";
+        } else if (!form.logoId) {
+          return "Escolha uma logo.";
+        }
         return null;
       default:
         return null;
@@ -983,13 +1082,41 @@ export function BuilderWizard() {
     if (step === 10 && catalog) {
       startTransition(async () => {
         try {
-          const logo = catalog.logos.find((l) => l.id === form.logoId);
           const banners = form.bannerIds
             .map((id) => catalog.banners.find((b) => b.id === id))
             .filter(Boolean);
-          if (!logo || banners.length !== 3) {
-            setError("Logo ou banners inválidos.");
+          if (banners.length !== 3) {
+            setError("Banners inválidos.");
             return;
+          }
+
+          let logoContent: string;
+          let logoId: string;
+          let generatedLogoVariant: string | undefined;
+
+          if (form.logoSource === "generated") {
+            const variants = generateLogoVariants({
+              storeName: form.storeName,
+              niche: form.niche,
+              fontId: form.fontId,
+            });
+            const picked = variants.find((v) => v.id === form.generatedLogoVariant);
+            const fallbackId = fallbackCatalogLogoId(catalog.logos);
+            if (!picked || !fallbackId) {
+              setError("Logo gerada inválida. Escolha outra opção.");
+              return;
+            }
+            logoContent = picked.svg;
+            logoId = fallbackId;
+            generatedLogoVariant = form.generatedLogoVariant;
+          } else {
+            const logo = catalog.logos.find((l) => l.id === form.logoId);
+            if (!logo) {
+              setError("Logo inválida.");
+              return;
+            }
+            logoContent = logo.svg_content;
+            logoId = form.logoId;
           }
 
           const result = await submitBuilder({
@@ -1000,7 +1127,9 @@ export function BuilderWizard() {
             storeName: form.storeName,
             niche: form.niche,
             bannerIds: form.bannerIds,
-            logoId: form.logoId,
+            logoSource: form.logoSource,
+            logoId,
+            generatedLogoVariant,
             primaryColor: form.primaryColor,
             secondaryColor: form.secondaryColor,
             fontId: form.fontId,
@@ -1010,7 +1139,7 @@ export function BuilderWizard() {
             nuvemshopLoginEmail: form.nuvemshopLoginEmail,
             nuvemshopLoginPassword: form.nuvemshopLoginPassword,
             logoSvg: await exportRecoloredAsset(
-              logo.svg_content,
+              logoContent,
               form.primaryColor,
               form.secondaryColor,
             ),
@@ -1132,7 +1261,7 @@ export function BuilderWizard() {
           <StepBanners form={form} catalog={catalog} toggleBanner={toggleBanner} update={update} />
         )}
         {step === 8 && <StepFonts form={form} update={update} />}
-        {step === 9 && <StepLogo form={form} catalog={catalog} update={update} />}
+        {step === 9 && <StepLogo form={form} catalog={catalog} setForm={setForm} />}
         {step === 10 && <StepReview form={form} catalog={catalog} />}
         {step === 11 && <StepDone form={form} submissionId={submissionId} />}
       </div>

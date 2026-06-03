@@ -31,13 +31,15 @@ export type BuilderFormState = {
   storeName: string;
   niche: string;
   bannerIds: string[];
+  logoSource: "catalog" | "generated";
   logoId: string;
+  generatedLogoVariant: string;
   primaryColor: string;
   secondaryColor: string;
   fontId: string;
 };
 
-export const STORAGE_KEY = "ascend-builder-v4";
+export const STORAGE_KEY = "ascend-builder-v5";
 
 /** Host da loja para /admin/apps/{id}/authorize (tela de permissões no admin). */
 export function normalizeStoreAdminHost(input: string): string | null {
@@ -135,7 +137,9 @@ export function emptyForm(): BuilderFormState {
     storeName: "",
     niche: "",
     bannerIds: [],
+    logoSource: "catalog",
     logoId: "",
+    generatedLogoVariant: "",
     primaryColor: "#0a0a0a",
     secondaryColor: "#d4af37",
     fontId: "",

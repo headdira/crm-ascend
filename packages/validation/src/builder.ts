@@ -114,7 +114,9 @@ export const builderSubmitSchema = z.object({
   storeName: z.string().min(2),
   niche: z.string().min(1),
   bannerIds: z.array(z.string().uuid()).length(3),
-  logoId: z.string().uuid(),
+  logoSource: z.enum(["catalog", "generated"]),
+  logoId: z.string().uuid().optional(),
+  generatedLogoVariant: z.string().min(1).max(40).optional(),
   primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/),
   fontId: z.string().min(1),
@@ -127,6 +129,22 @@ export const builderSubmitSchema = z.object({
   /** Raster recolorido vira SVG com JPEG embutido — pode passar de 100 KB. */
   logoSvg: z.string().min(10).max(2_000_000),
   bannerSvgs: z.array(z.string().min(10).max(2_000_000)).length(3),
+}).superRefine((data, ctx) => {
+  if (data.logoSource === "catalog") {
+    if (!data.logoId) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Escolha uma logo do catálogo",
+        path: ["logoId"],
+      });
+    }
+  } else if (!data.generatedLogoVariant) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Escolha uma variação de logo gerada",
+      path: ["generatedLogoVariant"],
+    });
+  }
 });
 
 const BUILDER_SUBMIT_FIELD_LABELS: Record<string, string> = {
@@ -137,7 +155,9 @@ const BUILDER_SUBMIT_FIELD_LABELS: Record<string, string> = {
   storeName: "Nome da loja",
   niche: "Nicho",
   bannerIds: "Banners",
-  logoId: "Logo",
+  logoSource: "Origem da logo",
+  logoId: "Logo (catálogo)",
+  generatedLogoVariant: "Logo gerada",
   primaryColor: "Cor principal",
   secondaryColor: "Cor de apoio",
   fontId: "Fonte",
