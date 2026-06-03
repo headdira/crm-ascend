@@ -93,6 +93,32 @@ export type Database = {
         Update: Partial<Database["public"]["Tables"]["landing_sessions"]["Row"]>;
         Relationships: TableRelationship[];
       };
+      kiwify_webhook_events: {
+        Row: {
+          id: string;
+          idempotency_key: string;
+          event_type: string;
+          kiwify_order_id: string | null;
+          payload: Json;
+          result: Json;
+          error: string | null;
+          processed_at: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          idempotency_key: string;
+          event_type: string;
+          kiwify_order_id?: string | null;
+          payload: Json;
+          result?: Json;
+          error?: string | null;
+          processed_at?: string | null;
+          created_at?: string;
+        };
+        Update: Partial<Database["public"]["Tables"]["kiwify_webhook_events"]["Row"]>;
+        Relationships: TableRelationship[];
+      };
       leads: {
         Row: {
           id: string;
