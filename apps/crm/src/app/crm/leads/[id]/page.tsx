@@ -8,6 +8,11 @@ import { getCurrentStaff } from "@/lib/auth";
 import { getLeadTrackingContext } from "@/lib/actions/leads";
 import { formatDate } from "@/lib/utils";
 import { LeadJourneyEvent } from "@/components/crm/lead-journey-event";
+import {
+  kiwifyCheckoutAbandoned,
+  kiwifyCheckoutPending,
+  kiwifyLeadBadge,
+} from "@/lib/kiwify-lead-status";
 import { ConvertLeadDialog } from "./convert-lead-dialog";
 
 function utmLabel(utm: Record<string, unknown>): string | null {
@@ -30,6 +35,9 @@ export default async function LeadDetailPage({
   const quiz = (lead.quiz_answers ?? {}) as Record<string, unknown>;
   const campaign = utmLabel(utm);
   const abandoned = quiz.checkout_abandoned === true;
+  const kiwifyAbandoned = kiwifyCheckoutAbandoned(quiz);
+  const kiwifyPending = kiwifyCheckoutPending(quiz, lead.reached_kiwify_at);
+  const kiwifyBadge = kiwifyLeadBadge(quiz, lead.reached_kiwify_at);
   const isFrio = lead.status === "frio";
   const isQuente = lead.status === "quente" || !!lead.reached_kiwify_at;
   const initialCta =
@@ -58,8 +66,8 @@ export default async function LeadDetailPage({
               <StatusBadge value={lead.status} />
               {isFrio && <Badge variant="outline">Lead frio</Badge>}
               {isQuente && <Badge>Lead quente</Badge>}
-              {lead.reached_kiwify_at && (
-                <Badge variant="secondary">Foi ao checkout Kiwify</Badge>
+              {kiwifyBadge && (
+                <Badge variant={kiwifyBadge.variant}>{kiwifyBadge.label}</Badge>
               )}
               {abandoned && !lead.reached_kiwify_at && (
                 <Badge variant="destructive">Abandonou formulário</Badge>
@@ -111,6 +119,26 @@ export default async function LeadDetailPage({
                   <p>
                     <span className="text-muted-foreground">Checkout Kiwify:</span>{" "}
                     {formatDate(lead.reached_kiwify_at)}
+                  </p>
+                )}
+                {kiwifyPending && (
+                  <p>
+                    <span className="text-muted-foreground">Status checkout:</span>{" "}
+                    Aguardando pagamento na Kiwify
+                    {typeof quiz.kiwify_checkout_started_at === "string" && (
+                      <> · desde {formatDate(quiz.kiwify_checkout_started_at)}</>
+                    )}
+                  </p>
+                )}
+                {kiwifyAbandoned && (
+                  <p>
+                    <span className="text-muted-foreground">Abandonou checkout Kiwify:</span>{" "}
+                    {typeof quiz.kiwify_abandoned_at === "string"
+                      ? formatDate(quiz.kiwify_abandoned_at)
+                      : "—"}
+                    {typeof quiz.kiwify_product_name === "string" && (
+                      <> · {quiz.kiwify_product_name}</>
+                    )}
                   </p>
                 )}
                 {lead.last_event_at && (

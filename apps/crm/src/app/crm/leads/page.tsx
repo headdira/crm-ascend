@@ -16,6 +16,7 @@ import { StatusBadge } from "@/components/crm/status-badge";
 import { getCurrentStaff } from "@/lib/auth";
 import { listLeads } from "@/lib/actions/leads";
 import { formatDate } from "@/lib/utils";
+import { kiwifyLeadBadge } from "@/lib/kiwify-lead-status";
 import { LeadDiscardButton } from "./lead-discard-button";
 
 export default async function LeadsPage({
@@ -51,6 +52,7 @@ export default async function LeadsPage({
             <TableHeader>
               <TableRow>
                 <TableHead>Nome</TableHead>
+                <TableHead>E-mail</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Temperatura</TableHead>
                 <TableHead>Origem</TableHead>
@@ -60,12 +62,19 @@ export default async function LeadsPage({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {leads.map((lead) => (
+              {leads.map((lead) => {
+                const quiz = (lead.quiz_answers ?? {}) as Record<string, unknown>;
+                const kiwifyBadge = kiwifyLeadBadge(quiz, lead.reached_kiwify_at);
+
+                return (
                 <TableRow key={lead.id}>
                   <TableCell>
                     <CrmTableLink href={`/crm/leads/${lead.id}`} className="font-medium hover:underline">
                       {lead.full_name}
                     </CrmTableLink>
+                  </TableCell>
+                  <TableCell className="text-muted-foreground text-sm">
+                    {lead.email_enc ?? "—"}
                   </TableCell>
                   <TableCell>
                     <StatusBadge value={lead.status} />
@@ -81,8 +90,8 @@ export default async function LeadsPage({
                   </TableCell>
                   <TableCell>{lead.source}</TableCell>
                   <TableCell>
-                    {lead.reached_kiwify_at ? (
-                      <Badge variant="secondary">Checkout</Badge>
+                    {kiwifyBadge ? (
+                      <Badge variant={kiwifyBadge.variant}>{kiwifyBadge.label}</Badge>
                     ) : (
                       <span className="text-muted-foreground text-xs">—</span>
                     )}
@@ -104,7 +113,8 @@ export default async function LeadsPage({
                     </div>
                   </TableCell>
                 </TableRow>
-              ))}
+                );
+              })}
             </TableBody>
           </Table>
         )}

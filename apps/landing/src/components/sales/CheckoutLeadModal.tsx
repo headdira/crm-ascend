@@ -9,6 +9,7 @@ import { getClientCookie } from "@/lib/sales/utm";
 import { getMetaBrowserIds } from "@/lib/sales/meta-attribution";
 import { trackMetaLead } from "@/lib/sales/meta-pixel-client";
 import { ensureLandingSession, trackEvent } from "@/lib/sales/track-client";
+import { buildPersonalizedCheckoutUrl } from "@/lib/sales/checkout-url";
 import { brandCta, brandTypography } from "./brand-preview/tokens";
 import { cn } from "@/lib/utils";
 
@@ -101,8 +102,11 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
   const phoneDigits = normalizePhone(phone);
   const phoneOk = phoneDigits.length >= 10;
 
-  const goToKiwify = () => {
-    window.open(checkoutUrl, "_blank", "noopener,noreferrer");
+  const goToKiwify = (customer?: { email: string; name: string; phone?: string }) => {
+    const url = customer
+      ? buildPersonalizedCheckoutUrl(customer, readUtm())
+      : checkoutUrl;
+    window.open(url, "_blank", "noopener,noreferrer");
     onClose();
   };
 
@@ -213,7 +217,11 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
         cta_label: ctaLabel(trackLabel),
         meta_event_id: leadEventId,
       });
-      goToKiwify();
+      goToKiwify({
+        email: email.trim().toLowerCase(),
+        name: firstNameValue,
+        phone: phoneDigits,
+      });
     } catch {
       setStatus("error");
       setErrorMsg("Não foi possível salvar seus dados. Tente novamente.");

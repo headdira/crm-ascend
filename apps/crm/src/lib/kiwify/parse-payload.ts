@@ -30,6 +30,10 @@ const ORDER_STATUS_TO_EVENT: Record<string, KiwifyWebhookTrigger> = {
   refunded: "compra_reembolsada",
   chargedback: "chargeback",
   waiting_payment: "pix_gerado",
+  abandoned: "carrinho_abandonado",
+  abandoned_cart: "carrinho_abandonado",
+  cart_abandoned: "carrinho_abandonado",
+  carrinho_abandonado: "carrinho_abandonado",
 };
 
 function normalizeTrigger(value: string | null): KiwifyWebhookTrigger | null {
@@ -85,7 +89,17 @@ export function detectWebhookEventType(
   if (fromQuery) return fromQuery;
 
   const candidates = [
-    readString(readNested(payload, "webhook_event_type", "event_type", "event", "trigger")),
+    readString(
+      readNested(
+        payload,
+        "webhook_event_type",
+        "Webhook_event_type",
+        "event_type",
+        "event",
+        "trigger",
+        "type",
+      ),
+    ),
     readString(readNested(payload, "order_status", "status")),
   ];
 
@@ -147,10 +161,12 @@ export function parseKiwifyWebhookPayload(payload: Record<string, unknown>): {
 
 function parseCustomer(payload: Record<string, unknown>) {
   const raw =
-    readRecord(readNested(payload, "Customer", "customer", "buyer", "Client")) ??
+    readRecord(readNested(payload, "Customer", "customer", "buyer", "Client", "lead")) ??
     payload;
 
-  const email = readString(readNested(raw, "email", "Email"));
+  const email =
+    readString(readNested(raw, "email", "Email", "customer_email")) ??
+    readString(readNested(payload, "email", "customer_email"));
   if (!email) return null;
 
   return {

@@ -2,6 +2,7 @@ import type { Json } from "@crm-ascend/db";
 import { createServiceSupabase } from "@crm-ascend/db";
 import { hashEmail, hashPhone } from "@crm-ascend/validation";
 import { getHashSalt } from "@/lib/env";
+import { findLeadByCustomerEmail } from "@/lib/kiwify/lead-match";
 import type { ParsedKiwifyWebhook, KiwifyProcessResult } from "@/lib/kiwify/types";
 
 function todayIsoDate(): string {
@@ -38,20 +39,6 @@ async function resolveProductId(
   return fallback?.id ?? null;
 }
 
-async function findLeadByEmail(
-  supabase: ReturnType<typeof createServiceSupabase>,
-  emailHash: string,
-) {
-  const { data } = await supabase
-    .from("leads")
-    .select("*")
-    .eq("email_hash", emailHash)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return data;
-}
-
 export async function provisionKiwifySale(
   parsed: ParsedKiwifyWebhook,
 ): Promise<KiwifyProcessResult> {
@@ -78,7 +65,7 @@ export async function provisionKiwifySale(
     return { ...(existingEvent.data.result as KiwifyProcessResult), ok: true, skipped: true };
   }
 
-  const lead = await findLeadByEmail(supabase, emailHash);
+  const lead = await findLeadByCustomerEmail(supabase, emailHash, parsed.customer.email);
 
   let studentId: string | null = null;
   const { data: existingStudent } = await supabase
@@ -259,15 +246,27 @@ export async function enrichLeadFromKiwifyEvent(
   const emailHash = hashEmail(parsed.customer.email, salt);
   const now = new Date().toISOString();
 
+  const isAbandoned = eventLabel === "carrinho_abandonado";
   const quizPatch = {
     kiwify_last_event: eventLabel,
     kiwify_last_event_at: now,
     kiwify_order_id: parsed.orderId,
     kiwify_product_id: parsed.product.id,
     kiwify_product_name: parsed.product.name,
+    ...(isAbandoned
+      ? {
+          kiwify_abandoned_at: now,
+          kiwify_checkout_abandoned: true,
+          kiwify_checkout_pending: false,
+        }
+      : {}),
   };
 
-  const lead = await findLeadByEmail(supabase, emailHash);
+  const lead = await findLeadByCustomerEmail(
+    supabase,
+    emailHash,
+    parsed.customer.email,
+  );
 
   if (lead) {
     const mergedQuiz = {
@@ -275,7 +274,6 @@ export async function enrichLeadFromKiwifyEvent(
         ? (lead.quiz_answers as Record<string, unknown>)
         : {}),
       ...quizPatch,
-      ...(eventLabel === "carrinho_abandonado" ? { kiwify_abandoned_at: now } : {}),
     };
 
     await supabase
@@ -305,10 +303,7 @@ export async function enrichLeadFromKiwifyEvent(
       status: "quente",
       last_event_at: now,
       utm: parsed.tracking as Json,
-      quiz_answers: {
-        ...quizPatch,
-        ...(eventLabel === "carrinho_abandonado" ? { kiwify_abandoned_at: now } : {}),
-      } as Json,
+      quiz_answers: quizPatch as Json,
     })
     .select("id")
     .single();
