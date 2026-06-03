@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getKiwifyWebhookToken } from "@/lib/env";
 import { validateKiwifyWebhookRequest } from "@/lib/kiwify/parse-payload";
 import { processKiwifyWebhook } from "@/lib/kiwify/process-webhook";
 
@@ -34,11 +33,4 @@ export async function POST(request: Request) {
     console.error("[kiwify-webhook]", message, err);
     return NextResponse.json({ error: message }, { status: 422 });
   }
-}
-
-export function buildKiwifyWebhookPublicUrl(baseUrl: string): string {
-  const token = getKiwifyWebhookToken();
-  const url = new URL("/api/webhooks/kiwify", baseUrl.replace(/\/$/, ""));
-  url.searchParams.set("token", token);
-  return url.toString();
 }
