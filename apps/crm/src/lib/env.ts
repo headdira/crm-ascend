@@ -1,5 +1,9 @@
 import { createHash } from "node:crypto";
 
+/** Token já registrado na Kiwify (derivado do client_secret). Fallback se env Vercel incompleto. */
+export const KIWIFY_WEBHOOK_TOKEN_REGISTERED =
+  "911d4f66cba1d63c3706fa973da40aed";
+
 export function getHashSalt(): string {
   const salt = process.env.HASH_SALT;
   if (!salt) throw new Error("HASH_SALT is not configured");
@@ -42,8 +46,14 @@ export function getKiwifyAccessTokenFromEnv(): string | null {
 export function getKiwifyWebhookToken(): string {
   const explicit = process.env.KIWIFY_WEBHOOK_TOKEN?.trim();
   if (explicit) return explicit;
-  return createHash("sha256")
-    .update(`kiwify-webhook:${getKiwifyClientSecret()}`)
-    .digest("hex")
-    .slice(0, 32);
+
+  const secret = process.env.KIWIFY_CLIENT_SECRET?.trim();
+  if (secret) {
+    return createHash("sha256")
+      .update(`kiwify-webhook:${secret}`)
+      .digest("hex")
+      .slice(0, 32);
+  }
+
+  return KIWIFY_WEBHOOK_TOKEN_REGISTERED;
 }

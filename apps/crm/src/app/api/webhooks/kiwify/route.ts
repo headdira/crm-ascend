@@ -21,8 +21,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  if (!validateKiwifyWebhookRequest({ url, rawBody, payload })) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  try {
+    if (!validateKiwifyWebhookRequest({ url, rawBody, payload })) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Webhook auth misconfigured";
+    console.error("[kiwify-webhook] auth:", message);
+    return NextResponse.json({ error: message }, { status: 503 });
   }
 
   try {
