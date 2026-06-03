@@ -5,12 +5,10 @@ import {
   builderSettingsSchema,
   BUILDER_NICHES,
 } from "@crm-ascend/validation";
-import { createServiceSupabase } from "@crm-ascend/db";
 import { revalidatePath } from "next/cache";
 import { ActionError } from "@/lib/errors";
 import { requireStaff } from "@/lib/auth";
-import { isBuilderNiche } from "@/lib/builder-niche";
-import { uploadBuilderImageFile, validateBuilderImageFile, MAX_BUILDER_BULK_BATCH } from "@/lib/builder-upload";
+import { processBuilderAssetUpload } from "@/lib/builder-upload-service";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 export type BulkUploadResult = {
@@ -89,124 +87,23 @@ export async function upsertBuilderAsset(input: unknown) {
   return data;
 }
 
-async function nextSortOrder(
-  assetType: "logo" | "banner",
-  niche: BuilderAsset["niche"],
-  offset: number,
-) {
-  const supabase = await getSupabaseServer();
-  const { data: last } = await supabase
-    .from("builder_assets")
-    .select("sort_order")
-    .eq("asset_type", assetType)
-    .eq("niche", niche)
-    .order("sort_order", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  return (last?.sort_order ?? 0) + 1 + offset;
-}
-
-/** Upload rápido: nicho + arquivo → Storage + registro no catálogo. */
+/** Upload via Server Action — prefira POST /api/crm/builder/upload-asset no cliente. */
 export async function uploadBuilderAsset(formData: FormData) {
   await requireStaff();
-
-  const assetType = formData.get("asset_type");
-  const niche = formData.get("niche");
-  const file = formData.get("file");
-
-  if (assetType !== "logo" && assetType !== "banner") {
-    throw new ActionError("Tipo inválido (logo ou banner)", "VALIDATION");
+  const result = await processBuilderAssetUpload(formData);
+  if (!result.ok) throw new ActionError(result.error, "VALIDATION");
+  const { created, failed } = result.data;
+  if (!created[0]) {
+    throw new ActionError(failed[0]?.error ?? "Falha no upload", "STORAGE");
   }
-  if (typeof niche !== "string" || !isBuilderNiche(niche)) {
-    throw new ActionError("Selecione um nicho válido", "VALIDATION");
-  }
-  if (!(file instanceof File)) {
-    throw new ActionError("Selecione uma imagem (PNG, JPG ou WebP)", "VALIDATION");
-  }
-  const fileErr = validateBuilderImageFile(file);
-  if (fileErr) throw new ActionError(fileErr, "VALIDATION");
-
-  const storage = createServiceSupabase();
-  const db = await getSupabaseServer();
-  const sortOrder = await nextSortOrder(assetType, niche, 0);
-
-  try {
-    const data = await uploadBuilderImageFile({
-      storage,
-      db,
-      assetType,
-      niche,
-      file,
-      sortOrder,
-      uniqueSuffix: String(Date.now()),
-    });
-    revalidatePath("/crm/builder");
-    return data;
-  } catch (e) {
-    throw new ActionError(e instanceof Error ? e.message : "Falha no upload", "STORAGE");
-  }
+  return created[0] as BuilderAsset;
 }
 
-/** Upload em massa: vários arquivos no mesmo nicho (lote de até 8 por request). */
 export async function uploadBuilderAssetsBulk(formData: FormData): Promise<BulkUploadResult> {
   await requireStaff();
-
-  const assetType = formData.get("asset_type");
-  const niche = formData.get("niche");
-  const files = formData.getAll("files").filter((f): f is File => f instanceof File);
-
-  if (assetType !== "logo" && assetType !== "banner") {
-    throw new ActionError("Tipo inválido", "VALIDATION");
-  }
-  if (typeof niche !== "string" || !isBuilderNiche(niche)) {
-    throw new ActionError("Selecione um nicho válido", "VALIDATION");
-  }
-  if (files.length === 0) {
-    throw new ActionError("Nenhum arquivo recebido", "VALIDATION");
-  }
-  if (files.length > MAX_BUILDER_BULK_BATCH) {
-    throw new ActionError(
-      `Máximo ${MAX_BUILDER_BULK_BATCH} arquivo por envio`,
-      "VALIDATION",
-    );
-  }
-
-  const storage = createServiceSupabase();
-  const db = await getSupabaseServer();
-  const baseSort = await nextSortOrder(assetType, niche, 0);
-  const runId = Date.now();
-
-  const created: BuilderAsset[] = [];
-  const failed: BulkUploadResult["failed"] = [];
-
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i]!;
-    const validation = validateBuilderImageFile(file);
-    if (validation) {
-      failed.push({ name: file.name, error: validation });
-      continue;
-    }
-    try {
-      const row = await uploadBuilderImageFile({
-        storage,
-        db,
-        assetType,
-        niche,
-        file,
-        sortOrder: baseSort + i,
-        uniqueSuffix: `${runId}-${i}`,
-      });
-      created.push(row);
-    } catch (e) {
-      failed.push({
-        name: file.name,
-        error: e instanceof Error ? e.message : "Erro no upload",
-      });
-    }
-  }
-
-  if (created.length > 0) revalidatePath("/crm/builder");
-  return { created, failed };
+  const result = await processBuilderAssetUpload(formData);
+  if (!result.ok) throw new ActionError(result.error, "VALIDATION");
+  return result.data as BulkUploadResult;
 }
 
 export async function deleteBuilderAsset(id: string) {

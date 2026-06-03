@@ -21,11 +21,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  uploadBuilderAsset,
-  upsertBuilderAsset,
-  type BuilderAsset,
-} from "@/lib/actions/builder";
+import { upsertBuilderAsset, type BuilderAsset } from "@/lib/actions/builder";
+import { postBuilderAssetUpload } from "@/lib/builder-upload-client";
 import { actionErrorMessage } from "@/lib/errors";
 import { BUILDER_NICHES } from "@crm-ascend/validation";
 
@@ -59,7 +56,8 @@ export function BuilderAssetDialog({
 
     setPending(true);
     try {
-      const row = await uploadBuilderAsset(fd);
+      const { asset: row } = await postBuilderAssetUpload(fd);
+      if (!row) throw new Error("Resposta inválida do servidor");
       toast.success(`${row.name} adicionado`);
       setOpen(false);
       router.refresh();

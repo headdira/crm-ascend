@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { BUILDER_NICHES } from "@crm-ascend/validation";
-import { uploadBuilderAssetsBulk } from "@/lib/actions/builder";
+import { postBuilderAssetUpload } from "@/lib/builder-upload-client";
 import { MAX_BUILDER_BULK_FILES, MAX_BUILDER_BULK_BATCH } from "@/lib/builder-upload";
 import { actionErrorMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
@@ -85,7 +85,7 @@ export function BuilderAssetBulkUpload({
         fd.set("niche", niche);
         for (const file of batch) fd.append("files", file);
 
-        const result = await uploadBuilderAssetsBulk(fd);
+        const result = await postBuilderAssetUpload(fd);
         totalOk += result.created.length;
         allFailed.push(...result.failed);
       }

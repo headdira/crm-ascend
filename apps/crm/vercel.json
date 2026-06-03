@@ -1,5 +1,11 @@
 {
   "$schema": "https://openapi.vercel.com/vercel.json",
+  "functions": {
+    "src/app/api/crm/builder/upload-asset/route.ts": {
+      "maxDuration": 60,
+      "memory": 1024
+    }
+  },
   "framework": "nextjs",
   "installCommand": "cd ../.. && pnpm install",
   "buildCommand": "cd ../.. && pnpm --filter @crm-ascend/crm build"
