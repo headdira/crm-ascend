@@ -1,32 +1,14 @@
-import Link from "next/link";
 import { CrmHeader } from "@/components/crm/crm-header";
 import { getCurrentStaff } from "@/lib/auth";
-import {
-  getBuilderSettings,
-  listBuilderAssets,
-  listBuilderSubmissions,
-} from "@/lib/actions/builder";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { BuilderAssetPreview } from "./builder-asset-preview";
-import { BuilderAssetDialog } from "./builder-asset-dialog";
-import { BuilderSettingsForm } from "./builder-settings-form";
-import { DeleteBuilderAssetButton } from "./delete-builder-asset-button";
+import { getBuilderSettings, listBuilderAssets } from "@/lib/actions/builder";
+import { BuilderAdminTabs } from "./builder-admin-tabs";
 
 export default async function BuilderAdminPage() {
   const staff = await getCurrentStaff();
-  const [logos, banners, settings, submissions] = await Promise.all([
+  const [logos, banners, settings] = await Promise.all([
     listBuilderAssets("logo"),
     listBuilderAssets("banner"),
     getBuilderSettings(),
-    listBuilderSubmissions(),
   ]);
 
   return (
@@ -44,143 +26,7 @@ export default async function BuilderAdminPage() {
           </p>
         </div>
 
-        <Tabs defaultValue="logos">
-          <TabsList>
-            <TabsTrigger value="logos">Logos ({logos.length})</TabsTrigger>
-            <TabsTrigger value="banners">Banners ({banners.length})</TabsTrigger>
-            <TabsTrigger value="settings">Vídeo &amp; links</TabsTrigger>
-            <TabsTrigger value="submissions">Respostas ({submissions.length})</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="logos" className="space-y-4">
-            <div className="flex justify-end">
-              <BuilderAssetDialog assetType="logo" />
-            </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Preview</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Nicho</TableHead>
-                  <TableHead>Ordem</TableHead>
-                  <TableHead>Ativo</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {logos.map((logo) => (
-                  <TableRow key={logo.id}>
-                    <TableCell>
-                      <BuilderAssetPreview content={logo.svg_content} />
-                    </TableCell>
-                    <TableCell>{logo.name}</TableCell>
-                    <TableCell>{logo.niche}</TableCell>
-                    <TableCell>{logo.sort_order}</TableCell>
-                    <TableCell>{logo.is_active ? "Sim" : "Não"}</TableCell>
-                    <TableCell className="flex gap-1">
-                      <BuilderAssetDialog assetType="logo" asset={logo} />
-                      <DeleteBuilderAssetButton id={logo.id} name={logo.name} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TabsContent>
-
-          <TabsContent value="banners" className="space-y-4">
-            <div className="flex justify-end">
-              <BuilderAssetDialog assetType="banner" />
-            </div>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Preview</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>Nicho</TableHead>
-                  <TableHead>Ordem</TableHead>
-                  <TableHead>Ativo</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {banners.map((banner) => (
-                  <TableRow key={banner.id}>
-                    <TableCell>
-                      <BuilderAssetPreview content={banner.svg_content} />
-                    </TableCell>
-                    <TableCell>{banner.name}</TableCell>
-                    <TableCell>{banner.niche}</TableCell>
-                    <TableCell>{banner.sort_order}</TableCell>
-                    <TableCell>{banner.is_active ? "Sim" : "Não"}</TableCell>
-                    <TableCell className="flex gap-1">
-                      <BuilderAssetDialog assetType="banner" asset={banner} />
-                      <DeleteBuilderAssetButton id={banner.id} name={banner.name} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TabsContent>
-
-          <TabsContent value="settings">
-            <BuilderSettingsForm settings={settings} />
-          </TabsContent>
-
-          <TabsContent value="submissions">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Loja</TableHead>
-                  <TableHead>Nicho</TableHead>
-                  <TableHead>E-mail loja</TableHead>
-                  <TableHead>Caso</TableHead>
-                  <TableHead />
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {submissions.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-muted-foreground text-center">
-                      Nenhuma resposta ainda.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  submissions.map((s) => (
-                    <TableRow key={s.id}>
-                      <TableCell className="text-xs">
-                        {new Date(s.created_at).toLocaleString("pt-BR")}
-                      </TableCell>
-                      <TableCell>{s.store_name ?? "—"}</TableCell>
-                      <TableCell>{s.niche ?? "—"}</TableCell>
-                      <TableCell>{s.store_email ?? "—"}</TableCell>
-                      <TableCell>
-                        {"case_id" in s && s.case_id ? (
-                          <Link
-                            href={`/crm/cases/${s.case_id}`}
-                            className="text-primary text-sm hover:underline"
-                          >
-                            Abrir
-                          </Link>
-                        ) : (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <Link
-                          href={`/crm/builder/submissions/${s.id}`}
-                          className="text-primary text-sm hover:underline"
-                        >
-                          Ver detalhes
-                        </Link>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TabsContent>
-        </Tabs>
+        <BuilderAdminTabs logos={logos} banners={banners} settings={settings} />
       </div>
     </>
   );

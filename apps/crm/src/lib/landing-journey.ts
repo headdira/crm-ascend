@@ -100,6 +100,9 @@ export function journeyDetailChips(
   if (payload.has_email === true) chips.push({ label: "Formulário", value: "Preencheu e-mail" });
   if (payload.has_phone === true) chips.push({ label: "Formulário", value: "Preencheu telefone" });
 
+  const metaEventId = str(payload.meta_event_id);
+  if (metaEventId) chips.push({ label: "Meta", value: `event_id ${metaEventId.slice(0, 8)}…` });
+
   const filled = payload.filled_fields;
   if (Array.isArray(filled) && filled.length > 0) {
     chips.push({
