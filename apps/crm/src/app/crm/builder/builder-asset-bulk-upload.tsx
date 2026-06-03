@@ -6,7 +6,7 @@ import { Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import { BUILDER_NICHES } from "@crm-ascend/validation";
 import { uploadBuilderAssetsBulk } from "@/lib/actions/builder";
-import { MAX_BUILDER_BULK_FILES } from "@/lib/builder-upload";
+import { MAX_BUILDER_BULK_FILES, MAX_BUILDER_BULK_BATCH } from "@/lib/builder-upload";
 import { actionErrorMessage } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel } from "@/components/ui/field";
@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-const BATCH_SIZE = 8;
+const BATCH_SIZE = MAX_BUILDER_BULK_BATCH;
 
 function filterImages(files: FileList | readonly File[]): File[] {
   return Array.from(files).filter(

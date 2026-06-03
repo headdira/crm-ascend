@@ -6,6 +6,8 @@ import { sanitizeUploadBasename, nicheStorageSlug } from "@/lib/builder-niche";
 export const BUILDER_ASSET_BUCKET = process.env.BUILDER_THEME_BUCKET?.trim() || "builder-theme";
 export const MAX_BUILDER_UPLOAD_BYTES = 5 * 1024 * 1024;
 export const MAX_BUILDER_BULK_FILES = 40;
+/** Arquivos por request de Server Action (evita 413 na Vercel). */
+export const MAX_BUILDER_BULK_BATCH = 1;
 export const ALLOWED_BUILDER_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 type Niche = (typeof BUILDER_NICHES)[number];

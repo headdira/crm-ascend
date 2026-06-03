@@ -10,7 +10,7 @@ import { revalidatePath } from "next/cache";
 import { ActionError } from "@/lib/errors";
 import { requireStaff } from "@/lib/auth";
 import { isBuilderNiche } from "@/lib/builder-niche";
-import { uploadBuilderImageFile, validateBuilderImageFile } from "@/lib/builder-upload";
+import { uploadBuilderImageFile, validateBuilderImageFile, MAX_BUILDER_BULK_BATCH } from "@/lib/builder-upload";
 import { getSupabaseServer } from "@/lib/supabase/server";
 
 export type BulkUploadResult = {
@@ -164,8 +164,11 @@ export async function uploadBuilderAssetsBulk(formData: FormData): Promise<BulkU
   if (files.length === 0) {
     throw new ActionError("Nenhum arquivo recebido", "VALIDATION");
   }
-  if (files.length > 8) {
-    throw new ActionError("Máximo 8 arquivos por envio (repita para lotes maiores)", "VALIDATION");
+  if (files.length > MAX_BUILDER_BULK_BATCH) {
+    throw new ActionError(
+      `Máximo ${MAX_BUILDER_BULK_BATCH} arquivo por envio`,
+      "VALIDATION",
+    );
   }
 
   const storage = createServiceSupabase();
