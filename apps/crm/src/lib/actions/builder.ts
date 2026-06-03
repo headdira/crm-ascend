@@ -4,11 +4,18 @@ import {
   builderAssetUpsertSchema,
   builderSettingsSchema,
   BUILDER_NICHES,
+  BUILDER_RASTER_PREFIX,
 } from "@crm-ascend/validation";
+import { createServiceSupabase } from "@crm-ascend/db";
 import { revalidatePath } from "next/cache";
 import { ActionError } from "@/lib/errors";
 import { requireStaff } from "@/lib/auth";
+import { isBuilderNiche, nicheStorageSlug, sanitizeUploadBasename } from "@/lib/builder-niche";
 import { getSupabaseServer } from "@/lib/supabase/server";
+
+const BUILDER_ASSET_BUCKET = process.env.BUILDER_THEME_BUCKET?.trim() || "builder-theme";
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
 
 export type BuilderAsset = {
   id: string;
@@ -79,6 +86,89 @@ export async function upsertBuilderAsset(input: unknown) {
   if (error) throw new ActionError(error.message, "DB_ERROR");
   revalidatePath("/crm/builder");
   return data;
+}
+
+/** Upload rápido: nicho + arquivo → Storage + registro no catálogo. */
+export async function uploadBuilderAsset(formData: FormData) {
+  await requireStaff();
+
+  const assetType = formData.get("asset_type");
+  const niche = formData.get("niche");
+  const file = formData.get("file");
+
+  if (assetType !== "logo" && assetType !== "banner") {
+    throw new ActionError("Tipo inválido (logo ou banner)", "VALIDATION");
+  }
+  if (typeof niche !== "string" || !isBuilderNiche(niche)) {
+    throw new ActionError("Selecione um nicho válido", "VALIDATION");
+  }
+  if (!(file instanceof File) || file.size === 0) {
+    throw new ActionError("Selecione uma imagem (PNG, JPG ou WebP)", "VALIDATION");
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new ActionError("Arquivo muito grande (máx. 5 MB)", "VALIDATION");
+  }
+  if (!ALLOWED_MIME.has(file.type)) {
+    throw new ActionError("Formato inválido. Use PNG, JPG ou WebP.", "VALIDATION");
+  }
+
+  const ext =
+    file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+  const baseName = sanitizeUploadBasename(file.name.replace(/\.[^.]+$/i, ""));
+  const slug = nicheStorageSlug(niche);
+  const objectPath = `builder-catalog/${slug}/${assetType}/${Date.now()}-${baseName}.${ext}`;
+
+  const storage = createServiceSupabase();
+  const bytes = Buffer.from(await file.arrayBuffer());
+  const { error: uploadErr } = await storage.storage.from(BUILDER_ASSET_BUCKET).upload(
+    objectPath,
+    bytes,
+    {
+      contentType: file.type,
+      upsert: false,
+      cacheControl: "31536000",
+    },
+  );
+  if (uploadErr) {
+    throw new ActionError(`Falha no upload: ${uploadErr.message}`, "STORAGE");
+  }
+
+  const { data: publicMeta } = storage.storage.from(BUILDER_ASSET_BUCKET).getPublicUrl(objectPath);
+  if (!publicMeta.publicUrl) {
+    throw new ActionError("URL pública indisponível após upload", "STORAGE");
+  }
+
+  const supabase = await getSupabaseServer();
+  const { data: last } = await supabase
+    .from("builder_assets")
+    .select("sort_order")
+    .eq("asset_type", assetType)
+    .eq("niche", niche)
+    .order("sort_order", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const sort_order = (last?.sort_order ?? 0) + 1;
+  const label = assetType === "banner" ? "Banner" : "Logo";
+  const name = `${niche} — ${label} ${baseName}`.slice(0, 120);
+  const svg_content = `${BUILDER_RASTER_PREFIX}${publicMeta.publicUrl}`;
+
+  const { data, error } = await supabase
+    .from("builder_assets")
+    .insert({
+      asset_type: assetType,
+      name,
+      niche,
+      svg_content,
+      sort_order,
+      is_active: true,
+    })
+    .select()
+    .single();
+
+  if (error) throw new ActionError(error.message, "DB_ERROR");
+  revalidatePath("/crm/builder");
+  return data as BuilderAsset;
 }
 
 export async function deleteBuilderAsset(id: string) {

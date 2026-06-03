@@ -1,5 +1,6 @@
-/** Converte `raster:/banners/foo.jpg` ou `/banners/foo.jpg` em URL absoluta. */
+/** Converte `raster:/banners/foo.jpg`, path local ou URL pública (Supabase). */
 export function resolveRasterAssetUrl(src: string): string {
+  if (/^https?:\/\//i.test(src)) return src;
   const path = src.startsWith("/") ? src : `/${src.replace(/^\//, "")}`;
 
   if (typeof window !== "undefined") {
@@ -12,8 +13,9 @@ export function resolveRasterAssetUrl(src: string): string {
   return crm ? `${crm}${path}` : path;
 }
 
-/** URLs para tentar carregar (local public → CRM na Vercel). */
+/** URLs para tentar carregar (Supabase, local public → CRM na Vercel). */
 export function rasterAssetUrlCandidates(src: string): string[] {
+  if (/^https?:\/\//i.test(src)) return [src];
   const path = src.startsWith("/") ? src : `/${src.replace(/^\//, "")}`;
   const urls: string[] = [];
 

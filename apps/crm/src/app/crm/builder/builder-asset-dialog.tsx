@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -21,7 +21,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { upsertBuilderAsset, type BuilderAsset } from "@/lib/actions/builder";
+import {
+  uploadBuilderAsset,
+  upsertBuilderAsset,
+  type BuilderAsset,
+} from "@/lib/actions/builder";
 import { actionErrorMessage } from "@/lib/errors";
 import { BUILDER_NICHES } from "@crm-ascend/validation";
 
@@ -34,10 +38,42 @@ export function BuilderAssetDialog({
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [niche, setNiche] = useState<(typeof BUILDER_NICHES)[number]>(
+    asset?.niche ?? "Genérico",
+  );
+  const fileRef = useRef<HTMLInputElement>(null);
+  const isNew = !asset;
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleCreateUpload(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const file = fileRef.current?.files?.[0];
+    if (!file) {
+      toast.error("Escolha uma imagem");
+      return;
+    }
+    const fd = new FormData();
+    fd.set("asset_type", assetType);
+    fd.set("niche", niche);
+    fd.set("file", file);
+
+    setPending(true);
+    try {
+      const row = await uploadBuilderAsset(fd);
+      toast.success(`${row.name} adicionado`);
+      setOpen(false);
+      router.refresh();
+    } catch (err) {
+      toast.error(actionErrorMessage(err));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  async function handleEditSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    setPending(true);
     try {
       await upsertBuilderAsset({
         id: asset?.id,
@@ -48,13 +84,21 @@ export function BuilderAssetDialog({
         sort_order: fd.get("sort_order"),
         is_active: fd.get("is_active") === "true",
       });
-      toast.success(asset ? "Asset atualizado" : "Asset criado");
+      toast.success("Asset atualizado");
       setOpen(false);
       router.refresh();
     } catch (err) {
       toast.error(actionErrorMessage(err));
+    } finally {
+      setPending(false);
     }
   }
+
+  const title = asset
+    ? `Editar ${assetType === "logo" ? "logo" : "banner"}`
+    : assetType === "logo"
+      ? "Nova logo"
+      : "Novo banner";
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -65,77 +109,110 @@ export function BuilderAssetDialog({
       </DialogTrigger>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>
-          <DialogTitle>
-            {asset ? `Editar ${assetType}` : assetType === "logo" ? "Nova logo" : "Novo banner"}
-          </DialogTitle>
+          <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleSubmit}>
-          <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor="name">Nome</FieldLabel>
-              <Input id="name" name="name" defaultValue={asset?.name} required />
-            </Field>
-            <Field>
-              <FieldLabel>Nicho</FieldLabel>
-              <Select name="niche" defaultValue={asset?.niche ?? "Genérico"}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {BUILDER_NICHES.map((n) => (
-                    <SelectItem key={n} value={n}>
-                      {n}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="svg_content">Conteúdo do asset</FieldLabel>
-              <Textarea
-                id="svg_content"
-                name="svg_content"
-                defaultValue={asset?.svg_content}
-                rows={8}
-                className="font-mono text-xs"
-                placeholder={
-                  assetType === "banner"
-                    ? 'SVG com #PRIMARY/#SECONDARY ou raster:/banners/arquivo.jpg'
-                    : "SVG com #PRIMARY e #SECONDARY"
-                }
-                required
-              />
-              <p className="text-muted-foreground text-xs">
-                Banners em escala de cinza: use{" "}
-                <code className="text-foreground">raster:/banners/nome.jpg</code> e coloque o arquivo
-                em <code className="text-foreground">public/banners/</code> do builder e do CRM.
-              </p>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor="sort_order">Ordem</FieldLabel>
-              <Input
-                id="sort_order"
-                name="sort_order"
-                type="number"
-                defaultValue={asset?.sort_order ?? 0}
-                min={0}
-              />
-            </Field>
-            <Field>
-              <FieldLabel>Ativo</FieldLabel>
-              <Select name="is_active" defaultValue={asset?.is_active !== false ? "true" : "false"}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="true">Sim</SelectItem>
-                  <SelectItem value="false">Não</SelectItem>
-                </SelectContent>
-              </Select>
-            </Field>
-            <Button type="submit">Salvar</Button>
-          </FieldGroup>
-        </form>
+
+        {isNew ? (
+          <form onSubmit={handleCreateUpload}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel>Nicho</FieldLabel>
+                <Select value={niche} onValueChange={(v) => setNiche(v as typeof niche)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Categoria do nicho" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BUILDER_NICHES.map((n) => (
+                      <SelectItem key={n} value={n}>
+                        {n}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="builder-asset-file">Imagem</FieldLabel>
+                <Input
+                  ref={fileRef}
+                  id="builder-asset-file"
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  required
+                />
+                <p className="text-muted-foreground text-xs">
+                  PNG, JPG ou WebP (máx. 5 MB). Banners em escala de cinza recolorizam melhor no
+                  wizard.
+                </p>
+              </Field>
+              <Button type="submit" disabled={pending}>
+                {pending ? "Enviando…" : "Salvar"}
+              </Button>
+            </FieldGroup>
+          </form>
+        ) : (
+          <form onSubmit={handleEditSubmit}>
+            <FieldGroup>
+              <Field>
+                <FieldLabel htmlFor="name">Nome</FieldLabel>
+                <Input id="name" name="name" defaultValue={asset?.name} required />
+              </Field>
+              <Field>
+                <FieldLabel>Nicho</FieldLabel>
+                <Select name="niche" defaultValue={asset?.niche ?? "Genérico"}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {BUILDER_NICHES.map((n) => (
+                      <SelectItem key={n} value={n}>
+                        {n}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="svg_content">Conteúdo do asset</FieldLabel>
+                <Textarea
+                  id="svg_content"
+                  name="svg_content"
+                  defaultValue={asset?.svg_content}
+                  rows={8}
+                  className="font-mono text-xs"
+                  required
+                />
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="sort_order">Ordem</FieldLabel>
+                <Input
+                  id="sort_order"
+                  name="sort_order"
+                  type="number"
+                  defaultValue={asset?.sort_order ?? 0}
+                  min={0}
+                />
+              </Field>
+              <Field>
+                <FieldLabel>Ativo</FieldLabel>
+                <Select
+                  name="is_active"
+                  defaultValue={asset?.is_active !== false ? "true" : "false"}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="true">Sim</SelectItem>
+                    <SelectItem value="false">Não</SelectItem>
+                  </SelectContent>
+                </Select>
+              </Field>
+              <Button type="submit" disabled={pending}>
+                {pending ? "Salvando…" : "Salvar"}
+              </Button>
+            </FieldGroup>
+          </form>
+        )}
       </DialogContent>
     </Dialog>
   );

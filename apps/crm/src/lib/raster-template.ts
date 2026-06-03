@@ -10,6 +10,7 @@ export type RasterRecolorTemplate = {
 const templateCache = new Map<string, Promise<RasterRecolorTemplate>>();
 
 function resolveRasterAssetUrl(src: string): string {
+  if (/^https?:\/\//i.test(src)) return src;
   const path = src.startsWith("/") ? src : `/${src.replace(/^\//, "")}`;
   if (typeof window !== "undefined") {
     return new URL(path, window.location.origin).href;
