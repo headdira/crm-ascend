@@ -8,6 +8,7 @@ import {
   clientContextFromRequest,
   sendMetaLeadEvent,
 } from "@/lib/sales/meta-capi";
+import { buildPersonalizedCheckoutUrl } from "@/lib/sales/checkout-url";
 import {
   ensureColdLeadForSession,
   getSessionIdFromRequest,
@@ -25,6 +26,28 @@ export type CheckoutTracking = {
   cta?: string;
   cta_label?: string;
 };
+
+export function buildCheckoutUrlForLead(input: {
+  full_name: string;
+  email: string;
+  phone: string;
+  utm?: Json;
+}): string {
+  const firstName = input.full_name.trim().split(/\s+/)[0] ?? input.full_name.trim();
+  const attribution =
+    input.utm && typeof input.utm === "object" && !Array.isArray(input.utm)
+      ? (input.utm as Record<string, string>)
+      : null;
+
+  return buildPersonalizedCheckoutUrl(
+    {
+      email: input.email.trim().toLowerCase(),
+      name: firstName,
+      phone: input.phone.replace(/\D/g, ""),
+    },
+    attribution,
+  );
+}
 
 function metaQuizFields(meta: CheckoutMeta | undefined): Record<string, unknown> {
   if (!meta) return {};
@@ -105,7 +128,8 @@ export async function upsertCheckoutLead(
     tracking?: CheckoutTracking;
     meta?: CheckoutMeta;
   },
-) {
+): Promise<{ id: string; checkout_url: string }> {
+  const checkout_url = buildCheckoutUrlForLead(input);
   const sessionId = getSessionIdFromRequest(request);
   const now = new Date().toISOString();
   const metaFields = metaQuizFields(input.meta);
@@ -152,7 +176,7 @@ export async function upsertCheckoutLead(
       sessionId,
     });
 
-    return id;
+    return { id, checkout_url };
   }
 
   const supabase = createServiceSupabase();
@@ -200,7 +224,7 @@ export async function upsertCheckoutLead(
       leadId: data.id,
       sessionId: null,
     });
-    return data.id;
+    return { id: data.id, checkout_url };
   }
 
   const { data, error } = await supabase
@@ -220,7 +244,7 @@ export async function upsertCheckoutLead(
     sessionId: null,
   });
 
-  return data.id;
+  return { id: data.id, checkout_url };
 }
 
 export async function upsertCheckoutAbandon(

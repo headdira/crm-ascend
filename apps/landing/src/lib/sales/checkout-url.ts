@@ -11,7 +11,7 @@ export function buildPersonalizedCheckoutUrl(
   customer: CheckoutCustomerPrefill,
   attribution?: Attribution | null,
 ): string {
-  const base = appendAttributionToUrl(CHECKOUT_URL, attribution ?? readAttributionFromDocument());
+  const base = appendAttributionToUrl(CHECKOUT_URL, attribution ?? null);
   const url = new URL(base);
   url.searchParams.set("email", customer.email.trim().toLowerCase());
   url.searchParams.set("name", customer.name.trim());

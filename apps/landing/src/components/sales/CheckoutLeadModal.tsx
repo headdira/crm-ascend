@@ -10,6 +10,7 @@ import { getMetaBrowserIds } from "@/lib/sales/meta-attribution";
 import { trackMetaLead } from "@/lib/sales/meta-pixel-client";
 import { ensureLandingSession, trackEvent } from "@/lib/sales/track-client";
 import { buildPersonalizedCheckoutUrl } from "@/lib/sales/checkout-url";
+import { openCheckoutInNewTab } from "@/lib/sales/open-checkout";
 import { brandCta, brandTypography } from "./brand-preview/tokens";
 import { cn } from "@/lib/utils";
 
@@ -50,7 +51,7 @@ const stepCopy: Record<Step, { title: string; hint: string }> = {
   },
 };
 
-export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLabel }: Props) {
+export default function CheckoutLeadModal({ open, onClose, checkoutUrl: _checkoutUrl, trackLabel }: Props) {
   const [step, setStep] = useState<Step>("name");
   const [firstName, setFirstName] = useState("");
   const [email, setEmail] = useState("");
@@ -87,6 +88,7 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
   useEffect(() => {
     if (!open || openedRef.current) return;
     openedRef.current = true;
+    void ensureLandingSession();
     trackEvent("checkout_modal_open", {
       cta: trackLabel,
       cta_label: ctaLabel(trackLabel),
@@ -102,13 +104,20 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
   const phoneDigits = normalizePhone(phone);
   const phoneOk = phoneDigits.length >= 10;
 
-  const goToKiwify = (customer?: { email: string; name: string; phone?: string }) => {
-    const url = customer
-      ? buildPersonalizedCheckoutUrl(customer, readUtm())
-      : checkoutUrl;
-    window.open(url, "_blank", "noopener,noreferrer");
+  const goToKiwify = (url: string) => {
+    openCheckoutInNewTab(url);
     onClose();
   };
+
+  const buildCheckoutUrl = () =>
+    buildPersonalizedCheckoutUrl(
+      {
+        email: email.trim().toLowerCase(),
+        name: firstNameValue,
+        phone: phoneDigits,
+      },
+      readUtm(),
+    );
 
   const reportAbandon = () => {
     if (completedRef.current) return;
@@ -179,6 +188,10 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
     setStatus("loading");
     setErrorMsg(null);
 
+    const personalizedUrl = buildCheckoutUrl();
+    completedRef.current = true;
+    goToKiwify(personalizedUrl);
+
     try {
       await ensureLandingSession();
       const leadEventId = crypto.randomUUID();
@@ -195,6 +208,7 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
         method: "POST",
         headers,
         credentials: "same-origin",
+        keepalive: true,
         body: JSON.stringify({
           type: "complete",
           full_name: firstNameValue,
@@ -209,24 +223,21 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl, trackLab
           },
         }),
       });
-      if (!res.ok) throw new Error("lead_failed");
-      completedRef.current = true;
+
       trackMetaLead(leadEventId, trackLabel);
       trackEvent("checkout_completed", {
         cta: trackLabel,
         cta_label: ctaLabel(trackLabel),
         meta_event_id: leadEventId,
       });
-      goToKiwify({
-        email: email.trim().toLowerCase(),
-        name: firstNameValue,
-        phone: phoneDigits,
-      });
-    } catch {
-      setStatus("error");
-      setErrorMsg("Não foi possível salvar seus dados. Tente novamente.");
+
+      if (!res.ok) {
+        console.error("[checkout] lead save failed", await res.text().catch(() => ""));
+      }
+    } catch (err) {
+      console.error("[checkout] lead save error", err);
     } finally {
-      setStatus((s) => (s === "loading" ? "idle" : s));
+      setStatus("idle");
     }
   };
 

@@ -54,7 +54,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   try {
     if (parsed.data.type === "complete") {
-      const id = await upsertCheckoutLead(request, {
+      const result = await upsertCheckoutLead(request, {
         full_name: parsed.data.full_name,
         email: parsed.data.email,
         phone: parsed.data.phone,
@@ -65,7 +65,7 @@ export const POST: APIRoute = async ({ request }) => {
         },
         meta: parsed.data.meta,
       });
-      return new Response(JSON.stringify({ ok: true, id }), {
+      return new Response(JSON.stringify({ ok: true, id: result.id, checkout_url: result.checkout_url }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });
