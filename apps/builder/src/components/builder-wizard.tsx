@@ -9,6 +9,8 @@ import {
 import { AscendLogoMark } from "@/components/colored-svg";
 import { ColoredAsset } from "@/components/colored-asset";
 import { exportRecoloredAsset } from "@/lib/recolor-raster";
+import { BUILDER_RASTER_PREVIEW_MAX_WIDTH } from "@/lib/raster-template";
+import { useDebouncedValue } from "@/lib/use-debounced-value";
 import {
   fetchCatalog,
   fetchOAuthSession,
@@ -402,6 +404,9 @@ function StepBanners({
   toggleBanner: (id: string) => void;
   update: (key: keyof BuilderFormState, value: BuilderFormState[keyof BuilderFormState]) => void;
 }) {
+  const previewPrimary = useDebouncedValue(form.primaryColor, 80);
+  const previewSecondary = useDebouncedValue(form.secondaryColor, 80);
+
   const banners = useMemo(() => {
     return catalog.banners.filter(
       (b) => b.niche === form.niche || b.niche === "Genérico",
@@ -466,8 +471,9 @@ function StepBanners({
               >
                 <ColoredAsset
                   content={banner.svg_content}
-                  primary={form.primaryColor}
-                  secondary={form.secondaryColor}
+                  primary={previewPrimary}
+                  secondary={previewSecondary}
+                  previewMaxWidth={BUILDER_RASTER_PREVIEW_MAX_WIDTH}
                   alt={banner.name}
                   className="aspect-[16/10] w-full object-cover [&_img]:h-full [&_img]:w-full [&_svg]:h-full [&_svg]:w-full"
                 />
@@ -556,6 +562,9 @@ function StepLogo({
   catalog: BuilderCatalog;
   update: (key: keyof BuilderFormState, value: BuilderFormState[keyof BuilderFormState]) => void;
 }) {
+  const previewPrimary = useDebouncedValue(form.primaryColor, 80);
+  const previewSecondary = useDebouncedValue(form.secondaryColor, 80);
+
   const logos = useMemo(() => {
     return catalog.logos.filter(
       (l) => l.niche === form.niche || l.niche === "Genérico",
@@ -592,8 +601,9 @@ function StepLogo({
               >
                 <ColoredAsset
                   content={logo.svg_content}
-                  primary={form.primaryColor}
-                  secondary={form.secondaryColor}
+                  primary={previewPrimary}
+                  secondary={previewSecondary}
+                  previewMaxWidth={480}
                   alt={logo.name}
                   className="mx-auto h-20 w-20 [&_img]:h-full [&_img]:w-full [&_svg]:h-full [&_svg]:w-full"
                 />
