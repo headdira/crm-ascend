@@ -764,8 +764,8 @@ function StepDone({ form }: { form: BuilderFormState }) {
           Tudo certo, {form.storeName.trim() || "Aluno"}!
         </h2>
         <p className="mt-4 text-base leading-relaxed text-zinc-200">
-          Recebemos suas escolhas. Sua loja ficará pronta em até{" "}
-          <strong className="text-ascend-gold">72 horas</strong>.
+          Recebemos sua solicitação, sua loja ficará pronta em até 72 horas e entraremos em contato
+          com você.
         </p>
       </div>
     </div>
