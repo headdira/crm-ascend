@@ -288,8 +288,8 @@ function StepPlan({
       <div>
         <h2 className="text-lg font-semibold text-zinc-100">Plano</h2>
         <p className="mt-1 text-sm text-zinc-400">
-          Assista ao vídeo para entender como assinar o plano. Depois siga em frente ou use o link
-          de afiliado.
+          Assista ao vídeo para entender como assinar o plano. Se ainda não criou a loja, use o link
+          de cadastro na Nuvemshop.
         </p>
       </div>
       <div className="aspect-video overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900">
@@ -323,22 +323,13 @@ function StepPlan({
           />
           <span>Revisei o vídeo / já sei como assinar e quero seguir em frente.</span>
         </label>
-        <label className="flex cursor-pointer items-start gap-3 text-sm text-zinc-300">
-          <input
-            type="checkbox"
-            checked={form.planWillSubscribe}
-            onChange={(e) => update("planWillSubscribe", e.target.checked)}
-            className="mt-1 size-4 rounded border-zinc-600 text-ascend-gold focus:ring-ascend-gold"
-          />
-          <span>Ainda não assinei — vou usar o link abaixo.</span>
-        </label>
         <Link
           href={affiliate}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center justify-center rounded-lg border border-ascend-gold/50 bg-ascend-gold/10 px-4 py-3 text-sm font-semibold text-ascend-gold transition hover:bg-ascend-gold/20"
         >
-          Abrir link de afiliado do plano
+          Link de cadastro Nuvemshop
         </Link>
       </div>
     </div>
@@ -746,7 +737,7 @@ function StepReview({ form, catalog }: { form: BuilderFormState; catalog: Builde
         />
         <ReviewRow
           label="Plano"
-          value={form.planWillSubscribe ? "Vou assinar pelo link" : "Seguir em frente"}
+          value={form.planWatchedInfo ? "Vídeo revisado" : "—"}
         />
         <ReviewRow label="Nome da loja" value={form.storeName || "—"} />
         <ReviewRow label="Nicho" value={form.niche || "—"} />
@@ -1067,7 +1058,7 @@ export function BuilderWizard() {
               secondaryColor: form.secondaryColor,
               fontId: form.fontId,
               planWatchedInfo: form.planWatchedInfo,
-              planWillSubscribe: form.planWillSubscribe,
+              planWillSubscribe: true,
               oauthSessionId: form.oauthSessionId,
               nuvemshopLoginEmail: form.nuvemshopLoginEmail,
               nuvemshopLoginPassword: form.nuvemshopLoginPassword,
