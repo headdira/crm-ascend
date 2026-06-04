@@ -18,10 +18,10 @@ import { AscendLogoMark } from "@/components/colored-svg";
 import { ColoredAsset } from "@/components/colored-asset";
 import { exportRecoloredAsset } from "@/lib/recolor-raster";
 import {
-  fallbackCatalogLogoId,
   generateLogoVariants,
   generatedLogoVariantLabel,
 } from "@/lib/generate-logo-variants";
+import { exportGeneratedLogoRaster } from "@/lib/rasterize-generated-logo";
 import { BUILDER_RASTER_PREVIEW_MAX_WIDTH } from "@/lib/raster-template";
 import { useDebouncedValue } from "@/lib/use-debounced-value";
 import {
@@ -617,9 +617,8 @@ function StepLogo({
       <div>
         <h2 className="text-lg font-semibold text-zinc-100">Escolha sua logo</h2>
         <p className="mt-1 text-sm text-zinc-400">
-          Use o <strong className="text-zinc-200">nome da sua loja</strong> com ícone do nicho{" "}
-          <strong className="text-zinc-200">{form.niche || "—"}</strong>, ou escolha um modelo do
-          catálogo.
+          Logos tipográficas com o <strong className="text-zinc-200">nome da sua loja</strong> na
+          fonte escolhida, ou um modelo pronto do catálogo.
         </p>
       </div>
 
@@ -1090,33 +1089,42 @@ export function BuilderWizard() {
             return;
           }
 
-          let logoContent: string;
-          let logoId: string;
+          let logoSvgPayload: string;
+          let logoId: string | undefined;
           let generatedLogoVariant: string | undefined;
 
           if (form.logoSource === "generated") {
-            const variants = generateLogoVariants({
-              storeName: form.storeName,
-              niche: form.niche,
-              fontId: form.fontId,
-            });
-            const picked = variants.find((v) => v.id === form.generatedLogoVariant);
-            const fallbackId = fallbackCatalogLogoId(catalog.logos);
-            if (!picked || !fallbackId) {
-              setError("Logo gerada inválida. Escolha outra opção.");
+            if (!form.generatedLogoVariant) {
+              setError("Escolha uma logo com o nome da sua loja.");
               return;
             }
-            logoContent = picked.svg;
-            logoId = fallbackId;
             generatedLogoVariant = form.generatedLogoVariant;
+            try {
+              logoSvgPayload = await exportGeneratedLogoRaster({
+                variantId: form.generatedLogoVariant,
+                storeName: form.storeName,
+                fontId: form.fontId,
+                primary: form.primaryColor,
+                secondary: form.secondaryColor,
+              });
+            } catch {
+              setError(
+                "Não foi possível gerar a logo em PNG. Escolha outra opção ou recarregue a página.",
+              );
+              return;
+            }
           } else {
             const logo = catalog.logos.find((l) => l.id === form.logoId);
             if (!logo) {
               setError("Logo inválida.");
               return;
             }
-            logoContent = logo.svg_content;
             logoId = form.logoId;
+            logoSvgPayload = await exportRecoloredAsset(
+              logo.svg_content,
+              form.primaryColor,
+              form.secondaryColor,
+            );
           }
 
           const result = await submitBuilder({
@@ -1138,11 +1146,7 @@ export function BuilderWizard() {
             oauthSessionId: form.oauthSessionId,
             nuvemshopLoginEmail: form.nuvemshopLoginEmail,
             nuvemshopLoginPassword: form.nuvemshopLoginPassword,
-            logoSvg: await exportRecoloredAsset(
-              logoContent,
-              form.primaryColor,
-              form.secondaryColor,
-            ),
+            logoSvg: logoSvgPayload,
             bannerSvgs: await Promise.all(
               banners.map((b) =>
                 exportRecoloredAsset(b!.svg_content, form.primaryColor, form.secondaryColor),
