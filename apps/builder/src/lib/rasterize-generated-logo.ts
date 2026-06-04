@@ -5,15 +5,24 @@ import {
   truncateStoreName,
 } from "./generate-logo-variants";
 
-const EXPORT_SCALE = 2;
+const EXPORT_SCALE = 3;
 
 type DrawParams = {
   displayName: string;
   initials: string;
   fontFamily: string;
+  fontWeight: number;
   primary: string;
   secondary: string;
 };
+
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 
 function roundRect(
   ctx: CanvasRenderingContext2D,
@@ -33,119 +42,152 @@ function roundRect(
   ctx.closePath();
 }
 
+function applyTextStyle(
+  ctx: CanvasRenderingContext2D,
+  family: string,
+  size: number,
+  weight: number,
+  letterSpacingPx: number,
+) {
+  ctx.font = `${weight} ${size}px ${family}`;
+  ctx.letterSpacing = `${letterSpacingPx}px`;
+}
+
 function fitTextSize(
   ctx: CanvasRenderingContext2D,
   text: string,
   family: string,
+  weight: number,
+  letterSpacingPx: number,
   maxWidth: number,
   startSize: number,
   minSize: number,
 ): number {
   let size = startSize;
   while (size > minSize) {
-    ctx.font = `700 ${size}px ${family}`;
+    applyTextStyle(ctx, family, size, weight, letterSpacingPx);
     if (ctx.measureText(text).width <= maxWidth) return size;
     size -= 1;
   }
-  ctx.font = `700 ${minSize}px ${family}`;
+  applyTextStyle(ctx, family, minSize, weight, letterSpacingPx);
   return minSize;
 }
 
-function setFont(ctx: CanvasRenderingContext2D, family: string, size: number, weight = "700") {
-  ctx.font = `${weight} ${size}px ${family}`;
-}
-
 function drawWordmark(ctx: CanvasRenderingContext2D, w: number, h: number, p: DrawParams) {
-  const pad = w * 0.08;
-  const maxTextW = w - pad * 2;
-  const startWord = titleFontSize(p.displayName) * 3.2;
-  const size = fitTextSize(ctx, p.displayName, p.fontFamily, maxTextW, startWord, 18);
-  setFont(ctx, p.fontFamily, size);
+  const maxTextW = w * 0.86;
+  const tracking = Math.max(1, w * 0.004);
+  const start = titleFontSize(p.displayName) * 3.6;
+  const size = fitTextSize(
+    ctx,
+    p.displayName,
+    p.fontFamily,
+    p.fontWeight,
+    tracking,
+    maxTextW,
+    start,
+    20,
+  );
+  applyTextStyle(ctx, p.fontFamily, size, p.fontWeight, tracking);
   ctx.fillStyle = p.primary;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(p.displayName, w / 2, h * 0.46);
+  ctx.fillText(p.displayName, w / 2, h * 0.52);
   const textW = Math.min(ctx.measureText(p.displayName).width, maxTextW);
-  roundRect(ctx, w / 2 - textW / 2, h * 0.62, textW, h * 0.06, h * 0.03);
+  const lineW = textW * 0.55;
+  roundRect(ctx, w / 2 - lineW / 2, h * 0.72, lineW, h * 0.045, h * 0.022);
   ctx.fillStyle = p.secondary;
   ctx.fill();
+}
+
+function drawHorizontal(ctx: CanvasRenderingContext2D, w: number, h: number, p: DrawParams) {
+  const padX = w * 0.04;
+  const boxH = h * 0.58;
+  const boxY = (h - boxH) / 2;
+  roundRect(ctx, padX, boxY, w - padX * 2, boxH, boxH / 2);
+  ctx.fillStyle = hexToRgba(p.secondary, 0.16);
+  ctx.fill();
+  ctx.strokeStyle = hexToRgba(p.secondary, 0.85);
+  ctx.lineWidth = Math.max(2, w * 0.004);
+  ctx.stroke();
+
+  const maxTextW = (w - padX * 2) * 0.88;
+  const tracking = Math.max(0.5, w * 0.003);
+  const start = titleFontSize(p.displayName) * 3.2;
+  const size = fitTextSize(
+    ctx,
+    p.displayName,
+    p.fontFamily,
+    p.fontWeight,
+    tracking,
+    maxTextW,
+    start,
+    18,
+  );
+  applyTextStyle(ctx, p.fontFamily, size, p.fontWeight, tracking);
+  ctx.fillStyle = p.primary;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(p.displayName, w / 2, h / 2 + 1);
 }
 
 function drawStacked(ctx: CanvasRenderingContext2D, w: number, h: number, p: DrawParams) {
-  const box = w * 0.28;
-  roundRect(ctx, w / 2 - box / 2, h * 0.12, box, box, box * 0.22);
+  const box = w * 0.22;
+  const boxY = h * 0.08;
+  roundRect(ctx, w / 2 - box / 2, boxY, box, box, box * 0.24);
   ctx.fillStyle = p.secondary;
   ctx.fill();
-  setFont(ctx, p.fontFamily, box * 0.38);
+  applyTextStyle(ctx, p.fontFamily, box * 0.42, p.fontWeight, 0);
   ctx.fillStyle = p.primary;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(p.initials, w / 2, h * 0.12 + box / 2 + 2);
-  const maxTextW = w * 0.88;
-  const startStacked = titleFontSize(p.displayName) * 2.6;
-  const size = fitTextSize(ctx, p.displayName, p.fontFamily, maxTextW, startStacked, 16);
-  setFont(ctx, p.fontFamily, size);
+  ctx.fillText(p.initials, w / 2, boxY + box / 2 + 2);
+
+  const maxTextW = w * 0.9;
+  const tracking = Math.max(0.5, w * 0.003);
+  const start = titleFontSize(p.displayName) * 2.8;
+  const size = fitTextSize(
+    ctx,
+    p.displayName,
+    p.fontFamily,
+    p.fontWeight,
+    tracking,
+    maxTextW,
+    start,
+    16,
+  );
+  applyTextStyle(ctx, p.fontFamily, size, p.fontWeight, tracking);
   ctx.fillStyle = p.primary;
   ctx.fillText(p.displayName, w / 2, h * 0.78);
 }
 
-function drawHorizontal(ctx: CanvasRenderingContext2D, w: number, h: number, p: DrawParams) {
-  roundRect(ctx, w * 0.06, h * 0.18, w * 0.88, h * 0.64, h * 0.2);
-  ctx.fillStyle = p.secondary;
-  ctx.fill();
-  const maxTextW = w * 0.78;
-  const startHoriz = titleFontSize(p.displayName) * 2.8;
-  const size = fitTextSize(ctx, p.displayName, p.fontFamily, maxTextW, startHoriz, 16);
-  setFont(ctx, p.fontFamily, size);
-  ctx.fillStyle = p.primary;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(p.displayName, w / 2, h / 2 + 2);
-}
-
 function drawMonogram(ctx: CanvasRenderingContext2D, w: number, h: number, p: DrawParams) {
-  const r = Math.min(w, h) * 0.42;
+  const cx = w / 2;
+  const cy = h / 2;
+  const r = Math.min(w, h) * 0.44;
   ctx.beginPath();
-  ctx.arc(w / 2, h / 2, r, 0, Math.PI * 2);
-  ctx.fillStyle = p.secondary;
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = p.secondary;
+  ctx.lineWidth = Math.max(4, w * 0.018);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r * 0.82, 0, Math.PI * 2);
+  ctx.fillStyle = hexToRgba(p.secondary, 0.14);
   ctx.fill();
-  ctx.beginPath();
-  ctx.arc(w / 2, h / 2, r * 0.78, 0, Math.PI * 2);
+  applyTextStyle(ctx, p.fontFamily, r * 0.58, p.fontWeight, 0);
   ctx.fillStyle = p.primary;
-  ctx.fill();
-  setFont(ctx, p.fontFamily, r * 0.72);
-  ctx.fillStyle = p.secondary;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(p.initials, w / 2, h / 2 + 3);
-}
-
-function drawBadge(ctx: CanvasRenderingContext2D, w: number, h: number, p: DrawParams) {
-  roundRect(ctx, w * 0.08, h * 0.08, w * 0.84, h * 0.84, w * 0.42);
-  ctx.fillStyle = p.secondary;
-  ctx.fill();
-  roundRect(ctx, w * 0.14, h * 0.14, w * 0.72, h * 0.72, w * 0.36);
-  ctx.fillStyle = p.primary;
-  ctx.fill();
-  const maxTextW = w * 0.62;
-  const startBadge = titleFontSize(p.displayName) * 2.4;
-  const size = fitTextSize(ctx, p.displayName, p.fontFamily, maxTextW, startBadge, 14);
-  setFont(ctx, p.fontFamily, size);
-  ctx.fillStyle = p.secondary;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(p.displayName, w / 2, h / 2 + 2);
+  ctx.fillText(p.initials, cx, cy + 3);
 }
 
 const VARIANT_FRAMES: Record<
   string,
   { width: number; height: number; draw: typeof drawWordmark }
 > = {
-  wordmark: { width: 480, height: 140, draw: drawWordmark },
-  stacked: { width: 320, height: 320, draw: drawStacked },
-  horizontal: { width: 520, height: 120, draw: drawHorizontal },
-  monogram: { width: 320, height: 320, draw: drawMonogram },
-  badge: { width: 320, height: 320, draw: drawBadge },
+  wordmark: { width: 560, height: 120, draw: drawWordmark },
+  horizontal: { width: 560, height: 120, draw: drawHorizontal },
+  stacked: { width: 560, height: 200, draw: drawStacked },
+  monogram: { width: 280, height: 280, draw: drawMonogram },
 };
 
 export function builderFontFamily(fontId: string): string {
@@ -165,18 +207,28 @@ export function builderFontFamily(fontId: string): string {
   }
 }
 
+function fontWeightFor(fontId: string): number {
+  return fontId === "playfair" ? 600 : 700;
+}
+
 async function ensureBuilderFontsLoaded(fontId: string): Promise<void> {
   const family = builderFontFamily(fontId);
-  const probe = `700 32px ${family}`;
-  try {
-    await document.fonts.load(probe);
-  } catch {
-    /* ignore — canvas usa fallback do sistema */
+  const weight = fontWeightFor(fontId);
+  const probes = [
+    `${weight} 24px ${family}`,
+    `${weight} 48px ${family}`,
+    `${weight} 72px ${family}`,
+  ];
+  for (const probe of probes) {
+    try {
+      await document.fonts.load(probe);
+    } catch {
+      /* ignore */
+    }
   }
   await document.fonts.ready;
 }
 
-/** Logo gerada no wizard → PNG embutido em SVG (mesmo pipeline dos banners raster). */
 export async function exportGeneratedLogoRaster(params: {
   variantId: string;
   storeName: string;
@@ -184,18 +236,22 @@ export async function exportGeneratedLogoRaster(params: {
   primary: string;
   secondary: string;
 }): Promise<string> {
-  const frame = VARIANT_FRAMES[params.variantId] ?? VARIANT_FRAMES.wordmark!;
+  const variantId =
+    params.variantId in VARIANT_FRAMES ? params.variantId : "wordmark";
+  const frame = VARIANT_FRAMES[variantId]!;
   const trimmed = params.storeName.trim();
   if (trimmed.length < 2) {
     throw new Error("Nome da loja muito curto para gerar logo.");
   }
 
-  await ensureBuilderFontsLoaded(params.fontId || "dm-sans");
+  const fontId = params.fontId || "dm-sans";
+  await ensureBuilderFontsLoaded(fontId);
 
   const drawParams: DrawParams = {
     displayName: truncateStoreName(trimmed),
     initials: storeInitials(trimmed),
-    fontFamily: builderFontFamily(params.fontId || "dm-sans"),
+    fontFamily: builderFontFamily(fontId),
+    fontWeight: fontWeightFor(fontId),
     primary: params.primary,
     secondary: params.secondary,
   };

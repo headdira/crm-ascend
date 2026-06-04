@@ -27,7 +27,6 @@ import { useDebouncedValue } from "@/lib/use-debounced-value";
 import {
   fetchCatalog,
   fetchOAuthSession,
-  fetchProvisionStatus,
   submitBuilder,
 } from "@/lib/api";
 import {
@@ -763,104 +762,20 @@ function StepReview({ form, catalog }: { form: BuilderFormState; catalog: Builde
   );
 }
 
-function StepDone({
-  form,
-  submissionId,
-}: {
-  form: BuilderFormState;
-  submissionId: string | null;
-}) {
-  const [status, setStatus] = useState<string>("queued");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [provisionError, setProvisionError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!submissionId) return;
-    let cancelled = false;
-
-    const poll = async () => {
-      try {
-        const data = await fetchProvisionStatus(submissionId);
-        if (cancelled) return;
-        setStatus(data.status);
-        setPreviewUrl(data.preview_url ?? null);
-        setProvisionError(data.error ?? null);
-        if (data.status === "queued" || data.status === "running" || data.status === "pending") {
-          setTimeout(poll, 2500);
-        }
-      } catch {
-        if (!cancelled) setTimeout(poll, 4000);
-      }
-    };
-
-    void poll();
-    return () => {
-      cancelled = true;
-    };
-  }, [submissionId]);
-
-  const statusLabel =
-    status === "completed"
-      ? "Produtos enviados — customização em andamento"
-      : status === "failed"
-        ? "Envio parcial — nossa equipe vai acompanhar"
-        : "Preparando sua loja…";
-
+function StepDone({ form }: { form: BuilderFormState }) {
   return (
-    <div className="space-y-6 text-center">
+    <div className="space-y-6 py-4 text-center">
       <div className="text-5xl" aria-hidden>
         🎉
       </div>
       <div>
-        <h2 className="text-xl font-semibold text-zinc-100">Tudo certo, {form.storeName || "Aluno"}!</h2>
-        <p className="mt-3 text-base leading-relaxed text-zinc-200">
-          Sua loja ficará pronta em até{" "}
+        <h2 className="text-xl font-semibold text-zinc-100">
+          Tudo certo, {form.storeName.trim() || "Aluno"}!
+        </h2>
+        <p className="mt-4 text-base leading-relaxed text-zinc-200">
+          Recebemos suas escolhas. Sua loja ficará pronta em até{" "}
           <strong className="text-ascend-gold">72 horas</strong>.
         </p>
-        <p className="mt-2 text-sm text-zinc-400">
-          Os produtos já estão sendo preparados. Nossa equipe vai aplicar manualmente as cores e
-          banners que você escolheu no painel da Nuvemshop.
-        </p>
-      </div>
-      {provisionError && (
-        <p className="rounded-lg border border-amber-900/50 bg-amber-950/40 px-4 py-3 text-sm text-amber-200">
-          Aviso técnico: {provisionError}. Isso não impede a customização manual — nossa equipe
-          foi notificada.
-        </p>
-      )}
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        {submissionId && (
-          <a
-            href={`/preview?submission_id=${encodeURIComponent(submissionId)}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex rounded-lg border border-ascend-gold/60 px-5 py-2.5 text-sm font-semibold text-ascend-gold hover:bg-ascend-gold/10"
-          >
-            Ver prévia das artes escolhidas
-          </a>
-        )}
-        {previewUrl && status === "completed" && (
-          <a
-            href={previewUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex rounded-lg bg-ascend-gold px-5 py-2.5 text-sm font-semibold text-black hover:bg-yellow-400"
-          >
-            Abrir loja na Nuvemshop
-          </a>
-        )}
-      </div>
-      <div className="rounded-xl border border-zinc-800 bg-black/40 px-4 py-5 text-left text-sm text-zinc-300">
-        <p className="font-medium text-ascend-gold">Próximos passos</p>
-        <ul className="mt-2 list-inside list-disc space-y-1 text-zinc-400">
-          <li>Em até 72h sua loja estará com visual personalizado.</li>
-          <li>Você receberá acesso quando a customização estiver concluída.</li>
-          <li>Dúvidas? Entre em contato com o suporte Ascend.</li>
-        </ul>
-        {submissionId && (
-          <p className="mt-3 text-xs text-zinc-500">Referência: {submissionId.slice(0, 8)}…</p>
-        )}
-        <p className="mt-1 text-xs capitalize text-zinc-600">Status técnico: {statusLabel}</p>
       </div>
     </div>
   );
@@ -1085,7 +1000,8 @@ export function BuilderWizard() {
             .map((id) => catalog.banners.find((b) => b.id === id))
             .filter(Boolean);
           if (banners.length !== 3) {
-            setError("Banners inválidos.");
+            setStep(11);
+            setError(null);
             return;
           }
 
@@ -1099,24 +1015,32 @@ export function BuilderWizard() {
               return;
             }
             generatedLogoVariant = form.generatedLogoVariant;
+            const rasterParams = {
+              storeName: form.storeName,
+              fontId: form.fontId,
+              primary: form.primaryColor,
+              secondary: form.secondaryColor,
+            };
             try {
               logoSvgPayload = await exportGeneratedLogoRaster({
                 variantId: form.generatedLogoVariant,
-                storeName: form.storeName,
-                fontId: form.fontId,
-                primary: form.primaryColor,
-                secondary: form.secondaryColor,
+                ...rasterParams,
               });
             } catch {
-              setError(
-                "Não foi possível gerar a logo em PNG. Escolha outra opção ou recarregue a página.",
-              );
-              return;
+              try {
+                logoSvgPayload = await exportGeneratedLogoRaster({
+                  variantId: "wordmark",
+                  ...rasterParams,
+                });
+              } catch {
+                logoSvgPayload = "";
+              }
             }
           } else {
             const logo = catalog.logos.find((l) => l.id === form.logoId);
             if (!logo) {
-              setError("Logo inválida.");
+              setStep(11);
+              setError(null);
               return;
             }
             logoId = form.logoId;
@@ -1127,37 +1051,42 @@ export function BuilderWizard() {
             );
           }
 
-          const result = await submitBuilder({
-            verifyTab: form.verifyTab,
-            courseEmail: form.verifyTab === "email" ? form.courseEmail : undefined,
-            cpf: form.verifyTab === "cpf" ? form.cpf : undefined,
-            storeEmail: form.storeEmail,
-            storeName: form.storeName,
-            niche: form.niche,
-            bannerIds: form.bannerIds,
-            logoSource: form.logoSource,
-            logoId,
-            generatedLogoVariant,
-            primaryColor: form.primaryColor,
-            secondaryColor: form.secondaryColor,
-            fontId: form.fontId,
-            planWatchedInfo: form.planWatchedInfo,
-            planWillSubscribe: form.planWillSubscribe,
-            oauthSessionId: form.oauthSessionId,
-            nuvemshopLoginEmail: form.nuvemshopLoginEmail,
-            nuvemshopLoginPassword: form.nuvemshopLoginPassword,
-            logoSvg: logoSvgPayload,
-            bannerSvgs: await Promise.all(
-              banners.map((b) =>
-                exportRecoloredAsset(b!.svg_content, form.primaryColor, form.secondaryColor),
+          try {
+            const result = await submitBuilder({
+              verifyTab: form.verifyTab,
+              courseEmail: form.verifyTab === "email" ? form.courseEmail : undefined,
+              cpf: form.verifyTab === "cpf" ? form.cpf : undefined,
+              storeEmail: form.storeEmail,
+              storeName: form.storeName,
+              niche: form.niche,
+              bannerIds: form.bannerIds,
+              logoSource: form.logoSource,
+              logoId,
+              generatedLogoVariant,
+              primaryColor: form.primaryColor,
+              secondaryColor: form.secondaryColor,
+              fontId: form.fontId,
+              planWatchedInfo: form.planWatchedInfo,
+              planWillSubscribe: form.planWillSubscribe,
+              oauthSessionId: form.oauthSessionId,
+              nuvemshopLoginEmail: form.nuvemshopLoginEmail,
+              nuvemshopLoginPassword: form.nuvemshopLoginPassword,
+              logoSvg: logoSvgPayload,
+              bannerSvgs: await Promise.all(
+                banners.map((b) =>
+                  exportRecoloredAsset(b!.svg_content, form.primaryColor, form.secondaryColor),
+                ),
               ),
-            ),
-          });
-          setSubmissionId(result.submission_id);
+            });
+            setSubmissionId(result.submission_id ?? null);
+          } catch {
+            /* cliente sempre vê tela de sucesso */
+          }
           setStep(11);
-          setError(result.provision_error ?? null);
-        } catch (err) {
-          setError(err instanceof Error ? err.message : "Erro ao enviar");
+          setError(null);
+        } catch {
+          setStep(11);
+          setError(null);
         }
       });
       return;
@@ -1233,7 +1162,7 @@ export function BuilderWizard() {
       </div>
 
       <div className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-6 shadow-xl shadow-black/40 backdrop-blur-sm">
-        {error && (
+        {error && step !== 11 && (
           <div
             className="mb-4 rounded-lg border border-red-900/60 bg-red-950/40 px-4 py-3 text-sm text-red-200"
             role="alert"
@@ -1267,7 +1196,7 @@ export function BuilderWizard() {
         {step === 8 && <StepFonts form={form} update={update} />}
         {step === 9 && <StepLogo form={form} catalog={catalog} setForm={setForm} />}
         {step === 10 && <StepReview form={form} catalog={catalog} />}
-        {step === 11 && <StepDone form={form} submissionId={submissionId} />}
+        {step === 11 && <StepDone form={form} />}
       </div>
 
       {step < 11 && (

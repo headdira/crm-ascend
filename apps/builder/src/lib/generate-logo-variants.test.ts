@@ -12,13 +12,13 @@ describe("generateLogoVariants", () => {
     );
   });
 
-  it("returns 5 SVG variants with placeholders", () => {
+  it("returns 4 SVG variants with placeholders", () => {
     const variants = generateLogoVariants({
       storeName: "Ascend Imports",
       niche: "Pet",
       fontId: "montserrat",
     });
-    expect(variants).toHaveLength(5);
+    expect(variants).toHaveLength(4);
     const stacked = variants.find((v) => v.id === "stacked");
     expect(stacked?.svg).toContain("Ascend Imports");
     const monogram = variants.find((v) => v.id === "monogram");

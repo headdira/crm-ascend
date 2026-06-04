@@ -7,11 +7,10 @@ export type GeneratedLogoVariant = {
 };
 
 const GENERATED_VARIANT_LABELS: Record<string, string> = {
-  stacked: "Marca e nome",
-  horizontal: "Faixa",
+  wordmark: "Nome limpo",
+  horizontal: "Cápsula",
+  stacked: "Marca + nome",
   monogram: "Monograma",
-  badge: "Selo",
-  wordmark: "Tipográfica",
 };
 
 export function generatedLogoVariantLabel(id: string): string {
@@ -26,7 +25,7 @@ function escapeXml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
-export function truncateStoreName(name: string, max = 28): string {
+export function truncateStoreName(name: string, max = 26): string {
   const t = name.trim();
   if (t.length <= max) return t;
   return `${t.slice(0, max - 1)}…`;
@@ -54,10 +53,10 @@ function fontFamilyFor(fontId: string): string {
 
 export function titleFontSize(name: string): number {
   const len = name.length;
-  if (len <= 10) return 22;
-  if (len <= 16) return 18;
-  if (len <= 22) return 15;
-  return 13;
+  if (len <= 8) return 26;
+  if (len <= 14) return 22;
+  if (len <= 20) return 18;
+  return 15;
 }
 
 function wrapSvg(inner: string, viewBox: string): string {
@@ -72,46 +71,40 @@ function buildVariants(
 ): GeneratedLogoVariant[] {
   const safe = escapeXml(displayName);
   const safeInitials = escapeXml(initials);
+  const fs = fontSize;
 
   const wordmark = wrapSvg(
-    `<text x="240" y="58" text-anchor="middle" fill="#PRIMARY" font-family="${fontFamily}" font-size="${fontSize + 6}" font-weight="700">${safe}</text>
-    <rect x="120" y="78" width="240" height="8" rx="4" fill="#SECONDARY"/>`,
-    "0 0 480 140",
-  );
-
-  const stacked = wrapSvg(
-    `<rect x="116" y="24" width="88" height="88" rx="20" fill="#SECONDARY"/>
-    <text x="160" y="78" text-anchor="middle" fill="#PRIMARY" font-family="${fontFamily}" font-size="32" font-weight="700">${safeInitials}</text>
-    <text x="160" y="248" text-anchor="middle" fill="#PRIMARY" font-family="${fontFamily}" font-size="${fontSize}" font-weight="700">${safe}</text>`,
-    "0 0 320 320",
+    `<text x="280" y="72" text-anchor="middle" fill="#PRIMARY" font-family="${fontFamily}" font-size="${fs + 8}" font-weight="700" letter-spacing="0.04em">${safe}</text>
+    <rect x="180" y="88" width="200" height="5" rx="2.5" fill="#SECONDARY"/>`,
+    "0 0 560 120",
   );
 
   const horizontal = wrapSvg(
-    `<rect x="16" y="20" width="488" height="80" rx="24" fill="#SECONDARY"/>
-    <text x="260" y="68" text-anchor="middle" fill="#PRIMARY" font-family="${fontFamily}" font-size="${fontSize + 4}" font-weight="700">${safe}</text>`,
-    "0 0 520 120",
+    `<rect x="24" y="28" width="512" height="64" rx="32" fill="#SECONDARY" opacity="0.18"/>
+    <rect x="24" y="28" width="512" height="64" rx="32" stroke="#SECONDARY" stroke-width="2" fill="none"/>
+    <text x="280" y="72" text-anchor="middle" fill="#PRIMARY" font-family="${fontFamily}" font-size="${fs + 4}" font-weight="700" letter-spacing="0.03em">${safe}</text>`,
+    "0 0 560 120",
+  );
+
+  const stacked = wrapSvg(
+    `<rect x="232" y="20" width="96" height="96" rx="22" fill="#SECONDARY"/>
+    <text x="280" y="78" text-anchor="middle" fill="#PRIMARY" font-family="${fontFamily}" font-size="36" font-weight="700">${safeInitials}</text>
+    <text x="280" y="168" text-anchor="middle" fill="#PRIMARY" font-family="${fontFamily}" font-size="${fs}" font-weight="700" letter-spacing="0.03em">${safe}</text>`,
+    "0 0 560 200",
   );
 
   const monogram = wrapSvg(
-    `<circle cx="160" cy="160" r="134" fill="#SECONDARY"/>
-    <circle cx="160" cy="160" r="104" fill="#PRIMARY"/>
-    <text x="160" y="172" text-anchor="middle" fill="#SECONDARY" font-family="${fontFamily}" font-size="56" font-weight="700">${safeInitials}</text>`,
-    "0 0 320 320",
-  );
-
-  const badge = wrapSvg(
-    `<rect x="26" y="26" width="268" height="268" rx="134" fill="#SECONDARY"/>
-    <rect x="46" y="46" width="228" height="228" rx="114" fill="#PRIMARY"/>
-    <text x="160" y="168" text-anchor="middle" fill="#SECONDARY" font-family="${fontFamily}" font-size="${fontSize - 1}" font-weight="700">${safe}</text>`,
-    "0 0 320 320",
+    `<circle cx="140" cy="140" r="118" stroke="#SECONDARY" stroke-width="6" fill="none"/>
+    <circle cx="140" cy="140" r="96" fill="#SECONDARY" opacity="0.15"/>
+    <text x="140" y="156" text-anchor="middle" fill="#PRIMARY" font-family="${fontFamily}" font-size="64" font-weight="700">${safeInitials}</text>`,
+    "0 0 280 280",
   );
 
   return [
     { id: "wordmark", label: GENERATED_VARIANT_LABELS.wordmark!, svg: wordmark },
-    { id: "stacked", label: GENERATED_VARIANT_LABELS.stacked!, svg: stacked },
     { id: "horizontal", label: GENERATED_VARIANT_LABELS.horizontal!, svg: horizontal },
+    { id: "stacked", label: GENERATED_VARIANT_LABELS.stacked!, svg: stacked },
     { id: "monogram", label: GENERATED_VARIANT_LABELS.monogram!, svg: monogram },
-    { id: "badge", label: GENERATED_VARIANT_LABELS.badge!, svg: badge },
   ];
 }
 
@@ -138,7 +131,6 @@ export function findGeneratedLogoSvg(
   return variants.find((v) => v.id === variantId)?.svg ?? null;
 }
 
-/** UUID de logo do catálogo (referência legada; envio gerado não exige catálogo). */
 export function fallbackCatalogLogoId(
   logos: { id: string; niche: string }[],
 ): string | null {
