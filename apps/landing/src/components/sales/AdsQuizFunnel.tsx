@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   Check,
@@ -38,21 +38,57 @@ const DEFAULT_CALCULATING = DEFAULT_ADS_QUIZ_CONFIG.calculating!;
 const DEFAULT_RESULT = DEFAULT_ADS_QUIZ_CONFIG.result!;
 
 const funnel = {
-  glow: "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-10%,rgba(255,184,0,0.14),transparent_55%)]",
+  glow: "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-10%,rgba(255,184,0,0.18),transparent_55%)]",
   glowBottom:
-    "pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-[radial-gradient(ellipse_70%_80%_at_50%_100%,rgba(255,184,0,0.06),transparent)]",
+    "pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-[radial-gradient(ellipse_70%_80%_at_50%_100%,rgba(255,184,0,0.08),transparent)]",
   choice:
-    "group w-full text-left rounded-2xl border border-white/[0.05] bg-[#070707] px-5 py-4 transition-all duration-200 hover:border-primary/45 hover:bg-primary/[0.03] hover:shadow-[0_0_32px_rgba(255,184,0,0.1)] active:scale-[0.985]",
+    "group w-full text-left rounded-2xl border border-white/[0.08] bg-[#0a0a0a] px-5 py-5 sm:px-6 sm:py-5 transition-all duration-200 hover:border-primary/55 hover:bg-primary/[0.06] hover:shadow-[0_0_40px_rgba(255,184,0,0.14)] active:scale-[0.985]",
   choiceSelected:
-    "border-primary/55 bg-primary/[0.05] shadow-[0_0_36px_rgba(255,184,0,0.14)]",
+    "border-primary/65 bg-primary/[0.08] shadow-[0_0_44px_rgba(255,184,0,0.18)]",
   input:
-    "w-full rounded-2xl bg-[#050505] border border-white/[0.07] px-5 py-4 text-white text-base font-inter placeholder:text-white/20 focus:border-primary/55 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,184,0,0.12)] transition-all",
-  cta: "inline-flex items-center justify-center gap-2.5 w-full rounded-2xl bg-primary px-6 py-5 min-h-[52px] text-[#0a0a0a] font-black uppercase tracking-wider text-sm sm:text-[15px] hover:brightness-110 shadow-[0_0_48px_rgba(255,184,0,0.28)] transition-all disabled:opacity-35 disabled:shadow-none disabled:cursor-not-allowed",
+    "w-full rounded-2xl bg-black border border-white/[0.1] px-5 py-5 text-white text-lg font-inter placeholder:text-white/25 focus:border-primary/60 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,184,0,0.15)] transition-all",
+  cta: "funnel-display inline-flex items-center justify-center gap-2.5 w-full rounded-2xl bg-primary px-6 py-6 min-h-[58px] text-[#0a0a0a] font-bold uppercase tracking-[0.12em] text-base sm:text-lg hover:brightness-110 shadow-[0_0_56px_rgba(255,184,0,0.32)] transition-all disabled:opacity-35 disabled:shadow-none disabled:cursor-not-allowed",
   ctaShimmer:
-    "funnel-cta-shimmer inline-flex items-center justify-center gap-2.5 w-full rounded-2xl px-6 py-5 min-h-[52px] text-[#0a0a0a] font-black uppercase tracking-wider text-sm sm:text-[15px] hover:brightness-110 shadow-[0_0_48px_rgba(255,184,0,0.28)] transition-all disabled:opacity-35 disabled:shadow-none disabled:cursor-not-allowed",
+    "funnel-cta-shimmer funnel-display inline-flex items-center justify-center gap-2.5 w-full rounded-2xl px-6 py-6 min-h-[58px] text-[#0a0a0a] font-bold uppercase tracking-[0.12em] text-base sm:text-lg hover:brightness-110 shadow-[0_0_56px_rgba(255,184,0,0.32)] transition-all disabled:opacity-35 disabled:shadow-none disabled:cursor-not-allowed",
   offerCard:
-    "rounded-3xl border border-primary/20 bg-[#050505] p-6 sm:p-7 shadow-[0_0_60px_rgba(255,184,0,0.08)]",
+    "rounded-3xl border border-primary/25 bg-black p-6 sm:p-8 shadow-[0_0_72px_rgba(255,184,0,0.1)]",
 } as const;
+
+function FunnelEyebrow({ children }: { children: string }) {
+  return (
+    <p className="funnel-display funnel-eyebrow-strip text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-primary">
+      {children}
+    </p>
+  );
+}
+
+function FunnelTitle({
+  children,
+  as: Tag = "h2",
+  size = "lg",
+  gold = false,
+}: {
+  children: ReactNode;
+  as?: "h1" | "h2";
+  size?: "xl" | "lg";
+  gold?: boolean;
+}) {
+  return (
+    <Tag
+      className={cn(
+        "funnel-display font-bold uppercase leading-[1.02] tracking-tight",
+        size === "xl" ? "text-[2.1rem] sm:text-[2.85rem]" : "text-[1.75rem] sm:text-[2.25rem]",
+        gold ? "funnel-headline-gold" : "text-white",
+      )}
+    >
+      <span className={gold ? undefined : "funnel-title-mark"}>{children}</span>
+    </Tag>
+  );
+}
+
+function FunnelHint({ children }: { children: ReactNode }) {
+  return <p className="funnel-body text-white/55 font-inter mt-3">{children}</p>;
+}
 
 function readUtm() {
   const rawAttribution = getClientCookie(ATTRIBUTION_COOKIE);
@@ -613,14 +649,14 @@ export default function AdsQuizFunnel() {
             : `Pergunta ${stepIndex + 1}`;
 
   return (
-    <div className="relative min-h-screen flex flex-col bg-black">
+    <div className="form-funnel relative min-h-screen flex flex-col bg-black">
       <div className={cn(funnel.glow, phase === "result" && "funnel-pulse-glow")} aria-hidden />
       <div className={funnel.glowBottom} aria-hidden />
 
       <header className="relative z-10 px-5 sm:px-6 pt-5 pb-3">
         <div className="max-w-lg mx-auto flex items-center justify-between gap-4">
           <div>
-            <p className="text-[10px] tracking-[0.35em] uppercase text-primary/90 font-bold">Ascend Club</p>
+            <p className="funnel-display text-xs tracking-[0.35em] uppercase text-primary font-bold">Ascend Club</p>
             {progressDone > 0 && (
               <p className="text-[10px] text-white/30 font-inter mt-0.5">{stepLabel}</p>
             )}
@@ -628,7 +664,7 @@ export default function AdsQuizFunnel() {
           {progressDone > 0 && (
             <div className="text-right">
               <p className="text-[10px] uppercase tracking-wider text-white/30 font-inter">Progresso</p>
-              <p className="text-sm font-black text-primary tabular-nums">{progressPct}%</p>
+              <p className="funnel-display text-lg font-bold text-primary tabular-nums">{progressPct}%</p>
             </div>
           )}
         </div>
@@ -648,26 +684,28 @@ export default function AdsQuizFunnel() {
       <main className="relative z-10 flex-1 max-w-lg mx-auto w-full px-5 sm:px-6 py-8 sm:py-10">
         {phase === "landing" && (
           <StepShell stepKey="landing">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.06] bg-white/[0.02] px-3 py-1.5 text-[10px] uppercase tracking-wider text-white/45 font-inter">
-              <Clock className="w-3 h-3 text-primary" />
+            <div className="inline-flex items-center gap-2 funnel-eyebrow-strip text-xs uppercase tracking-wider text-white/70 font-inter">
+              <Clock className="w-4 h-4 text-primary shrink-0" />
               Menos de 2 minutos · 100% gratuito
             </div>
 
             <AvatarStack />
 
-            <p className="text-xs tracking-[0.28em] uppercase text-primary font-bold">{landing.eyebrow}</p>
-            <h1 className="text-3xl sm:text-[2.35rem] font-black uppercase leading-[1.02] tracking-tight funnel-headline-gold">
+            <FunnelEyebrow>{landing.eyebrow}</FunnelEyebrow>
+            <FunnelTitle as="h1" size="xl" gold>
               {landing.headline}
-            </h1>
-            <p className="text-base text-white/50 font-inter leading-relaxed">{landing.subheadline}</p>
+            </FunnelTitle>
+            <p className="funnel-body text-white/60 font-inter">{landing.subheadline}</p>
 
             {landing.socialProof && (
-              <div className="rounded-2xl border border-primary/15 bg-primary/[0.04] px-4 py-3">
-                <p className="text-sm text-primary font-semibold font-inter">{landing.socialProof}</p>
+              <div className="funnel-marker-solid rounded-xl">
+                <p className="funnel-display text-base sm:text-lg text-primary font-bold uppercase tracking-wide">
+                  {landing.socialProof}
+                </p>
               </div>
             )}
 
-            <ul className="space-y-2 text-sm text-white/40 font-inter">
+            <ul className="space-y-3 funnel-body text-white/50 font-inter">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0" />
                 Entendemos seu problema e adaptamos o plano ao seu momento
@@ -700,14 +738,8 @@ export default function AdsQuizFunnel() {
             {currentStep.type === "choice" && (
               <>
                 <div>
-                  <h2 className="text-2xl sm:text-[1.65rem] font-black text-white uppercase tracking-tight leading-tight">
-                    {currentStep.title}
-                  </h2>
-                  {currentStep.hint && (
-                    <p className="text-sm text-white/45 font-inter leading-relaxed mt-2">
-                      {currentStep.hint}
-                    </p>
-                  )}
+                  <FunnelTitle>{currentStep.title}</FunnelTitle>
+                  {currentStep.hint && <FunnelHint>{currentStep.hint}</FunnelHint>}
                 </div>
                 <div className="space-y-2.5">
                   {currentStep.options.map((opt) => {
@@ -719,9 +751,11 @@ export default function AdsQuizFunnel() {
                         onClick={() => pickOption(currentStep.id, opt.id, opt.insight)}
                         className={cn(funnel.choice, selected && funnel.choiceSelected)}
                       >
-                        <p className="font-bold text-white text-[15px]">{opt.label}</p>
+                        <p className="funnel-display font-bold text-white text-lg sm:text-xl uppercase tracking-wide">
+                          {opt.label}
+                        </p>
                         {opt.subtitle && (
-                          <p className="text-xs text-white/40 mt-1 font-inter group-hover:text-white/55 transition-colors">
+                          <p className="text-sm text-white/45 mt-1.5 font-inter group-hover:text-white/60 transition-colors">
                             {opt.subtitle}
                           </p>
                         )}
@@ -734,9 +768,7 @@ export default function AdsQuizFunnel() {
 
             {currentStep.type === "message" && (
               <>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                  {currentStep.title}
-                </h2>
+                <FunnelTitle>{currentStep.title}</FunnelTitle>
                 {currentStep.imageUrl && currentStep.variant === "authority" && (
                   <img
                     src={currentStep.imageUrl}
@@ -752,7 +784,7 @@ export default function AdsQuizFunnel() {
                       : "border-white/[0.05] bg-[#060606]",
                   )}
                 >
-                  <p className="text-sm text-white/60 font-inter leading-relaxed whitespace-pre-line">
+                  <p className="funnel-body text-white/65 font-inter whitespace-pre-line">
                     {currentStep.body}
                   </p>
                 </div>
@@ -765,9 +797,7 @@ export default function AdsQuizFunnel() {
 
             {currentStep.type === "dynamic" && (
               <>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                  {currentStep.title}
-                </h2>
+                <FunnelTitle>{currentStep.title}</FunnelTitle>
                 {currentStep.imageUrl && (
                   <figure className="rounded-2xl border border-white/[0.08] bg-[#060606] overflow-hidden">
                     <img
@@ -778,8 +808,8 @@ export default function AdsQuizFunnel() {
                     />
                   </figure>
                 )}
-                <div className="rounded-2xl border border-primary/15 bg-primary/[0.03] px-5 py-5">
-                  <p className="text-sm text-white/65 font-inter leading-relaxed whitespace-pre-line">
+                <div className="funnel-marker-solid rounded-2xl">
+                  <p className="funnel-body text-white/75 font-inter whitespace-pre-line">
                     {resolveDynamicBody(currentStep.body, answers, questionSteps)}
                   </p>
                 </div>
@@ -792,12 +822,8 @@ export default function AdsQuizFunnel() {
 
             {currentStep.type === "mechanism" && (
               <>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tight leading-tight">
-                  {currentStep.title}
-                </h2>
-                {currentStep.intro && (
-                  <p className="text-sm text-white/45 font-inter leading-relaxed">{currentStep.intro}</p>
-                )}
+                <FunnelTitle>{currentStep.title}</FunnelTitle>
+                {currentStep.intro && <FunnelHint>{currentStep.intro}</FunnelHint>}
                 <div className="space-y-3">
                   {currentStep.mechanismSteps.map((item, i) => (
                     <div
@@ -809,13 +835,15 @@ export default function AdsQuizFunnel() {
                           {i + 1}
                         </span>
                         <div>
-                          <p className="font-bold text-white text-[15px]">{item.title}</p>
+                          <p className="funnel-display font-bold text-white text-lg uppercase tracking-wide">
+                            {item.title}
+                          </p>
                           {item.subtitle && (
-                            <p className="text-xs text-white/40 mt-1 font-inter">{item.subtitle}</p>
+                            <p className="text-sm text-white/50 mt-1 font-inter">{item.subtitle}</p>
                           )}
                           {item.highlight && (
-                            <p className="text-xs font-bold text-primary mt-2 font-inter uppercase tracking-wide">
-                              {item.highlight}
+                            <p className="funnel-display text-sm font-bold text-primary mt-2 uppercase tracking-wider">
+                              <span className="funnel-marker">{item.highlight}</span>
                             </p>
                           )}
                         </div>
@@ -824,7 +852,7 @@ export default function AdsQuizFunnel() {
                   ))}
                 </div>
                 {currentStep.bullets && currentStep.bullets.length > 0 && (
-                  <ul className="space-y-2 text-sm text-white/45 font-inter">
+                  <ul className="space-y-2.5 funnel-body text-white/50 font-inter">
                     {currentStep.bullets.map((b) => (
                       <li key={b} className="flex items-start gap-2">
                         <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0 mt-0.5" />
@@ -843,14 +871,8 @@ export default function AdsQuizFunnel() {
             {currentStep.type === "multichoice" && (
               <>
                 <div>
-                  <h2 className="text-2xl sm:text-[1.65rem] font-black text-white uppercase tracking-tight leading-tight">
-                    {currentStep.title}
-                  </h2>
-                  {currentStep.hint && (
-                    <p className="text-sm text-white/45 font-inter leading-relaxed mt-2">
-                      {currentStep.hint}
-                    </p>
-                  )}
+                  <FunnelTitle>{currentStep.title}</FunnelTitle>
+                  {currentStep.hint && <FunnelHint>{currentStep.hint}</FunnelHint>}
                 </div>
                 <div className="space-y-2.5">
                   {currentStep.options.map((opt) => {
@@ -873,7 +895,9 @@ export default function AdsQuizFunnel() {
                           >
                             {selected ? <Check className="w-3 h-3" /> : null}
                           </span>
-                          <p className="font-bold text-white text-[15px] text-left">{opt.label}</p>
+                          <p className="funnel-display font-bold text-white text-lg uppercase tracking-wide text-left">
+                            {opt.label}
+                          </p>
                         </div>
                       </button>
                     );
@@ -895,23 +919,17 @@ export default function AdsQuizFunnel() {
 
         {phase === "insight" && activeInsight && (
           <StepShell stepKey={`insight-${insightMeta?.stepId ?? "x"}`}>
-            {activeInsight.eyebrow && (
-              <p className="text-[10px] uppercase tracking-[0.3em] text-primary font-bold">
-                {activeInsight.eyebrow}
-              </p>
-            )}
-            <h2 className="text-2xl sm:text-[1.65rem] font-black text-white uppercase tracking-tight leading-tight">
-              {activeInsight.title}
-            </h2>
+            {activeInsight.eyebrow && <FunnelEyebrow>{activeInsight.eyebrow}</FunnelEyebrow>}
+            <FunnelTitle>{activeInsight.title}</FunnelTitle>
             <div
               className={cn(
-                "rounded-2xl border px-5 py-5",
+                "rounded-2xl border px-5 py-5 sm:px-6 sm:py-6",
                 activeInsight.variant === "objection"
-                  ? "border-primary/15 bg-primary/[0.03]"
-                  : "border-white/[0.06] bg-[#060606]",
+                  ? "funnel-marker-solid border-primary/20"
+                  : "border-white/[0.08] bg-black",
               )}
             >
-              <p className="text-sm text-white/60 font-inter leading-relaxed whitespace-pre-line">
+              <p className="funnel-body text-white/70 font-inter whitespace-pre-line">
                 {activeInsight.body}
               </p>
             </div>
@@ -930,11 +948,11 @@ export default function AdsQuizFunnel() {
                 <Loader2 className="w-8 h-8 animate-spin text-primary" />
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-[0.3em] text-primary/80 font-bold mb-3">
+                <p className="funnel-display funnel-eyebrow-strip inline-block text-sm uppercase tracking-[0.25em] text-primary font-bold mb-4">
                   Processando
                 </p>
-                <p className="text-lg font-bold text-white font-inter min-h-[3rem] transition-opacity duration-300">
-                  {calculatingMessages[calcMsgIndex]}
+                <p className="funnel-display text-xl sm:text-2xl font-bold text-white min-h-[3.5rem] transition-opacity duration-300 uppercase tracking-wide">
+                  <span className="funnel-marker">{calculatingMessages[calcMsgIndex]}</span>
                 </p>
               </div>
               <div className="space-y-2">
@@ -942,8 +960,8 @@ export default function AdsQuizFunnel() {
                   <div
                     key={msg}
                     className={cn(
-                      "flex items-center gap-2 text-sm font-inter transition-all duration-300",
-                      i <= calcMsgIndex ? "text-white/70" : "text-white/15",
+                      "flex items-center gap-2 text-base font-inter transition-all duration-300",
+                      i <= calcMsgIndex ? "text-white/75" : "text-white/15",
                     )}
                   >
                     <span
@@ -968,24 +986,22 @@ export default function AdsQuizFunnel() {
 
         {phase === "result" && offerStep && (
           <StepShell stepKey="result">
-            <p className="text-[10px] uppercase tracking-[0.3em] text-primary font-bold">
-              {resultConfig.eyebrow}
-            </p>
-            <h2 className="text-2xl sm:text-[1.75rem] font-black uppercase leading-tight tracking-tight funnel-headline-gold">
+            <FunnelEyebrow>{resultConfig.eyebrow}</FunnelEyebrow>
+            <FunnelTitle size="lg" gold>
               {resultConfig.headline}
-            </h2>
+            </FunnelTitle>
             {resultConfig.badge && (
-              <div className="inline-flex items-center gap-2 rounded-full border border-primary/35 bg-primary/[0.08] px-4 py-2">
-                <Sparkles className="w-4 h-4 text-primary" />
-                <span className="text-xs font-black uppercase tracking-[0.2em] text-primary">
+              <div className="inline-flex items-center gap-2 funnel-eyebrow-strip px-5 py-2.5">
+                <Sparkles className="w-5 h-5 text-primary" />
+                <span className="funnel-display text-sm font-bold uppercase tracking-[0.18em] text-primary">
                   {resultConfig.badge}
                 </span>
               </div>
             )}
             {resultConfig.highlights && resultConfig.highlights.length > 0 && (
-              <ul className="space-y-2 rounded-2xl border border-white/[0.06] bg-[#060606] px-4 py-4">
+              <ul className="space-y-3 funnel-marker-solid rounded-2xl">
                 {resultConfig.highlights.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-sm text-white/60 font-inter">
+                  <li key={item} className="flex items-start gap-2.5 funnel-body text-white/70 font-inter">
                     <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
                     {item}
                   </li>
@@ -1010,8 +1026,10 @@ export default function AdsQuizFunnel() {
             )}
 
             <div className={funnel.offerCard}>
-              <h3 className="text-lg font-black text-white uppercase tracking-tight">{offerStep.title}</h3>
-              <p className="text-sm text-white/50 font-inter mt-2">{offerStep.body}</p>
+              <h3 className="funnel-display text-xl sm:text-2xl font-bold text-white uppercase tracking-tight">
+                {offerStep.title}
+              </h3>
+              <p className="funnel-body text-white/55 font-inter mt-3">{offerStep.body}</p>
 
               {offerStep.urgencyNote && (
                 <div className="mt-4 rounded-xl border border-red-500/25 bg-red-500/[0.06] px-4 py-2.5">
@@ -1027,7 +1045,7 @@ export default function AdsQuizFunnel() {
                     {offerStep.originalPriceLabel}
                   </p>
                 )}
-                <p className="text-5xl sm:text-6xl font-black text-primary leading-none drop-shadow-[0_0_28px_rgba(255,184,0,0.45)] funnel-price-pop tabular-nums">
+                <p className="funnel-display text-6xl sm:text-7xl font-bold text-primary leading-none drop-shadow-[0_0_32px_rgba(255,184,0,0.5)] funnel-price-pop tabular-nums">
                   {animatedPrice}
                 </p>
               </div>
@@ -1077,17 +1095,15 @@ export default function AdsQuizFunnel() {
         {phase === "contact" && (
           <StepShell stepKey={`contact-${contactStep}`}>
             <div>
-              <p className="text-[10px] uppercase tracking-[0.25em] text-primary/80 font-bold mb-2">
-                Quase lá
-              </p>
-              <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+              <FunnelEyebrow>Quase lá</FunnelEyebrow>
+              <FunnelTitle>
                 {contactStep === "name"
                   ? contact.nameTitle
                   : contactStep === "email"
                     ? contact.emailTitle
                     : contact.phoneTitle}
-              </h2>
-              <p className="text-sm text-white/45 font-inter mt-2">
+              </FunnelTitle>
+              <p className="funnel-body text-white/55 font-inter mt-2">
                 {contactStep === "name"
                   ? contact.nameHint
                   : contactStep === "email"

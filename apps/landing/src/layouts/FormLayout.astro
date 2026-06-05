@@ -41,12 +41,13 @@ const pageTitle = title === "Ascend Club" ? title : `${title} | Ascend Club`;
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Oswald:wght@500;600;700&display=swap"
       rel="stylesheet"
     />
     <style is:global>
       :root {
         --font-inter-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+        --font-funnel-display: "Oswald", "Inter", ui-sans-serif, system-ui, sans-serif;
       }
       html,
       body {
@@ -54,8 +55,11 @@ const pageTitle = title === "Ascend Club" ? title : `${title} | Ascend Club`;
       }
     </style>
   </head>
-  <body class="font-inter antialiased bg-black text-white" style="font-family: var(--font-inter-family)">
-    <div class="relative min-h-screen bg-black overflow-x-hidden">
+  <body
+    class="form-funnel font-inter antialiased bg-black text-white"
+    style="font-family: var(--font-inter-family)"
+  >
+    <div class="form-funnel-shell relative min-h-screen bg-black overflow-x-hidden">
       <SalesJsonLd />
       <slot />
       <CookieConsent client:idle />
