@@ -62,12 +62,12 @@ export type AdsQuizStep = AdsQuizConfig["steps"][number];
 export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
   version: 1,
   landing: {
-    eyebrow: "Ascend Club · diagnóstico rápido",
-    headline: "Veja se o Ascend Club é o próximo passo para construir sua renda online",
+    eyebrow: "Diagnóstico gratuito · Ascend Club",
+    headline: "Descubra se o Ascend Club é o caminho certo pra sua renda online",
     subheadline:
-      "Menos de 2 minutos. Mentoria em grupo, suporte próximo e método validado — mesmo começando do zero.",
-    ctaLabel: "COMEÇAR",
-    socialProof: "Mais de 500 alunos aplicando o método Ascend",
+      "Responda 4 perguntas rápidas e receba uma recomendação personalizada — sem cartão, sem compromisso.",
+    ctaLabel: "QUERO MEU DIAGNÓSTICO",
+    socialProof: "+500 alunos já aplicando o método Ascend",
   },
   steps: [
     {
@@ -105,7 +105,7 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
       title: "Você está no lugar certo",
       body:
         "O Ascend Club foi criado para quem quer direcionamento claro: passo a passo, 2 calls ao vivo por semana, networking e suporte de verdade — sem ficar sozinho no processo.",
-      ctaLabel: "Continuar",
+      ctaLabel: "VER MINHA RECOMENDAÇÃO",
     },
     {
       id: "oferta",
@@ -120,17 +120,17 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
         "Grupo de networking exclusivo",
         "Suporte próximo no WhatsApp",
       ],
-      ctaLabel: "Quero entrar no Ascend Club",
+      ctaLabel: "QUERO GARANTIR MINHA VAGA",
     },
   ],
   contact: {
-    nameTitle: "Como podemos te chamar?",
-    nameHint: "Só seu primeiro nome.",
-    emailTitle: "Seu melhor e-mail",
-    emailHint: "Para liberar seu acesso ao checkout seguro.",
+    nameTitle: "Como posso te chamar?",
+    nameHint: "Só seu primeiro nome — para personalizar seu acesso.",
+    emailTitle: "Qual seu melhor e-mail?",
+    emailHint: "Vou usar para liberar seu checkout seguro na Kiwify.",
     phoneTitle: "Seu WhatsApp",
-    phoneHint: "Usamos só para suporte do programa.",
-    submitLabel: "Ir para pagamento",
+    phoneHint: "Só para suporte do programa. Em seguida você vai para o pagamento.",
+    submitLabel: "LIBERAR MEU ACESSO",
   },
 };
 

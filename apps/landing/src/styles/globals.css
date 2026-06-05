@@ -13,6 +13,21 @@ body {
   color: #fafafa;
 }
 
+@keyframes quiz-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.quiz-step-enter {
+  animation: quiz-step-in 0.32s ease-out both;
+}
+
 .sales-landing {
   --primary: #ffb800;
   --primary-foreground: #0a0a0a;

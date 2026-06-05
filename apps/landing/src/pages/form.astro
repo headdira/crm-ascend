@@ -1,7 +1,7 @@
 ---
 export const prerender = false;
 
-import Layout from "@/layouts/Layout.astro";
+import FormLayout from "@/layouts/FormLayout.astro";
 import AdsQuizFunnel from "@/components/sales/AdsQuizFunnel";
 import AttributionCapture from "@/components/sales/AttributionCapture";
 import { getSiteUrl } from "@/lib/site-url";
@@ -9,11 +9,11 @@ import { getSiteUrl } from "@/lib/site-url";
 const siteUrl = getSiteUrl();
 ---
 
-<Layout
+<FormLayout
   title="Diagnóstico rápido"
   description="Responda em poucos passos e veja se o Ascend Club é para você."
   canonical={`${siteUrl}/form`}
 >
   <AttributionCapture client:load />
   <AdsQuizFunnel client:load />
-</Layout>
+</FormLayout>
