@@ -175,33 +175,143 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
               }}
             />
             {step.type === "choice" && (
-              <Textarea
-                rows={4}
-                className="font-mono text-xs"
-                value={step.options.map((o) => `${o.id}|${o.label}|${o.subtitle ?? ""}`).join("\n")}
-                onChange={(e) => {
-                  const options = e.target.value
-                    .split("\n")
-                    .map((line) => line.trim())
-                    .filter(Boolean)
-                    .map((line) => {
-                      const [id, label, subtitle] = line.split("|");
-                      return {
-                        id: (id ?? "").trim(),
-                        label: (label ?? "").trim(),
-                        subtitle: cleanOptional(subtitle ?? ""),
-                      };
+              <>
+                <Textarea
+                  rows={4}
+                  className="font-mono text-xs"
+                  value={step.options
+                    .map((o) => {
+                      const tags = o.tags?.length ? o.tags.join(",") : "";
+                      return `${o.id}|${o.label}|${o.subtitle ?? ""}|${tags}`;
                     })
-                    .filter((o) => o.id && o.label);
-                  setSchema((s) => ({
-                    ...s,
-                    steps: s.steps.map((st, i) =>
-                      i === idx && st.type === "choice" ? { ...st, options } : st,
-                    ),
-                  }));
-                }}
-                placeholder="id|label|subtítulo opcional"
-              />
+                    .join("\n")}
+                  onChange={(e) => {
+                    const prevOpts = step.type === "choice" ? step.options : [];
+                    const options = e.target.value
+                      .split("\n")
+                      .map((line) => line.trim())
+                      .filter(Boolean)
+                      .map((line) => {
+                        const [id, label, subtitle, tagsRaw] = line.split("|");
+                        const prev = prevOpts.find((o) => o.id === (id ?? "").trim());
+                        const tags = (tagsRaw ?? "")
+                          .split(",")
+                          .map((t) => t.trim())
+                          .filter(Boolean);
+                        return {
+                          id: (id ?? "").trim(),
+                          label: (label ?? "").trim(),
+                          subtitle: cleanOptional(subtitle ?? ""),
+                          tags: tags.length ? tags : undefined,
+                          insight: prev?.insight,
+                        };
+                      })
+                      .filter((o) => o.id && o.label);
+                    setSchema((s) => ({
+                      ...s,
+                      steps: s.steps.map((st, i) =>
+                        i === idx && st.type === "choice" ? { ...st, options } : st,
+                      ),
+                    }));
+                  }}
+                  placeholder="id|label|subtítulo|tags opcionais (vírgula)"
+                />
+                <Field>
+                  <FieldLabel>Insights por opção (opcional)</FieldLabel>
+                  <Textarea
+                    rows={6}
+                    className="font-mono text-xs"
+                    value={step.options
+                      .filter((o) => o.insight)
+                      .map((o) => {
+                        const ins = o.insight!;
+                        const p = ins.proof;
+                        return [
+                          o.id,
+                          ins.eyebrow ?? "",
+                          ins.title,
+                          ins.body,
+                          ins.variant ?? "default",
+                          p?.name ?? "",
+                          p?.role ?? "",
+                          p?.quote ?? "",
+                          p?.imageUrl ?? "",
+                          p?.statLabel ?? "",
+                        ].join("|");
+                      })
+                      .join("\n")}
+                    onChange={(e) => {
+                      const insightById = new Map(
+                        e.target.value
+                          .split("\n")
+                          .map((line) => line.trim())
+                          .filter(Boolean)
+                          .map((line) => {
+                            const [
+                              optionId,
+                              eyebrow,
+                              title,
+                              body,
+                              variant,
+                              name,
+                              role,
+                              quote,
+                              imageUrl,
+                              statLabel,
+                            ] = line.split("|");
+                            if (!optionId?.trim() || !title?.trim() || !body?.trim()) return null;
+                            const proof =
+                              name?.trim() ||
+                              role?.trim() ||
+                              quote?.trim() ||
+                              imageUrl?.trim() ||
+                              statLabel?.trim()
+                                ? {
+                                    name: cleanOptional(name ?? ""),
+                                    role: cleanOptional(role ?? ""),
+                                    quote: cleanOptional(quote ?? ""),
+                                    imageUrl: cleanOptional(imageUrl ?? ""),
+                                    statLabel: cleanOptional(statLabel ?? ""),
+                                  }
+                                : undefined;
+                            return [
+                              optionId.trim(),
+                              {
+                                eyebrow: cleanOptional(eyebrow ?? ""),
+                                title: title.trim(),
+                                body: body.trim(),
+                                variant: cleanOptional(variant ?? "") as
+                                  | "default"
+                                  | "testimonial"
+                                  | "objection"
+                                  | "benefit"
+                                  | "stat"
+                                  | "mentor"
+                                  | undefined,
+                                proof,
+                              },
+                            ] as const;
+                          })
+                          .filter(Boolean) as [string, NonNullable<(typeof step.options)[0]["insight"]>][],
+                      );
+                      setSchema((s) => ({
+                        ...s,
+                        steps: s.steps.map((st, i) => {
+                          if (i !== idx || st.type !== "choice") return st;
+                          return {
+                            ...st,
+                            options: st.options.map((opt) => ({
+                              ...opt,
+                              insight: insightById.get(opt.id),
+                            })),
+                          };
+                        }),
+                      }));
+                    }}
+                    placeholder="optionId|eyebrow|título|corpo|variant|nome|cargo|quote|imageUrl|statLabel"
+                  />
+                </Field>
+              </>
             )}
             {step.type === "message" && (
               <Textarea
@@ -291,7 +401,7 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
       <section className="space-y-4">
         <h2 className="text-sm font-bold uppercase tracking-wider">Tela de cálculo</h2>
         <Field>
-          <FieldLabel>Mensagens (uma por linha, opcional)</FieldLabel>
+          <FieldLabel>Mensagens padrão (uma por linha)</FieldLabel>
           <Textarea
             rows={4}
             className="font-mono text-xs"
@@ -303,10 +413,50 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
                 .filter(Boolean);
               setSchema((s) => ({
                 ...s,
-                calculating: messages.length ? { messages } : undefined,
+                calculating: {
+                  messages,
+                  messagesByTags: s.calculating?.messagesByTags,
+                },
               }));
             }}
             placeholder="Analisando suas respostas…"
+          />
+        </Field>
+        <Field>
+          <FieldLabel>Mensagens por perfil (opcional) — tags|msg1;msg2</FieldLabel>
+          <Textarea
+            rows={4}
+            className="font-mono text-xs"
+            value={(schema.calculating?.messagesByTags ?? [])
+              .map((r) => `${r.whenTags.join(",")}|${r.messages.join(";")}`)
+              .join("\n")}
+            onChange={(e) => {
+              const messagesByTags = e.target.value
+                .split("\n")
+                .map((line) => line.trim())
+                .filter(Boolean)
+                .map((line) => {
+                  const [tagsRaw, msgsRaw] = line.split("|");
+                  const whenTags = (tagsRaw ?? "")
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter(Boolean);
+                  const messages = (msgsRaw ?? "")
+                    .split(";")
+                    .map((m) => m.trim())
+                    .filter(Boolean);
+                  return { whenTags, messages };
+                })
+                .filter((r) => r.whenTags.length && r.messages.length);
+              setSchema((s) => ({
+                ...s,
+                calculating: {
+                  messages: s.calculating?.messages ?? ["Analisando…"],
+                  messagesByTags: messagesByTags.length ? messagesByTags : undefined,
+                },
+              }));
+            }}
+            placeholder="needs_support|Priorizando suporte…;Ajustando plano…"
           />
         </Field>
       </section>
@@ -370,7 +520,45 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-sm font-bold uppercase tracking-wider">Depoimentos (opcional)</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wider">Resultado por perfil (opcional)</h2>
+        <Field>
+          <FieldLabel>tags|headline|reassurance — uma regra por linha</FieldLabel>
+          <Textarea
+            rows={5}
+            className="font-mono text-xs"
+            value={(schema.resultRules ?? [])
+              .map((r) => `${r.whenTags.join(",")}|${r.headline}|${r.reassurance ?? ""}`)
+              .join("\n")}
+            onChange={(e) => {
+              const resultRules = e.target.value
+                .split("\n")
+                .map((line) => line.trim())
+                .filter(Boolean)
+                .map((line) => {
+                  const [tagsRaw, headline, reassurance] = line.split("|");
+                  const whenTags = (tagsRaw ?? "")
+                    .split(",")
+                    .map((t) => t.trim())
+                    .filter(Boolean);
+                  return {
+                    whenTags,
+                    headline: (headline ?? "").trim(),
+                    reassurance: cleanOptional(reassurance ?? ""),
+                  };
+                })
+                .filter((r) => r.whenTags.length && r.headline);
+              setSchema((s) => ({
+                ...s,
+                resultRules: resultRules.length ? resultRules : undefined,
+              }));
+            }}
+            placeholder="stage_zero|Você tem perfil para começar do zero…|Texto de apoio"
+          />
+        </Field>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-sm font-bold uppercase tracking-wider">Depoimentos na oferta (opcional)</h2>
         <Field>
           <FieldLabel>nome|cargo|frase — um por linha</FieldLabel>
           <Textarea

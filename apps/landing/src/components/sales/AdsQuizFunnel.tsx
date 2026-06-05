@@ -8,11 +8,18 @@ import {
   Clock,
   Loader2,
   Lock,
+  Quote,
   ShieldCheck,
   Sparkles,
+  Users,
 } from "lucide-react";
-import type { AdsQuizConfig, AdsQuizStep } from "@crm-ascend/validation/ads-quiz";
-import { DEFAULT_ADS_QUIZ_CONFIG } from "@crm-ascend/validation/ads-quiz";
+import type { AdsQuizConfig, AdsQuizStep, QuizOptionInsight } from "@crm-ascend/validation/ads-quiz";
+import {
+  DEFAULT_ADS_QUIZ_CONFIG,
+  collectProfileTags,
+  resolveCalculatingMessages,
+  resolveResultDisplay,
+} from "@crm-ascend/validation/ads-quiz";
 import { ATTRIBUTION_COOKIE } from "@/lib/sales/consent";
 import { parseAttributionCookie, readAttributionFromDocument, getClientCookie } from "@/lib/sales/utm";
 import { getMetaBrowserIds } from "@/lib/sales/meta-attribution";
@@ -22,7 +29,7 @@ import { buildPersonalizedCheckoutUrl } from "@/lib/sales/checkout-url";
 import { openCheckoutInNewTab } from "@/lib/sales/open-checkout";
 import { cn } from "@/lib/utils";
 
-type Phase = "landing" | "steps" | "calculating" | "result" | "contact";
+type Phase = "landing" | "steps" | "insight" | "calculating" | "result" | "contact";
 type ContactStep = "name" | "email" | "phone";
 
 const DEFAULT_OFFER = DEFAULT_ADS_QUIZ_CONFIG.steps.find((s) => s.type === "offer")!;
@@ -112,6 +119,53 @@ function optionLabelForStep(step: AdsQuizStep, optionId: string): string | null 
   return step.options.find((o) => o.id === optionId)?.label ?? null;
 }
 
+function InsightProof({ insight }: { insight: QuizOptionInsight }) {
+  const proof = insight.proof;
+  if (!proof) return null;
+
+  if (insight.variant === "stat" && proof.statLabel) {
+    return (
+      <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] px-4 py-4 min-h-[4.5rem] flex items-center gap-3">
+        <Users className="w-5 h-5 text-primary shrink-0" />
+        <p className="text-sm font-bold text-primary font-inter">{proof.statLabel}</p>
+      </div>
+    );
+  }
+
+  if (proof.quote) {
+    return (
+      <blockquote className="rounded-2xl border border-white/[0.06] bg-[#060606] px-4 py-4 min-h-[5.5rem]">
+        <div className="flex gap-3">
+          {proof.imageUrl ? (
+            <img
+              src={proof.imageUrl}
+              alt={proof.name ?? ""}
+              className="w-11 h-11 rounded-full object-cover border border-white/10 shrink-0"
+            />
+          ) : (
+            <span className="w-11 h-11 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
+              <Quote className="w-4 h-4 text-primary/80" />
+            </span>
+          )}
+          <div>
+            <p className="text-sm text-white/65 font-inter italic leading-relaxed">
+              &ldquo;{proof.quote}&rdquo;
+            </p>
+            {(proof.name || proof.role) && (
+              <footer className="mt-2 text-xs text-white/35 font-inter">
+                {proof.name && <span className="text-white/55 font-semibold">{proof.name}</span>}
+                {proof.role ? ` · ${proof.role}` : ""}
+              </footer>
+            )}
+          </div>
+        </div>
+      </blockquote>
+    );
+  }
+
+  return null;
+}
+
 function StepShell({ children, stepKey }: { children: React.ReactNode; stepKey: string }) {
   return (
     <div key={stepKey} className="quiz-step-enter space-y-6">
@@ -183,6 +237,9 @@ export default function AdsQuizFunnel() {
   const [calcMsgIndex, setCalcMsgIndex] = useState(0);
   const [calcProgress, setCalcProgress] = useState(0);
   const [resultViewed, setResultViewed] = useState(false);
+  const [activeInsight, setActiveInsight] = useState<QuizOptionInsight | null>(null);
+  const [insightMeta, setInsightMeta] = useState<{ stepId: string; optionId: string } | null>(null);
+  const [insightsSeen, setInsightsSeen] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const calculatingStarted = useRef(false);
 
@@ -211,18 +268,29 @@ export default function AdsQuizFunnel() {
   }, [steps]);
 
   const currentStep: AdsQuizStep | undefined = questionSteps[stepIndex];
-  const calculatingMessages = config?.calculating?.messages ?? DEFAULT_CALCULATING.messages;
-  const resultConfig = config?.result ?? DEFAULT_RESULT;
+  const profileTags = useMemo(
+    () => collectProfileTags(questionSteps, answers),
+    [questionSteps, answers],
+  );
+  const calculatingMessages = useMemo(
+    () => resolveCalculatingMessages(config?.calculating, profileTags, DEFAULT_CALCULATING.messages),
+    [config?.calculating, profileTags],
+  );
+  const resultConfig = useMemo(
+    () => resolveResultDisplay(config ?? DEFAULT_ADS_QUIZ_CONFIG, profileTags, DEFAULT_RESULT),
+    [config, profileTags],
+  );
   const testimonials = config?.testimonials ?? [];
 
-  const progressTotal = questionSteps.length + 4;
+  const progressTotal = questionSteps.length * 2 + 3;
   const progressDone = useMemo(() => {
     if (phase === "landing") return 0;
-    if (phase === "steps") return stepIndex + 1;
-    if (phase === "calculating") return questionSteps.length + 1;
-    if (phase === "result") return questionSteps.length + 2;
+    if (phase === "steps") return stepIndex * 2 + 1;
+    if (phase === "insight") return stepIndex * 2 + 2;
+    if (phase === "calculating") return questionSteps.length * 2 + 1;
+    if (phase === "result") return questionSteps.length * 2 + 2;
     const contactOffset = { name: 1, email: 2, phone: 3 }[contactStep];
-    return questionSteps.length + 2 + contactOffset;
+    return questionSteps.length * 2 + 2 + contactOffset;
   }, [phase, stepIndex, contactStep, questionSteps.length]);
 
   const progressPct = progressTotal > 0 ? Math.round((progressDone / progressTotal) * 100) : 0;
@@ -243,6 +311,10 @@ export default function AdsQuizFunnel() {
     calculatingStarted.current = true;
 
     trackEvent("quiz_calculating", { cta: "quiz_form" });
+    trackEvent("profile_snapshot", {
+      cta: "quiz_form",
+      profile_tags: profileTags.join(","),
+    });
     setCalcMsgIndex(0);
     setCalcProgress(0);
 
@@ -264,7 +336,7 @@ export default function AdsQuizFunnel() {
       window.clearInterval(progressInterval);
       window.clearTimeout(doneTimer);
     };
-  }, [phase, calculatingMessages.length]);
+  }, [phase, calculatingMessages.length, profileTags]);
 
   useEffect(() => {
     if (phase !== "result") {
@@ -276,7 +348,11 @@ export default function AdsQuizFunnel() {
   }, [phase]);
 
   const persistProgress = useCallback(
-    (stepId: string, nextAnswers: Record<string, string>) => {
+    (
+      stepId: string,
+      nextAnswers: Record<string, string>,
+      extra?: { profile_tags?: string[]; insights_seen?: string[] },
+    ) => {
       void ensureLandingSession().then(() =>
         fetch("/api/sales/lead", {
           method: "POST",
@@ -286,7 +362,11 @@ export default function AdsQuizFunnel() {
           body: JSON.stringify({
             type: "quiz_progress",
             step_id: stepId,
-            answers: nextAnswers,
+            answers: {
+              ...nextAnswers,
+              ...(extra?.profile_tags ? { profile_tags: extra.profile_tags } : {}),
+              ...(extra?.insights_seen ? { insights_seen: extra.insights_seen } : {}),
+            },
             utm: readUtm(),
           }),
         }),
@@ -297,15 +377,45 @@ export default function AdsQuizFunnel() {
 
   const goToCalculating = () => setPhase("calculating");
 
-  const pickOption = (stepId: string, optionId: string) => {
+  const advanceAfterQuestion = () => {
+    if (stepIndex < questionSteps.length - 1) setStepIndex((i) => i + 1);
+    else goToCalculating();
+  };
+
+  const pickOption = (stepId: string, optionId: string, insight?: QuizOptionInsight) => {
     const next = { ...answers, [stepId]: optionId };
     setAnswers(next);
-    persistProgress(stepId, next);
+    const tags = collectProfileTags(questionSteps, next);
+    persistProgress(stepId, next, { profile_tags: tags, insights_seen: insightsSeen });
     trackEvent("quiz_step", { step_id: stepId, option_id: optionId });
-    window.setTimeout(() => {
-      if (stepIndex < questionSteps.length - 1) setStepIndex((i) => i + 1);
-      else goToCalculating();
-    }, 180);
+
+    if (insight) {
+      setActiveInsight(insight);
+      setInsightMeta({ stepId, optionId });
+      setPhase("insight");
+      return;
+    }
+
+    window.setTimeout(() => advanceAfterQuestion(), 180);
+  };
+
+  const finishInsight = () => {
+    if (!activeInsight || !insightMeta) return;
+    const key = `${insightMeta.stepId}:${insightMeta.optionId}`;
+    const nextSeen = insightsSeen.includes(key) ? insightsSeen : [...insightsSeen, key];
+    setInsightsSeen(nextSeen);
+    trackEvent("quiz_insight", {
+      step_id: insightMeta.stepId,
+      option_id: insightMeta.optionId,
+      variant: activeInsight.variant ?? "default",
+    });
+    persistProgress(insightMeta.stepId, answers, {
+      profile_tags: collectProfileTags(questionSteps, answers),
+      insights_seen: nextSeen,
+    });
+    setActiveInsight(null);
+    setInsightMeta(null);
+    advanceAfterQuestion();
   };
 
   const advanceMessageStep = () => {
@@ -427,9 +537,11 @@ export default function AdsQuizFunnel() {
   const stepLabel =
     phase === "landing"
       ? "Início"
-      : phase === "calculating"
-        ? "Analisando"
-        : phase === "result"
+      : phase === "insight"
+        ? "Para você"
+        : phase === "calculating"
+          ? "Analisando"
+          : phase === "result"
           ? "Seu diagnóstico"
           : phase === "contact"
             ? `Contato · ${contactStep === "name" ? "nome" : contactStep === "email" ? "e-mail" : "WhatsApp"}`
@@ -535,7 +647,7 @@ export default function AdsQuizFunnel() {
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => pickOption(currentStep.id, opt.id)}
+                        onClick={() => pickOption(currentStep.id, opt.id, opt.insight)}
                         className={cn(funnel.choice, selected && funnel.choiceSelected)}
                       >
                         <p className="font-bold text-white text-[15px]">{opt.label}</p>
@@ -567,6 +679,36 @@ export default function AdsQuizFunnel() {
                 </button>
               </>
             )}
+          </StepShell>
+        )}
+
+        {phase === "insight" && activeInsight && (
+          <StepShell stepKey={`insight-${insightMeta?.stepId ?? "x"}`}>
+            {activeInsight.eyebrow && (
+              <p className="text-[10px] uppercase tracking-[0.3em] text-primary font-bold">
+                {activeInsight.eyebrow}
+              </p>
+            )}
+            <h2 className="text-2xl sm:text-[1.65rem] font-black text-white uppercase tracking-tight leading-tight">
+              {activeInsight.title}
+            </h2>
+            <div
+              className={cn(
+                "rounded-2xl border px-5 py-5",
+                activeInsight.variant === "objection"
+                  ? "border-primary/15 bg-primary/[0.03]"
+                  : "border-white/[0.06] bg-[#060606]",
+              )}
+            >
+              <p className="text-sm text-white/60 font-inter leading-relaxed whitespace-pre-line">
+                {activeInsight.body}
+              </p>
+            </div>
+            <InsightProof insight={activeInsight} />
+            <button type="button" onClick={finishInsight} className={funnel.cta}>
+              {activeInsight.ctaLabel ?? "Continuar"}
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </StepShell>
         )}
 
