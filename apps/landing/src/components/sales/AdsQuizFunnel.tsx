@@ -18,6 +18,7 @@ import {
   DEFAULT_ADS_QUIZ_CONFIG,
   collectProfileTags,
   resolveCalculatingMessages,
+  resolveDynamicBody,
   resolveResultDisplay,
 } from "@crm-ascend/validation/ads-quiz";
 import { ATTRIBUTION_COOKIE } from "@/lib/sales/consent";
@@ -107,7 +108,7 @@ function useCountUp(target: string, run: boolean): string {
 }
 
 function chipLabelForStep(step: AdsQuizStep): string {
-  if (step.type !== "choice") return step.id;
+  if (step.type !== "choice" && step.type !== "multichoice") return step.id;
   const title = step.title.trim();
   const beforeQ = title.split("?")[0]?.trim() ?? title;
   if (beforeQ.length <= 28) return beforeQ;
@@ -115,7 +116,7 @@ function chipLabelForStep(step: AdsQuizStep): string {
 }
 
 function optionLabelForStep(step: AdsQuizStep, optionId: string): string | null {
-  if (step.type !== "choice") return null;
+  if (step.type !== "choice" && step.type !== "multichoice") return null;
   return step.options.find((o) => o.id === optionId)?.label ?? null;
 }
 
@@ -261,6 +262,7 @@ export default function AdsQuizFunnel() {
   const [activeInsight, setActiveInsight] = useState<QuizOptionInsight | null>(null);
   const [insightMeta, setInsightMeta] = useState<{ stepId: string; optionId: string } | null>(null);
   const [insightsSeen, setInsightsSeen] = useState<string[]>([]);
+  const [multiDraft, setMultiDraft] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const calculatingStarted = useRef(false);
 
@@ -324,6 +326,12 @@ export default function AdsQuizFunnel() {
   }, [phase, contactStep]);
 
   useEffect(() => {
+    if (phase !== "steps" || !currentStep || currentStep.type !== "multichoice") return;
+    const raw = answers[currentStep.id];
+    setMultiDraft(raw ? raw.split(",").filter(Boolean) : []);
+  }, [phase, stepIndex, currentStep, answers]);
+
+  useEffect(() => {
     if (phase !== "calculating") {
       calculatingStarted.current = false;
       return;
@@ -350,7 +358,7 @@ export default function AdsQuizFunnel() {
     const doneTimer = window.setTimeout(() => {
       setCalcProgress(100);
       setPhase("result");
-    }, 2800);
+    }, 3600);
 
     return () => {
       window.clearInterval(msgInterval);
@@ -440,11 +448,35 @@ export default function AdsQuizFunnel() {
     advanceAfterQuestion();
   };
 
-  const advanceMessageStep = () => {
+  const advanceLinearStep = () => {
     if (!currentStep) return;
     trackEvent("quiz_step", { step_id: currentStep.id, action: "continue" });
     if (stepIndex < questionSteps.length - 1) setStepIndex((i) => i + 1);
     else goToCalculating();
+  };
+
+  const toggleMultiOption = (optionId: string) => {
+    if (!currentStep || currentStep.type !== "multichoice") return;
+    const max = currentStep.maxSelect ?? currentStep.options.length;
+    setMultiDraft((prev) => {
+      if (prev.includes(optionId)) return prev.filter((id) => id !== optionId);
+      if (prev.length >= max) return prev;
+      return [...prev, optionId];
+    });
+  };
+
+  const submitMultichoice = () => {
+    if (!currentStep || currentStep.type !== "multichoice") return;
+    const min = currentStep.minSelect ?? 1;
+    if (multiDraft.length < min) return;
+    const value = multiDraft.join(",");
+    const next = { ...answers, [currentStep.id]: value };
+    setAnswers(next);
+    const tags = collectProfileTags(questionSteps, next);
+    persistProgress(currentStep.id, next, { profile_tags: tags, insights_seen: insightsSeen });
+    trackEvent("quiz_step", { step_id: currentStep.id, option_id: value });
+    setPhase("steps");
+    advanceAfterQuestion();
   };
 
   const startQuiz = () => {
@@ -455,11 +487,22 @@ export default function AdsQuizFunnel() {
 
   const answerChips = useMemo(() => {
     return questionSteps
-      .filter((s): s is Extract<AdsQuizStep, { type: "choice" }> => s.type === "choice")
+      .filter(
+        (s): s is Extract<AdsQuizStep, { type: "choice" | "multichoice" }> =>
+          s.type === "choice" || s.type === "multichoice",
+      )
       .map((step) => {
-        const optionId = answers[step.id];
-        if (!optionId) return null;
-        const label = optionLabelForStep(step, optionId);
+        const raw = answers[step.id];
+        if (!raw) return null;
+        const label =
+          step.type === "multichoice"
+            ? raw
+                .split(",")
+                .filter(Boolean)
+                .map((id) => optionLabelForStep(step, id))
+                .filter(Boolean)
+                .join(", ")
+            : optionLabelForStep(step, raw);
         if (!label) return null;
         return { key: step.id, text: `${chipLabelForStep(step)}: ${label}` };
       })
@@ -690,12 +733,154 @@ export default function AdsQuizFunnel() {
                 <h2 className="text-2xl font-black text-white uppercase tracking-tight">
                   {currentStep.title}
                 </h2>
-                <div className="rounded-2xl border border-white/[0.05] bg-[#060606] px-5 py-5">
+                {currentStep.imageUrl && currentStep.variant === "authority" && (
+                  <img
+                    src={currentStep.imageUrl}
+                    alt="Mentores Ascend Club"
+                    className="w-full max-h-56 object-cover object-top rounded-2xl border border-white/[0.08]"
+                  />
+                )}
+                <div
+                  className={cn(
+                    "rounded-2xl border px-5 py-5",
+                    currentStep.variant === "story"
+                      ? "border-primary/15 bg-primary/[0.03]"
+                      : "border-white/[0.05] bg-[#060606]",
+                  )}
+                >
                   <p className="text-sm text-white/60 font-inter leading-relaxed whitespace-pre-line">
                     {currentStep.body}
                   </p>
                 </div>
-                <button type="button" onClick={advanceMessageStep} className={funnel.cta}>
+                <button type="button" onClick={advanceLinearStep} className={funnel.cta}>
+                  {currentStep.ctaLabel}
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+
+            {currentStep.type === "dynamic" && (
+              <>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tight">
+                  {currentStep.title}
+                </h2>
+                {currentStep.imageUrl && (
+                  <figure className="rounded-2xl border border-white/[0.08] bg-[#060606] overflow-hidden">
+                    <img
+                      src={currentStep.imageUrl}
+                      alt="Print real de resultado"
+                      className="w-full max-h-48 object-cover object-top"
+                      loading="lazy"
+                    />
+                  </figure>
+                )}
+                <div className="rounded-2xl border border-primary/15 bg-primary/[0.03] px-5 py-5">
+                  <p className="text-sm text-white/65 font-inter leading-relaxed whitespace-pre-line">
+                    {resolveDynamicBody(currentStep.body, answers, questionSteps)}
+                  </p>
+                </div>
+                <button type="button" onClick={advanceLinearStep} className={funnel.cta}>
+                  {currentStep.ctaLabel}
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+
+            {currentStep.type === "mechanism" && (
+              <>
+                <h2 className="text-2xl font-black text-white uppercase tracking-tight leading-tight">
+                  {currentStep.title}
+                </h2>
+                {currentStep.intro && (
+                  <p className="text-sm text-white/45 font-inter leading-relaxed">{currentStep.intro}</p>
+                )}
+                <div className="space-y-3">
+                  {currentStep.mechanismSteps.map((item, i) => (
+                    <div
+                      key={`${item.title}-${i}`}
+                      className="rounded-2xl border border-white/[0.06] bg-[#060606] px-5 py-4"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 border border-primary/30 text-sm font-black text-primary">
+                          {i + 1}
+                        </span>
+                        <div>
+                          <p className="font-bold text-white text-[15px]">{item.title}</p>
+                          {item.subtitle && (
+                            <p className="text-xs text-white/40 mt-1 font-inter">{item.subtitle}</p>
+                          )}
+                          {item.highlight && (
+                            <p className="text-xs font-bold text-primary mt-2 font-inter uppercase tracking-wide">
+                              {item.highlight}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {currentStep.bullets && currentStep.bullets.length > 0 && (
+                  <ul className="space-y-2 text-sm text-white/45 font-inter">
+                    {currentStep.bullets.map((b) => (
+                      <li key={b} className="flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0 mt-0.5" />
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <button type="button" onClick={advanceLinearStep} className={funnel.cta}>
+                  {currentStep.ctaLabel}
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+
+            {currentStep.type === "multichoice" && (
+              <>
+                <div>
+                  <h2 className="text-2xl sm:text-[1.65rem] font-black text-white uppercase tracking-tight leading-tight">
+                    {currentStep.title}
+                  </h2>
+                  {currentStep.hint && (
+                    <p className="text-sm text-white/45 font-inter leading-relaxed mt-2">
+                      {currentStep.hint}
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2.5">
+                  {currentStep.options.map((opt) => {
+                    const selected = multiDraft.includes(opt.id);
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => toggleMultiOption(opt.id)}
+                        className={cn(funnel.choice, selected && funnel.choiceSelected)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={cn(
+                              "flex h-5 w-5 shrink-0 items-center justify-center rounded border",
+                              selected
+                                ? "border-primary bg-primary text-[#0a0a0a]"
+                                : "border-white/20",
+                            )}
+                          >
+                            {selected ? <Check className="w-3 h-3" /> : null}
+                          </span>
+                          <p className="font-bold text-white text-[15px] text-left">{opt.label}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+                <button
+                  type="button"
+                  disabled={multiDraft.length < (currentStep.minSelect ?? 1)}
+                  onClick={submitMultichoice}
+                  className={funnel.cta}
+                >
                   {currentStep.ctaLabel}
                   <ArrowRight className="w-5 h-5" />
                 </button>
@@ -785,6 +970,24 @@ export default function AdsQuizFunnel() {
             <h2 className="text-2xl sm:text-[1.75rem] font-black uppercase leading-tight tracking-tight funnel-headline-gold">
               {resultConfig.headline}
             </h2>
+            {resultConfig.badge && (
+              <div className="inline-flex items-center gap-2 rounded-full border border-primary/35 bg-primary/[0.08] px-4 py-2">
+                <Sparkles className="w-4 h-4 text-primary" />
+                <span className="text-xs font-black uppercase tracking-[0.2em] text-primary">
+                  {resultConfig.badge}
+                </span>
+              </div>
+            )}
+            {resultConfig.highlights && resultConfig.highlights.length > 0 && (
+              <ul className="space-y-2 rounded-2xl border border-white/[0.06] bg-[#060606] px-4 py-4">
+                {resultConfig.highlights.map((item) => (
+                  <li key={item} className="flex items-start gap-2.5 text-sm text-white/60 font-inter">
+                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            )}
             {resultConfig.reassurance && (
               <p className="text-sm text-white/50 font-inter leading-relaxed">{resultConfig.reassurance}</p>
             )}

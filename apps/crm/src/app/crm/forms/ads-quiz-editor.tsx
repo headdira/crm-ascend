@@ -322,7 +322,7 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
                 </Field>
               </>
             )}
-            {step.type === "message" && (
+            {(step.type === "message" || step.type === "dynamic") && (
               <Textarea
                 rows={4}
                 value={step.body}
@@ -331,10 +331,65 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
                   setSchema((s) => ({
                     ...s,
                     steps: s.steps.map((st, i) =>
-                      i === idx && st.type === "message" ? { ...st, body } : st,
+                      i === idx && (st.type === "message" || st.type === "dynamic") ? { ...st, body } : st,
                     ),
                   }));
                 }}
+                placeholder={step.type === "dynamic" ? "Use {{objetivo}} ou {{momento}} para personalizar" : undefined}
+              />
+            )}
+            {step.type === "mechanism" && (
+              <Textarea
+                rows={3}
+                value={step.intro ?? ""}
+                onChange={(e) => {
+                  const intro = cleanOptional(e.target.value);
+                  setSchema((s) => ({
+                    ...s,
+                    steps: s.steps.map((st, i) =>
+                      i === idx && st.type === "mechanism" ? { ...st, intro } : st,
+                    ),
+                  }));
+                }}
+                placeholder="Introdução (opcional)"
+              />
+            )}
+            {step.type === "multichoice" && (
+              <Textarea
+                rows={4}
+                className="font-mono text-xs"
+                value={step.options
+                  .map((o) => {
+                    const tags = o.tags?.length ? o.tags.join(",") : "";
+                    return `${o.id}|${o.label}|${tags}`;
+                  })
+                  .join("\n")}
+                onChange={(e) => {
+                  const options = e.target.value
+                    .split("\n")
+                    .map((line) => line.trim())
+                    .filter(Boolean)
+                    .map((line) => {
+                      const [id, label, tagsRaw] = line.split("|");
+                      const tags = (tagsRaw ?? "")
+                        .split(",")
+                        .map((t) => t.trim())
+                        .filter(Boolean);
+                      return {
+                        id: (id ?? "").trim(),
+                        label: (label ?? "").trim(),
+                        tags: tags.length ? tags : undefined,
+                      };
+                    })
+                    .filter((o) => o.id && o.label);
+                  setSchema((s) => ({
+                    ...s,
+                    steps: s.steps.map((st, i) =>
+                      i === idx && st.type === "multichoice" ? { ...st, options } : st,
+                    ),
+                  }));
+                }}
+                placeholder="id|label|tags"
               />
             )}
             {step.type === "offer" && (
@@ -521,6 +576,41 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
                     return s;
                   }
                   return { ...s, result: { ...prev, reassurance } };
+                });
+              }}
+            />
+          </Field>
+          <Field>
+            <FieldLabel>Badge (ex: PERFIL IDEAL)</FieldLabel>
+            <Input
+              value={schema.result?.badge ?? ""}
+              onChange={(e) => {
+                const badge = cleanOptional(e.target.value);
+                setSchema((s) => {
+                  const prev = s.result ?? { eyebrow: "", headline: "" };
+                  if (!prev.eyebrow.trim() || !prev.headline.trim()) return s;
+                  return { ...s, result: { ...prev, badge } };
+                });
+              }}
+            />
+          </Field>
+          <Field>
+            <FieldLabel>Destaques do diagnóstico (um por linha)</FieldLabel>
+            <Textarea
+              rows={3}
+              value={(schema.result?.highlights ?? []).join("\n")}
+              onChange={(e) => {
+                const highlights = e.target.value
+                  .split("\n")
+                  .map((h) => h.trim())
+                  .filter(Boolean);
+                setSchema((s) => {
+                  const prev = s.result ?? { eyebrow: "", headline: "" };
+                  if (!prev.eyebrow.trim() || !prev.headline.trim()) return s;
+                  return {
+                    ...s,
+                    result: { ...prev, highlights: highlights.length ? highlights : undefined },
+                  };
                 });
               }}
             />
