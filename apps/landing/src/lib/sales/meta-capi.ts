@@ -142,7 +142,7 @@ export async function sendMetaCapiEvent(input: SendMetaEventInput): Promise<Meta
 
 /** Evento principal de otimização — lead quente (formulário completo). */
 export async function sendMetaLeadEvent(
-  input: SendMetaEventInput & {
+  input: Omit<SendMetaEventInput, "eventName"> & {
     userData: MetaUserData & { email: string; phone: string; firstName: string };
   },
 ): Promise<MetaCapiResult> {

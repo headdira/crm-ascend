@@ -107,7 +107,7 @@ async function sendLeadToMetaCapi(
 function buildQuizAnswers(
   tracking: CheckoutTracking | undefined,
   extra: Record<string, unknown>,
-): Json {
+): Record<string, unknown> {
   return {
     lead_temperature: "quente",
     marketing_consent: true,
@@ -115,7 +115,7 @@ function buildQuizAnswers(
     initial_cta: tracking?.cta ?? null,
     initial_cta_label: tracking?.cta_label ?? null,
     ...extra,
-  } as Json;
+  };
 }
 
 export async function upsertCheckoutLead(
@@ -165,7 +165,7 @@ export async function upsertCheckoutLead(
           kiwify_checkout_pending: true,
           kiwify_checkout_started_at: now,
           kiwify_checkout_abandoned: false,
-        }),
+        }) as Json,
         reached_kiwify_at: now,
         last_event_at: now,
         status: LEAD_STATUS_QUENTE,
@@ -208,7 +208,7 @@ export async function upsertCheckoutLead(
       kiwify_checkout_pending: true,
       kiwify_checkout_started_at: now,
       kiwify_checkout_abandoned: false,
-    }),
+    }) as Json,
     last_event_at: now,
     reached_kiwify_at: now,
     status: LEAD_STATUS_QUENTE,

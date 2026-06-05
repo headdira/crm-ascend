@@ -3,7 +3,6 @@ export const prerender = false;
 
 import Layout from "@/layouts/Layout.astro";
 import AdsQuizFunnel from "@/components/sales/AdsQuizFunnel";
-import ConsentScripts from "@/components/sales/ConsentScripts";
 import AttributionCapture from "@/components/sales/AttributionCapture";
 import { getSiteUrl } from "@/lib/site-url";
 
@@ -17,5 +16,4 @@ const siteUrl = getSiteUrl();
 >
   <AttributionCapture client:load />
   <AdsQuizFunnel client:load />
-  <ConsentScripts client:idle />
 </Layout>

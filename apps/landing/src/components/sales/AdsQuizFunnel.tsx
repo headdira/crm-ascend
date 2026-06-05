@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
-import type { AdsQuizConfig, AdsQuizStep } from "@crm-ascend/validation";
-import { DEFAULT_ADS_QUIZ_CONFIG } from "@crm-ascend/validation";
+import type { AdsQuizConfig, AdsQuizStep } from "@crm-ascend/validation/ads-quiz";
+import { DEFAULT_ADS_QUIZ_CONFIG } from "@crm-ascend/validation/ads-quiz";
 import { ATTRIBUTION_COOKIE } from "@/lib/sales/consent";
 import { parseAttributionCookie, readAttributionFromDocument, getClientCookie } from "@/lib/sales/utm";
 import { getMetaBrowserIds } from "@/lib/sales/meta-attribution";

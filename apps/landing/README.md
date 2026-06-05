@@ -1,6 +1,6 @@
 # Ascend Club — Landing
 
-Site público de vendas (landing, `/conhecimento`, `/privacidade`). **Deploy separado** do CRM interno.
+Site público de vendas (landing, `/form`, `/conhecimento`, `/privacidade`). **Deploy separado** do CRM interno.
 
 Stack: **Astro 5** + React islands (visual idêntico à versão Next).
 
@@ -13,7 +13,9 @@ pnpm --filter @crm-ascend/landing dev   # http://localhost:3000
 
 ## Checkout / lead
 
-Ao clicar em qualquer CTA de compra, abre um formulário em **duas etapas** (e-mail → telefone). Após enviar, o lead é gravado via `POST /api/sales/lead` e o usuário segue para a Kiwify.
+**Landing principal (`/`):** ao clicar em qualquer CTA de compra, abre um modal em três etapas (nome → e-mail → WhatsApp). Após enviar, o lead é gravado via `POST /api/sales/lead` e o usuário segue para a Kiwify.
+
+**Quiz de anúncios (`/form`):** funil em etapas (perguntas → oferta → contato) para campanhas pagas. Config editável no CRM em **Formulário** (`/crm/forms`). Progresso parcial via `type: quiz_progress`; conclusão via `type: quiz_complete`.
 
 ## Variáveis
 

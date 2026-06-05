@@ -74,25 +74,40 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
-    if (parsed.data.type === "complete" || parsed.data.type === "quiz_complete") {
-      const isQuiz = parsed.data.type === "quiz_complete";
+    if (parsed.data.type === "quiz_complete") {
       const result = await upsertCheckoutLead(request, {
         full_name: parsed.data.full_name,
         email: parsed.data.email,
         phone: parsed.data.phone,
         utm: (parsed.data.utm ?? {}) as Json,
         tracking: {
-          cta: isQuiz ? "quiz_form" : parsed.data.cta,
-          cta_label: isQuiz ? "Quiz anúncios" : ctaLabel(parsed.data.cta),
+          cta: "quiz_form",
+          cta_label: "Quiz anúncios",
         },
         meta: parsed.data.meta,
-        quiz_extra: isQuiz
-          ? {
-              ads_quiz: true,
-              ads_quiz_answers: parsed.data.answers ?? {},
-              checkout_flow: false,
-            }
-          : undefined,
+        quiz_extra: {
+          ads_quiz: true,
+          ads_quiz_answers: parsed.data.answers ?? {},
+          checkout_flow: false,
+        },
+      });
+      return new Response(JSON.stringify({ ok: true, id: result.id, checkout_url: result.checkout_url }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (parsed.data.type === "complete") {
+      const result = await upsertCheckoutLead(request, {
+        full_name: parsed.data.full_name,
+        email: parsed.data.email,
+        phone: parsed.data.phone,
+        utm: (parsed.data.utm ?? {}) as Json,
+        tracking: {
+          cta: parsed.data.cta,
+          cta_label: ctaLabel(parsed.data.cta),
+        },
+        meta: parsed.data.meta,
       });
       return new Response(JSON.stringify({ ok: true, id: result.id, checkout_url: result.checkout_url }), {
         status: 200,
