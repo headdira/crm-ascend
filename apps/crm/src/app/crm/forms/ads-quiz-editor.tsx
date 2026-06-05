@@ -13,6 +13,11 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
+function cleanOptional(value: string): string | undefined {
+  const v = value.trim();
+  return v || undefined;
+}
+
 export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; publicUrl: string }) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
@@ -48,6 +53,8 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
 
   const landing = schema.landing;
   const contact = schema.contact;
+  const offerIdx = schema.steps.findIndex((s) => s.type === "offer");
+  const offerStep = offerIdx >= 0 && schema.steps[offerIdx]?.type === "offer" ? schema.steps[offerIdx] : null;
 
   return (
     <form onSubmit={(e) => void handleSave(e)} className="space-y-10 max-w-3xl">
@@ -139,7 +146,7 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
               onChange={(e) =>
                 setSchema((s) => ({
                   ...s,
-                  landing: { ...s.landing, socialProof: e.target.value || undefined },
+                  landing: { ...s.landing, socialProof: cleanOptional(e.target.value) },
                 }))
               }
             />
@@ -150,8 +157,7 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
       <section className="space-y-4">
         <h2 className="text-sm font-bold uppercase tracking-wider">Perguntas e etapas</h2>
         <p className="text-muted-foreground text-sm">
-          Edite títulos e textos. A ordem e tipos das etapas vêm do JSON salvo no banco (padrão já
-          inclui objetivo, experiência, mensagem e oferta).
+          Edite títulos e textos. A etapa <code>offer</code> alimenta a tela de resultado do funil.
         </p>
         {schema.steps.map((step, idx) => (
           <div key={step.id} className="rounded-lg border border-border p-4 space-y-3">
@@ -183,7 +189,7 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
                       return {
                         id: (id ?? "").trim(),
                         label: (label ?? "").trim(),
-                        subtitle: (subtitle ?? "").trim() || undefined,
+                        subtitle: cleanOptional(subtitle ?? ""),
                       };
                     })
                     .filter((o) => o.id && o.label);
@@ -214,18 +220,54 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
             )}
             {step.type === "offer" && (
               <>
-                <Input
-                  value={step.priceLabel}
-                  onChange={(e) => {
-                    const priceLabel = e.target.value;
-                    setSchema((s) => ({
-                      ...s,
-                      steps: s.steps.map((st, i) =>
-                        i === idx && st.type === "offer" ? { ...st, priceLabel } : st,
-                      ),
-                    }));
-                  }}
-                />
+                <Field>
+                  <FieldLabel>Preço atual (ex: R$60)</FieldLabel>
+                  <Input
+                    value={step.priceLabel}
+                    onChange={(e) => {
+                      const priceLabel = e.target.value;
+                      setSchema((s) => ({
+                        ...s,
+                        steps: s.steps.map((st, i) =>
+                          i === idx && st.type === "offer" ? { ...st, priceLabel } : st,
+                        ),
+                      }));
+                    }}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Preço antigo riscado (opcional, ex: R$197)</FieldLabel>
+                  <Input
+                    value={step.originalPriceLabel ?? ""}
+                    onChange={(e) => {
+                      const originalPriceLabel = cleanOptional(e.target.value);
+                      setSchema((s) => ({
+                        ...s,
+                        steps: s.steps.map((st, i) =>
+                          i === idx && st.type === "offer"
+                            ? { ...st, originalPriceLabel }
+                            : st,
+                        ),
+                      }));
+                    }}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel>Nota de urgência (opcional)</FieldLabel>
+                  <Input
+                    value={step.urgencyNote ?? ""}
+                    onChange={(e) => {
+                      const urgencyNote = cleanOptional(e.target.value);
+                      setSchema((s) => ({
+                        ...s,
+                        steps: s.steps.map((st, i) =>
+                          i === idx && st.type === "offer" ? { ...st, urgencyNote } : st,
+                        ),
+                      }));
+                    }}
+                    placeholder="Lote promocional: apenas 47 vagas..."
+                  />
+                </Field>
                 <Textarea
                   rows={3}
                   value={step.bullets.join("\n")}
@@ -238,11 +280,128 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
                       ),
                     }));
                   }}
+                  placeholder="Um benefício por linha"
                 />
               </>
             )}
           </div>
         ))}
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-sm font-bold uppercase tracking-wider">Tela de cálculo</h2>
+        <Field>
+          <FieldLabel>Mensagens (uma por linha, opcional)</FieldLabel>
+          <Textarea
+            rows={4}
+            className="font-mono text-xs"
+            value={(schema.calculating?.messages ?? []).join("\n")}
+            onChange={(e) => {
+              const messages = e.target.value
+                .split("\n")
+                .map((m) => m.trim())
+                .filter(Boolean);
+              setSchema((s) => ({
+                ...s,
+                calculating: messages.length ? { messages } : undefined,
+              }));
+            }}
+            placeholder="Analisando suas respostas…"
+          />
+        </Field>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-sm font-bold uppercase tracking-wider">Tela de resultado</h2>
+        <FieldGroup>
+          <Field>
+            <FieldLabel>Eyebrow</FieldLabel>
+            <Input
+              value={schema.result?.eyebrow ?? ""}
+              onChange={(e) => {
+                const eyebrow = e.target.value;
+                setSchema((s) => {
+                  const prev = s.result ?? { eyebrow: "", headline: "" };
+                  const next = { ...prev, eyebrow };
+                  if (!next.eyebrow.trim() || !next.headline.trim()) {
+                    return { ...s, result: undefined };
+                  }
+                  return { ...s, result: { ...next, reassurance: cleanOptional(next.reassurance ?? "") } };
+                });
+              }}
+            />
+          </Field>
+          <Field>
+            <FieldLabel>Título</FieldLabel>
+            <Textarea
+              rows={2}
+              value={schema.result?.headline ?? ""}
+              onChange={(e) => {
+                const headline = e.target.value;
+                setSchema((s) => {
+                  const prev = s.result ?? { eyebrow: "", headline: "" };
+                  const next = { ...prev, headline };
+                  if (!next.eyebrow.trim() || !next.headline.trim()) {
+                    return { ...s, result: undefined };
+                  }
+                  return { ...s, result: { ...next, reassurance: cleanOptional(next.reassurance ?? "") } };
+                });
+              }}
+            />
+          </Field>
+          <Field>
+            <FieldLabel>Reassurance (opcional)</FieldLabel>
+            <Textarea
+              rows={2}
+              value={schema.result?.reassurance ?? ""}
+              onChange={(e) => {
+                const reassurance = cleanOptional(e.target.value);
+                setSchema((s) => {
+                  const prev = s.result ?? { eyebrow: "", headline: "" };
+                  if (!prev.eyebrow.trim() || !prev.headline.trim()) {
+                    return s;
+                  }
+                  return { ...s, result: { ...prev, reassurance } };
+                });
+              }}
+            />
+          </Field>
+        </FieldGroup>
+      </section>
+
+      <section className="space-y-4">
+        <h2 className="text-sm font-bold uppercase tracking-wider">Depoimentos (opcional)</h2>
+        <Field>
+          <FieldLabel>nome|cargo|frase — um por linha</FieldLabel>
+          <Textarea
+            rows={5}
+            className="font-mono text-xs"
+            value={(schema.testimonials ?? [])
+              .map((t) => `${t.name}|${t.role ?? ""}|${t.quote}`)
+              .join("\n")}
+            onChange={(e) => {
+              const testimonials = e.target.value
+                .split("\n")
+                .map((line) => line.trim())
+                .filter(Boolean)
+                .map((line) => {
+                  const [name, role, ...quoteParts] = line.split("|");
+                  const quote = quoteParts.join("|").trim();
+                  return {
+                    name: (name ?? "").trim(),
+                    role: cleanOptional(role ?? ""),
+                    quote,
+                  };
+                })
+                .filter((t) => t.name && t.quote);
+              setSchema((s) => ({
+                ...s,
+                testimonials: testimonials.length ? testimonials : undefined,
+              }));
+            }}
+            placeholder="Maria Silva|Aluna|Consegui minha primeira venda em 3 semanas"
+          />
+        </Field>
       </section>
 
       <section className="space-y-4">
@@ -271,6 +430,13 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
           ))}
         </FieldGroup>
       </section>
+
+      {offerStep && (
+        <p className="text-xs text-muted-foreground">
+          Oferta ativa: <strong>{offerStep.priceLabel}</strong>
+          {offerStep.originalPriceLabel ? ` (de ${offerStep.originalPriceLabel})` : ""}
+        </p>
+      )}
 
       <Button type="submit" disabled={saving}>
         {saving ? "Salvando…" : "Salvar quiz"}

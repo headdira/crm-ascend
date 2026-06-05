@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  Check,
   CheckCircle2,
   Clock,
   Loader2,
@@ -21,8 +22,12 @@ import { buildPersonalizedCheckoutUrl } from "@/lib/sales/checkout-url";
 import { openCheckoutInNewTab } from "@/lib/sales/open-checkout";
 import { cn } from "@/lib/utils";
 
-type Phase = "landing" | "steps" | "contact";
+type Phase = "landing" | "steps" | "calculating" | "result" | "contact";
 type ContactStep = "name" | "email" | "phone";
+
+const DEFAULT_OFFER = DEFAULT_ADS_QUIZ_CONFIG.steps.find((s) => s.type === "offer")!;
+const DEFAULT_CALCULATING = DEFAULT_ADS_QUIZ_CONFIG.calculating!;
+const DEFAULT_RESULT = DEFAULT_ADS_QUIZ_CONFIG.result!;
 
 const funnel = {
   glow: "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-10%,rgba(255,184,0,0.14),transparent_55%)]",
@@ -35,6 +40,8 @@ const funnel = {
   input:
     "w-full rounded-2xl bg-[#050505] border border-white/[0.07] px-5 py-4 text-white text-base font-inter placeholder:text-white/20 focus:border-primary/55 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,184,0,0.12)] transition-all",
   cta: "inline-flex items-center justify-center gap-2.5 w-full rounded-2xl bg-primary px-6 py-5 min-h-[52px] text-[#0a0a0a] font-black uppercase tracking-wider text-sm sm:text-[15px] hover:brightness-110 shadow-[0_0_48px_rgba(255,184,0,0.28)] transition-all disabled:opacity-35 disabled:shadow-none disabled:cursor-not-allowed",
+  ctaShimmer:
+    "funnel-cta-shimmer inline-flex items-center justify-center gap-2.5 w-full rounded-2xl px-6 py-5 min-h-[52px] text-[#0a0a0a] font-black uppercase tracking-wider text-sm sm:text-[15px] hover:brightness-110 shadow-[0_0_48px_rgba(255,184,0,0.28)] transition-all disabled:opacity-35 disabled:shadow-none disabled:cursor-not-allowed",
   offerCard:
     "rounded-3xl border border-primary/20 bg-[#050505] p-6 sm:p-7 shadow-[0_0_60px_rgba(255,184,0,0.08)]",
 } as const;
@@ -48,6 +55,61 @@ function readUtm() {
 
 function normalizePhone(value: string): string {
   return value.replace(/\D/g, "");
+}
+
+function useCountUp(target: string, run: boolean): string {
+  const [display, setDisplay] = useState(target);
+
+  useEffect(() => {
+    if (!run) {
+      setDisplay(target);
+      return;
+    }
+
+    const match = target.match(/(\d+)/);
+    if (!match) {
+      setDisplay(target);
+      return;
+    }
+
+    const end = Number.parseInt(match[1], 10);
+    const startIdx = target.indexOf(match[1]);
+    const prefix = target.slice(0, startIdx);
+    const suffix = target.slice(startIdx + match[1].length);
+    const duration = 1200;
+    let frame = 0;
+    let startTime = 0;
+
+    const tick = (ts: number) => {
+      if (!startTime) startTime = ts;
+      const progress = Math.min((ts - startTime) / duration, 1);
+      const eased = 1 - (1 - progress) ** 3;
+      const value = Math.round(eased * end);
+      setDisplay(`${prefix}${value}${suffix}`);
+      if (progress < 1) {
+        frame = requestAnimationFrame(tick);
+      }
+    };
+
+    setDisplay(`${prefix}0${suffix}`);
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [target, run]);
+
+  return display;
+}
+
+function chipLabelForStep(step: AdsQuizStep): string {
+  if (step.type !== "choice") return step.id;
+  const title = step.title.trim();
+  const beforeQ = title.split("?")[0]?.trim() ?? title;
+  if (beforeQ.length <= 28) return beforeQ;
+  return step.id.charAt(0).toUpperCase() + step.id.slice(1).replace(/_/g, " ");
+}
+
+function optionLabelForStep(step: AdsQuizStep, optionId: string): string | null {
+  if (step.type !== "choice") return null;
+  return step.options.find((o) => o.id === optionId)?.label ?? null;
 }
 
 function StepShell({ children, stepKey }: { children: React.ReactNode; stepKey: string }) {
@@ -83,6 +145,30 @@ function TrustFooter() {
   );
 }
 
+function AvatarStack({ count = 5 }: { count?: number }) {
+  const colors = ["#ffb800", "#ff9500", "#e6a800", "#ffc933", "#cc9200"];
+  return (
+    <div className="flex items-center gap-3">
+      <div className="flex -space-x-2.5">
+        {Array.from({ length: count }).map((_, i) => (
+          <span
+            key={i}
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-black text-[10px] font-black text-[#0a0a0a]"
+            style={{ backgroundColor: colors[i % colors.length] }}
+          >
+            {String.fromCharCode(65 + i)}
+          </span>
+        ))}
+      </div>
+      <p className="text-xs text-white/45 font-inter leading-snug">
+        <span className="text-white/70 font-semibold">+500 alunos</span>
+        <br />
+        já fizeram o diagnóstico
+      </p>
+    </div>
+  );
+}
+
 export default function AdsQuizFunnel() {
   const [config, setConfig] = useState<AdsQuizConfig | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -94,7 +180,11 @@ export default function AdsQuizFunnel() {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [calcMsgIndex, setCalcMsgIndex] = useState(0);
+  const [calcProgress, setCalcProgress] = useState(0);
+  const [resultViewed, setResultViewed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const calculatingStarted = useRef(false);
 
   useEffect(() => {
     void ensureLandingSession().then(() => {
@@ -113,23 +203,77 @@ export default function AdsQuizFunnel() {
   }, []);
 
   const steps = config?.steps ?? [];
-  const currentStep: AdsQuizStep | undefined = steps[stepIndex];
+  const questionSteps = useMemo(() => steps.filter((s) => s.type !== "offer"), [steps]);
+  const offerStep = useMemo(() => {
+    const found = steps.find((s) => s.type === "offer");
+    if (found?.type === "offer") return found;
+    return DEFAULT_OFFER.type === "offer" ? DEFAULT_OFFER : null;
+  }, [steps]);
 
-  const progressTotal = steps.length + 3;
+  const currentStep: AdsQuizStep | undefined = questionSteps[stepIndex];
+  const calculatingMessages = config?.calculating?.messages ?? DEFAULT_CALCULATING.messages;
+  const resultConfig = config?.result ?? DEFAULT_RESULT;
+  const testimonials = config?.testimonials ?? [];
+
+  const progressTotal = questionSteps.length + 4;
   const progressDone = useMemo(() => {
     if (phase === "landing") return 0;
     if (phase === "steps") return stepIndex + 1;
+    if (phase === "calculating") return questionSteps.length + 1;
+    if (phase === "result") return questionSteps.length + 2;
     const contactOffset = { name: 1, email: 2, phone: 3 }[contactStep];
-    return steps.length + contactOffset;
-  }, [phase, stepIndex, contactStep, steps.length]);
+    return questionSteps.length + 2 + contactOffset;
+  }, [phase, stepIndex, contactStep, questionSteps.length]);
 
   const progressPct = progressTotal > 0 ? Math.round((progressDone / progressTotal) * 100) : 0;
+  const animatedPrice = useCountUp(offerStep?.priceLabel ?? "R$60", phase === "result" && resultViewed);
 
   useEffect(() => {
     if (phase !== "contact") return;
     const t = window.setTimeout(() => inputRef.current?.focus(), 120);
     return () => window.clearTimeout(t);
   }, [phase, contactStep]);
+
+  useEffect(() => {
+    if (phase !== "calculating") {
+      calculatingStarted.current = false;
+      return;
+    }
+    if (calculatingStarted.current) return;
+    calculatingStarted.current = true;
+
+    trackEvent("quiz_calculating", { cta: "quiz_form" });
+    setCalcMsgIndex(0);
+    setCalcProgress(0);
+
+    const msgInterval = window.setInterval(() => {
+      setCalcMsgIndex((i) => Math.min(i + 1, calculatingMessages.length - 1));
+    }, 650);
+
+    const progressInterval = window.setInterval(() => {
+      setCalcProgress((p) => Math.min(p + 4, 100));
+    }, 110);
+
+    const doneTimer = window.setTimeout(() => {
+      setCalcProgress(100);
+      setPhase("result");
+    }, 2800);
+
+    return () => {
+      window.clearInterval(msgInterval);
+      window.clearInterval(progressInterval);
+      window.clearTimeout(doneTimer);
+    };
+  }, [phase, calculatingMessages.length]);
+
+  useEffect(() => {
+    if (phase !== "result") {
+      setResultViewed(false);
+      return;
+    }
+    setResultViewed(true);
+    trackEvent("view_offer", { cta: "quiz_form" });
+  }, [phase]);
 
   const persistProgress = useCallback(
     (stepId: string, nextAnswers: Record<string, string>) => {
@@ -151,22 +295,24 @@ export default function AdsQuizFunnel() {
     [],
   );
 
+  const goToCalculating = () => setPhase("calculating");
+
   const pickOption = (stepId: string, optionId: string) => {
     const next = { ...answers, [stepId]: optionId };
     setAnswers(next);
     persistProgress(stepId, next);
     trackEvent("quiz_step", { step_id: stepId, option_id: optionId });
     window.setTimeout(() => {
-      if (stepIndex < steps.length - 1) setStepIndex((i) => i + 1);
-      else setPhase("contact");
+      if (stepIndex < questionSteps.length - 1) setStepIndex((i) => i + 1);
+      else goToCalculating();
     }, 180);
   };
 
-  const advanceMessageOrOffer = () => {
+  const advanceMessageStep = () => {
     if (!currentStep) return;
     trackEvent("quiz_step", { step_id: currentStep.id, action: "continue" });
-    if (stepIndex < steps.length - 1) setStepIndex((i) => i + 1);
-    else setPhase("contact");
+    if (stepIndex < questionSteps.length - 1) setStepIndex((i) => i + 1);
+    else goToCalculating();
   };
 
   const startQuiz = () => {
@@ -174,6 +320,19 @@ export default function AdsQuizFunnel() {
     setPhase("steps");
     setStepIndex(0);
   };
+
+  const answerChips = useMemo(() => {
+    return questionSteps
+      .filter((s): s is Extract<AdsQuizStep, { type: "choice" }> => s.type === "choice")
+      .map((step) => {
+        const optionId = answers[step.id];
+        if (!optionId) return null;
+        const label = optionLabelForStep(step, optionId);
+        if (!label) return null;
+        return { key: step.id, text: `${chipLabelForStep(step)}: ${label}` };
+      })
+      .filter(Boolean) as { key: string; text: string }[];
+  }, [questionSteps, answers]);
 
   const firstNameValue = firstName.trim().split(/\s+/)[0] ?? "";
   const nameOk = firstNameValue.length >= 2;
@@ -268,13 +427,17 @@ export default function AdsQuizFunnel() {
   const stepLabel =
     phase === "landing"
       ? "Início"
-      : phase === "contact"
-        ? `Contato · ${contactStep === "name" ? "nome" : contactStep === "email" ? "e-mail" : "WhatsApp"}`
-        : `Pergunta ${stepIndex + 1}`;
+      : phase === "calculating"
+        ? "Analisando"
+        : phase === "result"
+          ? "Seu diagnóstico"
+          : phase === "contact"
+            ? `Contato · ${contactStep === "name" ? "nome" : contactStep === "email" ? "e-mail" : "WhatsApp"}`
+            : `Pergunta ${stepIndex + 1}`;
 
   return (
     <div className="relative min-h-screen flex flex-col bg-black">
-      <div className={funnel.glow} aria-hidden />
+      <div className={cn(funnel.glow, phase === "result" && "funnel-pulse-glow")} aria-hidden />
       <div className={funnel.glowBottom} aria-hidden />
 
       <header className="relative z-10 px-5 sm:px-6 pt-5 pb-3">
@@ -298,7 +461,7 @@ export default function AdsQuizFunnel() {
             <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
               <div
                 className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary shadow-[0_0_12px_rgba(255,184,0,0.5)] transition-all duration-500 ease-out"
-                style={{ width: `${progressPct}%` }}
+                style={{ width: `${phase === "calculating" ? calcProgress : progressPct}%` }}
               />
             </div>
           </div>
@@ -313,8 +476,10 @@ export default function AdsQuizFunnel() {
               Menos de 2 minutos · 100% gratuito
             </div>
 
+            <AvatarStack />
+
             <p className="text-xs tracking-[0.28em] uppercase text-primary font-bold">{landing.eyebrow}</p>
-            <h1 className="text-3xl sm:text-[2.35rem] font-black uppercase leading-[1.02] tracking-tight text-white">
+            <h1 className="text-3xl sm:text-[2.35rem] font-black uppercase leading-[1.02] tracking-tight funnel-headline-gold">
               {landing.headline}
             </h1>
             <p className="text-base text-white/50 font-inter leading-relaxed">{landing.subheadline}</p>
@@ -336,7 +501,7 @@ export default function AdsQuizFunnel() {
               </li>
             </ul>
 
-            <button type="button" onClick={startQuiz} className={cn(funnel.cta, "mt-2")}>
+            <button type="button" onClick={startQuiz} className={cn(funnel.ctaShimmer, "mt-2")}>
               {landing.ctaLabel}
               <ArrowRight className="w-5 h-5" />
             </button>
@@ -396,43 +561,145 @@ export default function AdsQuizFunnel() {
                     {currentStep.body}
                   </p>
                 </div>
-                <button type="button" onClick={advanceMessageOrOffer} className={funnel.cta}>
+                <button type="button" onClick={advanceMessageStep} className={funnel.cta}>
                   {currentStep.ctaLabel}
                   <ArrowRight className="w-5 h-5" />
                 </button>
               </>
+            )}
+          </StepShell>
+        )}
+
+        {phase === "calculating" && (
+          <StepShell stepKey="calculating">
+            <div className="text-center space-y-8 py-6">
+              <div className="mx-auto w-16 h-16 rounded-full border-2 border-primary/30 flex items-center justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.3em] text-primary/80 font-bold mb-3">
+                  Processando
+                </p>
+                <p className="text-lg font-bold text-white font-inter min-h-[3rem] transition-opacity duration-300">
+                  {calculatingMessages[calcMsgIndex]}
+                </p>
+              </div>
+              <div className="space-y-2">
+                {calculatingMessages.map((msg, i) => (
+                  <div
+                    key={msg}
+                    className={cn(
+                      "flex items-center gap-2 text-sm font-inter transition-all duration-300",
+                      i <= calcMsgIndex ? "text-white/70" : "text-white/15",
+                    )}
+                  >
+                    <span
+                      className={cn(
+                        "flex h-5 w-5 items-center justify-center rounded-full border text-[10px]",
+                        i < calcMsgIndex
+                          ? "border-primary bg-primary text-[#0a0a0a]"
+                          : i === calcMsgIndex
+                            ? "border-primary/60 text-primary"
+                            : "border-white/10",
+                      )}
+                    >
+                      {i < calcMsgIndex ? <Check className="w-3 h-3" /> : i + 1}
+                    </span>
+                    {msg}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </StepShell>
+        )}
+
+        {phase === "result" && offerStep && (
+          <StepShell stepKey="result">
+            <p className="text-[10px] uppercase tracking-[0.3em] text-primary font-bold">
+              {resultConfig.eyebrow}
+            </p>
+            <h2 className="text-2xl sm:text-[1.75rem] font-black uppercase leading-tight tracking-tight funnel-headline-gold">
+              {resultConfig.headline}
+            </h2>
+            {resultConfig.reassurance && (
+              <p className="text-sm text-white/50 font-inter leading-relaxed">{resultConfig.reassurance}</p>
             )}
 
-            {currentStep.type === "offer" && (
-              <>
-                <h2 className="text-2xl font-black text-white uppercase tracking-tight">
-                  {currentStep.title}
-                </h2>
-                <div className={funnel.offerCard}>
-                  <p className="text-sm text-white/50 font-inter">{currentStep.body}</p>
-                  <p className="text-5xl sm:text-6xl font-black text-primary mt-4 leading-none drop-shadow-[0_0_24px_rgba(255,184,0,0.3)]">
-                    {currentStep.priceLabel}
-                  </p>
-                  {currentStep.priceNote && (
-                    <p className="text-xs text-white/35 font-inter mt-2 uppercase tracking-wide">
-                      {currentStep.priceNote}
-                    </p>
-                  )}
-                  <ul className="space-y-2.5 mt-6 pt-5 border-t border-white/[0.06]">
-                    {currentStep.bullets.map((b) => (
-                      <li key={b} className="flex items-start gap-2.5 text-sm text-white/65 font-inter">
-                        <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
-                        {b}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <button type="button" onClick={advanceMessageOrOffer} className={funnel.cta}>
-                  {currentStep.ctaLabel}
-                  <ArrowRight className="w-5 h-5" />
-                </button>
-              </>
+            {answerChips.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {answerChips.map((chip) => (
+                  <span
+                    key={chip.key}
+                    className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/60 font-inter"
+                  >
+                    {chip.text}
+                  </span>
+                ))}
+              </div>
             )}
+
+            <div className={funnel.offerCard}>
+              <h3 className="text-lg font-black text-white uppercase tracking-tight">{offerStep.title}</h3>
+              <p className="text-sm text-white/50 font-inter mt-2">{offerStep.body}</p>
+
+              {offerStep.urgencyNote && (
+                <div className="mt-4 rounded-xl border border-red-500/25 bg-red-500/[0.06] px-4 py-2.5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-red-400 font-inter">
+                    {offerStep.urgencyNote}
+                  </p>
+                </div>
+              )}
+
+              <div className="mt-5 flex items-end gap-3 min-h-[4.5rem]">
+                {offerStep.originalPriceLabel && (
+                  <p className="text-lg text-white/30 font-inter line-through pb-1">
+                    {offerStep.originalPriceLabel}
+                  </p>
+                )}
+                <p className="text-5xl sm:text-6xl font-black text-primary leading-none drop-shadow-[0_0_28px_rgba(255,184,0,0.45)] funnel-price-pop tabular-nums">
+                  {animatedPrice}
+                </p>
+              </div>
+
+              {offerStep.priceNote && (
+                <p className="text-xs text-white/35 font-inter mt-2 uppercase tracking-wide">
+                  {offerStep.priceNote}
+                </p>
+              )}
+
+              <ul className="space-y-2.5 mt-6 pt-5 border-t border-white/[0.06]">
+                {offerStep.bullets.map((b) => (
+                  <li key={b} className="flex items-start gap-2.5 text-sm text-white/65 font-inter">
+                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                    {b}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {testimonials.length > 0 && (
+              <div className="space-y-3">
+                {testimonials.map((t) => (
+                  <blockquote
+                    key={`${t.name}-${t.quote.slice(0, 24)}`}
+                    className="rounded-2xl border border-white/[0.05] bg-[#060606] px-4 py-4"
+                  >
+                    <p className="text-sm text-white/60 font-inter italic leading-relaxed">
+                      &ldquo;{t.quote}&rdquo;
+                    </p>
+                    <footer className="mt-2 text-xs text-white/35 font-inter">
+                      <span className="text-white/55 font-semibold">{t.name}</span>
+                      {t.role ? ` · ${t.role}` : ""}
+                    </footer>
+                  </blockquote>
+                ))}
+              </div>
+            )}
+
+            <button type="button" onClick={() => setPhase("contact")} className={funnel.ctaShimmer}>
+              {offerStep.ctaLabel}
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </StepShell>
         )}
 
