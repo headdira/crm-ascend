@@ -239,7 +239,7 @@ function AvatarStack({ count = 5 }: { count?: number }) {
       <p className="text-xs text-white/45 font-inter leading-snug">
         <span className="text-white/70 font-semibold">+500 alunos</span>
         <br />
-        já fizeram o diagnóstico
+        já receberam loja pronta
       </p>
     </div>
   );
@@ -670,11 +670,15 @@ export default function AdsQuizFunnel() {
             <ul className="space-y-2 text-sm text-white/40 font-inter">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0" />
-                Diagnóstico personalizado com base nas suas respostas
+                Loja pronta com produtos validados no nicho que você escolher
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0" />
-                Sem compromisso — você só paga se quiser entrar
+                Logo, banner e identidade visual personalizados
+              </li>
+              <li className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0" />
+                Sem cartão agora — diagnóstico 100% gratuito
               </li>
             </ul>
 
