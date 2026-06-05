@@ -4,6 +4,7 @@ export const ADS_QUIZ_SLUG = "ascend-ads" as const;
 
 export const quizInsightVariantSchema = z.enum([
   "default",
+  "print",
   "testimonial",
   "objection",
   "benefit",
@@ -11,11 +12,26 @@ export const quizInsightVariantSchema = z.enum([
   "mentor",
 ]);
 
+/** Prints reais servidos em /public/media/proof (mesmos da landing). */
+export const QUIZ_PROOF_IMAGES = [
+  "/media/proof/proof-01.jpeg",
+  "/media/proof/proof-02.jpg",
+  "/media/proof/proof-03.jpeg",
+  "/media/proof/proof-04.jpeg",
+  "/media/proof/proof-05.jpeg",
+  "/media/proof/proof-06.jpeg",
+  "/media/proof/proof-07.jpeg",
+  "/media/proof/proof-08.jpg",
+  "/media/proof/proof-09.jpg",
+  "/media/proof/proof-10.jpg",
+] as const;
+
 export const quizInsightProofSchema = z.object({
   name: z.string().max(80).optional(),
   role: z.string().max(120).optional(),
   quote: z.string().max(400).optional(),
   imageUrl: z.string().max(500).optional(),
+  imageCaption: z.string().max(120).optional(),
   statLabel: z.string().max(80).optional(),
 });
 
@@ -207,12 +223,10 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
             eyebrow: "PRIMEIRO MARCO",
             title: "Renda extra com método — não com tentativa e erro",
             body: "No Ascend Club você segue um passo a passo pensado para iniciantes, com 2 calls ao vivo por semana para não travar no caminho.",
-            variant: "testimonial",
+            variant: "print",
             proof: {
-              name: "Lucas F.",
-              role: "Aluno Ascend Club",
-              quote: "Em 3 meses já estava faturando R$2.500/mês. O suporte próximo faz toda a diferença.",
-              imageUrl: "/testimonials/lucas-f.jpg",
+              imageUrl: QUIZ_PROOF_IMAGES[0],
+              imageCaption: "Print real de aluno no Ascend Club",
             },
           },
         },
@@ -225,12 +239,10 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
             eyebrow: "MOVIMENTO ASCEND",
             title: "Você não precisa fazer essa virada sozinho",
             body: "O Ascend Club é mentoria + comunidade ativa: networking real, direcionamento e suporte próximo enquanto você constrói sua saída do CLT.",
-            variant: "testimonial",
+            variant: "print",
             proof: {
-              name: "Mariana C.",
-              role: "Aluna Ascend Club",
-              quote: "Saí do CLT e hoje tenho meu próprio negócio digital. Melhor investimento que já fiz.",
-              imageUrl: "/testimonials/mariana-c.jpg",
+              imageUrl: QUIZ_PROOF_IMAGES[1],
+              imageCaption: "Print real — resultado no digital",
             },
           },
         },
@@ -243,12 +255,10 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
             eyebrow: "NETWORKING",
             title: "Escala pede direcionamento e conexões",
             body: "Além do método, você entra em um grupo de networking exclusivo — onde parcerias e trocas aceleram resultados.",
-            variant: "testimonial",
+            variant: "print",
             proof: {
-              name: "Rafael O.",
-              role: "Aluno Ascend Club",
-              quote: "Fechei parcerias e meu faturamento triplicou em 6 meses.",
-              imageUrl: "/testimonials/rafael-o.jpg",
+              imageUrl: QUIZ_PROOF_IMAGES[2],
+              imageCaption: "Print real — escala no método Ascend",
             },
           },
         },
@@ -267,8 +277,11 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
             eyebrow: "MÉTODO DO ZERO",
             title: "A mentoria foi criada para quem está começando",
             body: "Passo a passo claro, linguagem acessível e suporte no WhatsApp. Você não precisa chegar sabendo — precisa chegar disposto a seguir o direcionamento.",
-            variant: "benefit",
-            proof: { statLabel: "+500 alunos aplicando o método" },
+            variant: "print",
+            proof: {
+              imageUrl: QUIZ_PROOF_IMAGES[3],
+              imageCaption: "Print real — começando do zero",
+            },
           },
         },
         {
@@ -279,12 +292,10 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
             eyebrow: "NÃO É CURSO GRAVADO",
             title: "Aqui você tem acompanhamento de verdade",
             body: "2 calls ao vivo por semana + suporte próximo. Dúvidas resolvidas na hora — não em módulo gravado que você assiste sem feedback.",
-            variant: "objection",
+            variant: "print",
             proof: {
-              name: "Pedro H.",
-              role: "Aluno Ascend Club",
-              quote: "Já tentei vários cursos. O Ascend Club é diferente: acompanhamento DE VERDADE.",
-              imageUrl: "/testimonials/pedro-h.jpg",
+              imageUrl: QUIZ_PROOF_IMAGES[4],
+              imageCaption: "Print real — acompanhamento no programa",
             },
           },
         },
@@ -296,12 +307,10 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
             eyebrow: "PRÓXIMO NÍVEL",
             title: "Estrutura, calls e comunidade para escalar com consistência",
             body: "Ferramentas usadas por grandes players, palestrantes convidados e networking ativo — para quem já tem tração e quer organizar o crescimento.",
-            variant: "benefit",
+            variant: "print",
             proof: {
-              name: "Ana C.",
-              role: "Aluna Ascend Club",
-              quote: "As calls ao vivo são transformadoras. Cada dúvida resolvida na hora.",
-              imageUrl: "/testimonials/ana-c.jpg",
+              imageUrl: QUIZ_PROOF_IMAGES[5],
+              imageCaption: "Print real — evolução com estrutura",
             },
           },
         },
@@ -320,7 +329,11 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
             eyebrow: "DIRECIONAMENTO",
             title: "Do zero ao resultado — com rota clara",
             body: "O Ascend Club organiza o caminho em etapas práticas. Você sabe o que fazer agora, e o que vem depois — sem ficar pulando de vídeo em vídeo.",
-            variant: "benefit",
+            variant: "print",
+            proof: {
+              imageUrl: QUIZ_PROOF_IMAGES[6],
+              imageCaption: "Print real — passo a passo aplicado",
+            },
           },
         },
         {
@@ -331,8 +344,11 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
             eyebrow: "COMUNIDADE ATIVA",
             title: "Networking e suporte que mantêm você no jogo",
             body: "Grupo exclusivo, 2 calls por semana e WhatsApp com o time. Você faz parte de um movimento — não de mais uma plataforma abandonada.",
-            variant: "stat",
-            proof: { statLabel: "2 calls ao vivo · toda semana" },
+            variant: "print",
+            proof: {
+              imageUrl: QUIZ_PROOF_IMAGES[7],
+              imageCaption: "Print real — comunidade Ascend Club",
+            },
           },
         },
         {
@@ -343,8 +359,11 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
             eyebrow: "PROVA REAL",
             title: "Método validado em perfis diferentes",
             body: "Centenas de alunos em situações distintas já aplicaram o método Ascend. Se você participa e segue o direcionamento, o caminho existe.",
-            variant: "objection",
-            proof: { statLabel: "+500 alunos · perfis e contextos diferentes" },
+            variant: "print",
+            proof: {
+              imageUrl: QUIZ_PROOF_IMAGES[8],
+              imageCaption: "Print real de resultado — mesmos da landing",
+            },
           },
         },
         {
@@ -355,11 +374,10 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
             eyebrow: "RITMO COM SUPORTE",
             title: "Calls ao vivo para destravar — sem ficar perdido",
             body: "As aulas em grupo tiram dúvidas na hora e explicam até fixar. Você avança no seu ritmo, mas nunca sem referência.",
-            variant: "benefit",
+            variant: "print",
             proof: {
-              name: "Kelvin Martins",
-              role: "Co-fundador · Ascend Club",
-              quote: "Traduzimos o que funciona no mercado em passos claros — do primeiro conteúdo à primeira venda.",
+              imageUrl: QUIZ_PROOF_IMAGES[9],
+              imageCaption: "Print real — suporte e evolução no programa",
             },
           },
         },

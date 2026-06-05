@@ -123,6 +123,27 @@ function InsightProof({ insight }: { insight: QuizOptionInsight }) {
   const proof = insight.proof;
   if (!proof) return null;
 
+  const isPrint =
+    insight.variant === "print" || (Boolean(proof.imageUrl) && !proof.quote);
+
+  if (isPrint && proof.imageUrl) {
+    return (
+      <figure className="rounded-2xl border border-white/[0.08] bg-[#060606] overflow-hidden min-h-[12rem]">
+        <img
+          src={proof.imageUrl}
+          alt={proof.imageCaption ?? "Print real de resultado"}
+          className="w-full max-h-[22rem] object-cover object-top"
+          loading="lazy"
+        />
+        {proof.imageCaption && (
+          <figcaption className="px-4 py-3 text-[11px] uppercase tracking-wider text-white/40 font-inter border-t border-white/[0.06]">
+            {proof.imageCaption}
+          </figcaption>
+        )}
+      </figure>
+    );
+  }
+
   if (insight.variant === "stat" && proof.statLabel) {
     return (
       <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] px-4 py-4 min-h-[4.5rem] flex items-center gap-3">
@@ -415,6 +436,7 @@ export default function AdsQuizFunnel() {
     });
     setActiveInsight(null);
     setInsightMeta(null);
+    setPhase("steps");
     advanceAfterQuestion();
   };
 

@@ -236,6 +236,7 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
                           p?.role ?? "",
                           p?.quote ?? "",
                           p?.imageUrl ?? "",
+                          p?.imageCaption ?? "",
                           p?.statLabel ?? "",
                         ].join("|");
                       })
@@ -257,6 +258,7 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
                               role,
                               quote,
                               imageUrl,
+                              imageCaption,
                               statLabel,
                             ] = line.split("|");
                             if (!optionId?.trim() || !title?.trim() || !body?.trim()) return null;
@@ -265,29 +267,36 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
                               role?.trim() ||
                               quote?.trim() ||
                               imageUrl?.trim() ||
+                              imageCaption?.trim() ||
                               statLabel?.trim()
                                 ? {
                                     name: cleanOptional(name ?? ""),
                                     role: cleanOptional(role ?? ""),
                                     quote: cleanOptional(quote ?? ""),
                                     imageUrl: cleanOptional(imageUrl ?? ""),
+                                    imageCaption: cleanOptional(imageCaption ?? ""),
                                     statLabel: cleanOptional(statLabel ?? ""),
                                   }
                                 : undefined;
+                            const variantValue = cleanOptional(variant ?? "");
+                            const allowedVariants = [
+                              "default",
+                              "print",
+                              "testimonial",
+                              "objection",
+                              "benefit",
+                              "stat",
+                              "mentor",
+                            ] as const;
                             return [
                               optionId.trim(),
                               {
                                 eyebrow: cleanOptional(eyebrow ?? ""),
                                 title: title.trim(),
                                 body: body.trim(),
-                                variant: cleanOptional(variant ?? "") as
-                                  | "default"
-                                  | "testimonial"
-                                  | "objection"
-                                  | "benefit"
-                                  | "stat"
-                                  | "mentor"
-                                  | undefined,
+                                variant: allowedVariants.includes(variantValue as (typeof allowedVariants)[number])
+                                  ? (variantValue as (typeof allowedVariants)[number])
+                                  : undefined,
                                 proof,
                               },
                             ] as const;
@@ -308,7 +317,7 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
                         }),
                       }));
                     }}
-                    placeholder="optionId|eyebrow|título|corpo|variant|nome|cargo|quote|imageUrl|statLabel"
+                    placeholder="optionId|eyebrow|título|corpo|print|nome|cargo|quote|/media/proof/proof-01.jpeg|legenda|statLabel"
                   />
                 </Field>
               </>
@@ -558,7 +567,7 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-sm font-bold uppercase tracking-wider">Depoimentos na oferta (opcional)</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wider">Depoimentos na oferta final (opcional)</h2>
         <Field>
           <FieldLabel>nome|cargo|frase — um por linha</FieldLabel>
           <Textarea
