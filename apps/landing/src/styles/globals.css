@@ -157,6 +157,59 @@ body {
   line-height: 1.65;
 }
 
+.form-funnel .funnel-landing-frame {
+  width: 100%;
+  max-width: 22rem;
+  margin-inline: auto;
+  padding: 1.5rem 1.25rem 1.75rem;
+  border-radius: 1.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
+  box-shadow:
+    0 24px 80px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.form-funnel .funnel-landing-hero {
+  width: 100%;
+  max-width: 15rem;
+  margin-inline: auto;
+  aspect-ratio: 4 / 5;
+  border-radius: 1.25rem;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+}
+
+.form-funnel .funnel-landing-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  min-height: 3.75rem;
+  padding: 1rem 1.5rem;
+  border-radius: 1rem;
+  font-family: var(--font-funnel-display, "Oswald", sans-serif);
+  font-size: 1.0625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0a0a0a;
+  background: #ffb800;
+  box-shadow: 0 12px 40px rgba(255, 184, 0, 0.35);
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-funnel .funnel-landing-cta:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 16px 48px rgba(255, 184, 0, 0.42);
+}
+
+.form-funnel .funnel-landing-cta:active {
+  transform: scale(0.985);
+}
+
 @media (min-width: 640px) {
   .form-funnel .funnel-body {
     font-size: 1.125rem;

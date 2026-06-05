@@ -128,6 +128,7 @@ export const adsQuizConfigSchema = z.object({
     subheadline: z.string().max(600),
     ctaLabel: z.string().min(1).max(80),
     socialProof: z.string().max(200).optional(),
+    heroImageUrl: z.string().max(500).optional(),
   }),
   steps: z.array(quizStepSchema).min(1).max(24),
   calculating: z
@@ -286,8 +287,8 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
       "Veja se o Ascend Club resolve o que você busca: renda online, liberdade financeira e geográfica — sem precisar aparecer",
     subheadline:
       "Responda em poucos minutos. Entendemos seu momento e mostramos o plano adaptado: loja pronta com produtos selecionados, ensino de como vender e mentoria ao vivo. Não é curso gravado. Sem cartão.",
-    ctaLabel: "COMEÇAR MEU DIAGNÓSTICO",
-    socialProof: "⚡ +500 alunos já no programa — loja, vendas e mentoria ao vivo",
+    ctaLabel: "COMEÇAR AGORA",
+    socialProof: "⚡ Mais de 500 alunos já no programa — loja, vendas e mentoria ao vivo",
   },
   steps: [
     {

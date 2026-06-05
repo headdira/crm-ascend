@@ -5,7 +5,6 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
-  Clock,
   Loader2,
   Lock,
   Quote,
@@ -29,6 +28,7 @@ import { ensureLandingSession, trackEvent } from "@/lib/sales/track-client";
 import { buildPersonalizedCheckoutUrl } from "@/lib/sales/checkout-url";
 import { openCheckoutInNewTab } from "@/lib/sales/open-checkout";
 import { cn } from "@/lib/utils";
+import { QUIZ_LANDING_HEROES } from "@/lib/sales/media";
 
 type Phase = "landing" | "steps" | "insight" | "calculating" | "result" | "contact";
 type ContactStep = "name" | "email" | "phone";
@@ -257,30 +257,6 @@ function TrustFooter() {
   );
 }
 
-function AvatarStack({ count = 5 }: { count?: number }) {
-  const colors = ["#ffb800", "#ff9500", "#e6a800", "#ffc933", "#cc9200"];
-  return (
-    <div className="flex items-center gap-3">
-      <div className="flex -space-x-2.5">
-        {Array.from({ length: count }).map((_, i) => (
-          <span
-            key={i}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-black text-[10px] font-black text-[#0a0a0a]"
-            style={{ backgroundColor: colors[i % colors.length] }}
-          >
-            {String.fromCharCode(65 + i)}
-          </span>
-        ))}
-      </div>
-      <p className="text-xs text-white/45 font-inter leading-snug">
-        <span className="text-white/70 font-semibold">+500 alunos</span>
-        <br />
-        já fizeram o diagnóstico
-      </p>
-    </div>
-  );
-}
-
 export default function AdsQuizFunnel() {
   const [config, setConfig] = useState<AdsQuizConfig | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -301,6 +277,7 @@ export default function AdsQuizFunnel() {
   const [multiDraft, setMultiDraft] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const calculatingStarted = useRef(false);
+  const landingHeroRef = useRef<string | null>(null);
 
   useEffect(() => {
     void ensureLandingSession().then(() => {
@@ -635,6 +612,10 @@ export default function AdsQuizFunnel() {
   }
 
   const { landing, contact } = config;
+  const landingHero =
+    landing.heroImageUrl ??
+    (landingHeroRef.current ??=
+      QUIZ_LANDING_HEROES[Math.floor(Math.random() * QUIZ_LANDING_HEROES.length)]);
   const stepLabel =
     phase === "landing"
       ? "Início"
@@ -653,83 +634,85 @@ export default function AdsQuizFunnel() {
       <div className={cn(funnel.glow, phase === "result" && "funnel-pulse-glow")} aria-hidden />
       <div className={funnel.glowBottom} aria-hidden />
 
-      <header className="relative z-10 px-5 sm:px-6 pt-5 pb-3">
-        <div className="max-w-lg mx-auto flex items-center justify-between gap-4">
-          <div>
-            <p className="funnel-display text-xs tracking-[0.35em] uppercase text-primary font-bold">Ascend Club</p>
+      {phase !== "landing" && (
+        <header className="relative z-10 px-5 sm:px-6 pt-5 pb-3">
+          <div className="max-w-lg mx-auto flex items-center justify-between gap-4">
+            <div>
+              <p className="funnel-display text-xs tracking-[0.35em] uppercase text-primary font-bold">Ascend Club</p>
+              {progressDone > 0 && (
+                <p className="text-[10px] text-white/30 font-inter mt-0.5">{stepLabel}</p>
+              )}
+            </div>
             {progressDone > 0 && (
-              <p className="text-[10px] text-white/30 font-inter mt-0.5">{stepLabel}</p>
-            )}
-          </div>
-          {progressDone > 0 && (
-            <div className="text-right">
-              <p className="text-[10px] uppercase tracking-wider text-white/30 font-inter">Progresso</p>
-              <p className="funnel-display text-lg font-bold text-primary tabular-nums">{progressPct}%</p>
-            </div>
-          )}
-        </div>
-
-        {progressDone > 0 && (
-          <div className="max-w-lg mx-auto mt-4">
-            <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary shadow-[0_0_12px_rgba(255,184,0,0.5)] transition-all duration-500 ease-out"
-                style={{ width: `${phase === "calculating" ? calcProgress : progressPct}%` }}
-              />
-            </div>
-          </div>
-        )}
-      </header>
-
-      <main className="relative z-10 flex-1 max-w-lg mx-auto w-full px-5 sm:px-6 py-8 sm:py-10">
-        {phase === "landing" && (
-          <StepShell stepKey="landing">
-            <div className="inline-flex items-center gap-2 funnel-eyebrow-strip text-xs uppercase tracking-wider text-white/70 font-inter">
-              <Clock className="w-4 h-4 text-primary shrink-0" />
-              Menos de 2 minutos · 100% gratuito
-            </div>
-
-            <AvatarStack />
-
-            <FunnelEyebrow>{landing.eyebrow}</FunnelEyebrow>
-            <FunnelTitle as="h1" size="xl" gold>
-              {landing.headline}
-            </FunnelTitle>
-            <p className="funnel-body text-white/60 font-inter">{landing.subheadline}</p>
-
-            {landing.socialProof && (
-              <div className="funnel-marker-solid rounded-xl">
-                <p className="funnel-display text-base sm:text-lg text-primary font-bold uppercase tracking-wide">
-                  {landing.socialProof}
-                </p>
+              <div className="text-right">
+                <p className="text-[10px] uppercase tracking-wider text-white/30 font-inter">Progresso</p>
+                <p className="funnel-display text-lg font-bold text-primary tabular-nums">{progressPct}%</p>
               </div>
             )}
+          </div>
 
-            <ul className="space-y-3 funnel-body text-white/50 font-inter">
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0" />
-                Entendemos seu problema e adaptamos o plano ao seu momento
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0" />
-                Loja pronta + ensino de vendas + mentoria ao vivo
-              </li>
-              <li className="flex items-center gap-2">
-                <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0" />
-                Sem cartão agora — diagnóstico gratuito
-              </li>
-            </ul>
+          {progressDone > 0 && (
+            <div className="max-w-lg mx-auto mt-4">
+              <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary shadow-[0_0_12px_rgba(255,184,0,0.5)] transition-all duration-500 ease-out"
+                  style={{ width: `${phase === "calculating" ? calcProgress : progressPct}%` }}
+                />
+              </div>
+            </div>
+          )}
+        </header>
+      )}
 
-            <button type="button" onClick={startQuiz} className={cn(funnel.ctaShimmer, "mt-2")}>
-              {landing.ctaLabel}
-              <ArrowRight className="w-5 h-5" />
-            </button>
+      <main
+        className={cn(
+          "relative z-10 flex-1 w-full px-5 sm:px-6",
+          phase === "landing"
+            ? "flex flex-col items-center justify-center py-6 sm:py-8"
+            : "max-w-lg mx-auto py-8 sm:py-10",
+        )}
+      >
+        {phase === "landing" && (
+          <StepShell stepKey="landing">
+            <div className="funnel-landing-frame text-center space-y-5 sm:space-y-6">
+              {landingHero && (
+                <div className="funnel-landing-hero">
+                  <img
+                    src={landingHero}
+                    alt=""
+                    className="h-full w-full object-cover object-center"
+                    loading="eager"
+                    decoding="async"
+                  />
+                </div>
+              )}
 
-            {loadError && (
-              <p className="text-xs text-amber-400/70 font-inter text-center">
-                Usando configuração padrão (não foi possível carregar do servidor).
-              </p>
-            )}
+              <div className="space-y-3">
+                <FunnelTitle as="h1" size="lg" gold>
+                  {landing.headline}
+                </FunnelTitle>
+                <p className="funnel-body text-white/60 font-inter text-base sm:text-[1.05rem] leading-relaxed">
+                  {landing.subheadline}
+                </p>
+              </div>
+
+              <div className="space-y-3 pt-1">
+                <button type="button" onClick={startQuiz} className="funnel-landing-cta">
+                  {landing.ctaLabel}
+                  <ArrowRight className="w-5 h-5 shrink-0" aria-hidden />
+                </button>
+
+                {landing.socialProof && (
+                  <p className="text-sm text-white/45 font-inter leading-snug px-1">{landing.socialProof}</p>
+                )}
+              </div>
+
+              {loadError && (
+                <p className="text-xs text-amber-400/70 font-inter text-center">
+                  Usando configuração padrão (não foi possível carregar do servidor).
+                </p>
+              )}
+            </div>
           </StepShell>
         )}
 

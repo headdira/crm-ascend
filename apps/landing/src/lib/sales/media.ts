@@ -9,6 +9,11 @@ export const MENTOR_KELVIN_WEBP = "/media/mentor-kelvin.webp";
 export const MENTOR_ERICK_IMAGE = "/media/mentor-erick.jpeg";
 export const MENTOR_ERICK_WEBP = "/media/mentor-erick.webp";
 
+/** Banners estilo funil InLead (selfie + destino) para capa do quiz /form */
+export const QUIZ_HERO_KELVIN_PARIS = "/media/quiz-hero-kelvin-paris.png";
+export const QUIZ_HERO_ERICK_DUBAI = "/media/quiz-hero-erick-dubai.png";
+export const QUIZ_LANDING_HEROES = [QUIZ_HERO_KELVIN_PARIS, QUIZ_HERO_ERICK_DUBAI] as const;
+
 export const PROOF_IMAGES = [
   "/media/proof/proof-01.jpeg",
   "/media/proof/proof-02.jpg",

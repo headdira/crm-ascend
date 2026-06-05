@@ -151,6 +151,19 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
               }
             />
           </Field>
+          <Field>
+            <FieldLabel>Foto da capa (URL, opcional)</FieldLabel>
+            <Input
+              value={landing.heroImageUrl ?? ""}
+              placeholder="/media/quiz-hero-kelvin-paris.png"
+              onChange={(e) =>
+                setSchema((s) => ({
+                  ...s,
+                  landing: { ...s.landing, heroImageUrl: cleanOptional(e.target.value) },
+                }))
+              }
+            />
+          </Field>
         </FieldGroup>
       </section>
 
