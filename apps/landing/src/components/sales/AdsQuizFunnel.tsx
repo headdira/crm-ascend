@@ -670,15 +670,15 @@ export default function AdsQuizFunnel() {
             <ul className="space-y-2 text-sm text-white/40 font-inter">
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0" />
-                Diagnóstico personalizado com base nas suas respostas
+                Entendemos seu problema e adaptamos o plano ao seu momento
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0" />
-                Inclui loja pronta com produtos validados por nicho
+                Loja pronta + ensino de vendas + mentoria ao vivo
               </li>
               <li className="flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0" />
-                Sem compromisso — você só paga se quiser entrar
+                Sem cartão agora — diagnóstico gratuito
               </li>
             </ul>
 
