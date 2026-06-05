@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import {
   BadgeCheck,
   FileSignature,
+  FormInput,
   GraduationCap,
   LifeBuoy,
   Package,
@@ -32,6 +33,7 @@ const nav = [
     label: "Comercial",
     items: [
       { href: "/crm/leads", label: "Leads", icon: UserPlus },
+      { href: "/crm/forms", label: "Formulário", icon: FormInput },
       { href: "/crm/students", label: "Alunos", icon: GraduationCap },
     ],
   },

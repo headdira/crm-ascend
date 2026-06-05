@@ -2,7 +2,11 @@ import type { APIRoute } from "astro";
 import { z } from "zod";
 import type { Json } from "@crm-ascend/db";
 import { ctaLabel } from "@/lib/sales/cta-labels";
-import { upsertCheckoutAbandon, upsertCheckoutLead } from "@/lib/sales/lead-server";
+import {
+  upsertAdsQuizProgress,
+  upsertCheckoutAbandon,
+  upsertCheckoutLead,
+} from "@/lib/sales/lead-server";
 
 const metaSchema = z.object({
   event_id: z.string().uuid(),
@@ -31,7 +35,24 @@ const abandonSchema = z.object({
   utm: z.record(z.unknown()).optional(),
 });
 
-const leadSchema = z.discriminatedUnion("type", [completeSchema, abandonSchema]);
+const quizCompleteSchema = completeSchema.omit({ type: true }).extend({
+  type: z.literal("quiz_complete"),
+  answers: z.record(z.unknown()).optional(),
+});
+
+const quizProgressSchema = z.object({
+  type: z.literal("quiz_progress"),
+  step_id: z.string().min(1).max(64),
+  answers: z.record(z.unknown()).optional(),
+  utm: z.record(z.unknown()).optional(),
+});
+
+const leadSchema = z.discriminatedUnion("type", [
+  completeSchema,
+  abandonSchema,
+  quizCompleteSchema,
+  quizProgressSchema,
+]);
 
 export const POST: APIRoute = async ({ request }) => {
   let body: unknown;
@@ -53,19 +74,39 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   try {
-    if (parsed.data.type === "complete") {
+    if (parsed.data.type === "complete" || parsed.data.type === "quiz_complete") {
+      const isQuiz = parsed.data.type === "quiz_complete";
       const result = await upsertCheckoutLead(request, {
         full_name: parsed.data.full_name,
         email: parsed.data.email,
         phone: parsed.data.phone,
         utm: (parsed.data.utm ?? {}) as Json,
         tracking: {
-          cta: parsed.data.cta,
-          cta_label: ctaLabel(parsed.data.cta),
+          cta: isQuiz ? "quiz_form" : parsed.data.cta,
+          cta_label: isQuiz ? "Quiz anúncios" : ctaLabel(parsed.data.cta),
         },
         meta: parsed.data.meta,
+        quiz_extra: isQuiz
+          ? {
+              ads_quiz: true,
+              ads_quiz_answers: parsed.data.answers ?? {},
+              checkout_flow: false,
+            }
+          : undefined,
       });
       return new Response(JSON.stringify({ ok: true, id: result.id, checkout_url: result.checkout_url }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (parsed.data.type === "quiz_progress") {
+      const id = await upsertAdsQuizProgress(request, {
+        step_id: parsed.data.step_id,
+        answers: parsed.data.answers ?? {},
+        utm: (parsed.data.utm ?? {}) as Json,
+      });
+      return new Response(JSON.stringify({ ok: true, id }), {
         status: 200,
         headers: { "Content-Type": "application/json" },
       });

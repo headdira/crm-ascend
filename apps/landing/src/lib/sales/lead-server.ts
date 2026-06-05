@@ -127,6 +127,7 @@ export async function upsertCheckoutLead(
     utm?: Json;
     tracking?: CheckoutTracking;
     meta?: CheckoutMeta;
+    quiz_extra?: Record<string, unknown>;
   },
 ): Promise<{ id: string; checkout_url: string }> {
   const checkout_url = buildCheckoutUrlForLead(input);
@@ -158,6 +159,7 @@ export async function upsertCheckoutLead(
         quiz_answers: buildQuizAnswers(input.tracking, {
           ...prev,
           ...metaFields,
+          ...(input.quiz_extra ?? {}),
           checkout_completed: true,
           reached_kiwify: true,
           kiwify_checkout_pending: true,
@@ -200,6 +202,7 @@ export async function upsertCheckoutLead(
     utm: (input.utm ?? {}) as Json,
     quiz_answers: buildQuizAnswers(input.tracking, {
       ...metaFields,
+      ...(input.quiz_extra ?? {}),
       checkout_completed: true,
       reached_kiwify: true,
       kiwify_checkout_pending: true,
@@ -347,4 +350,54 @@ export async function upsertCheckoutAbandon(
 
   if (error) throw error;
   return data.id;
+}
+
+export async function upsertAdsQuizProgress(
+  request: Request,
+  input: {
+    step_id: string;
+    answers: Record<string, unknown>;
+    utm?: Json;
+  },
+) {
+  const sessionId = getSessionIdFromRequest(request);
+  if (!sessionId) return null;
+
+  await upsertLandingSession(request, sessionId);
+  await ensureColdLeadForSession(sessionId, { eventName: "quiz_progress" });
+
+  const now = new Date().toISOString();
+  const tracking: CheckoutTracking = {
+    cta: "quiz_form",
+    cta_label: "Quiz anúncios",
+  };
+
+  const supabase = createServiceSupabase();
+  const { data: sessionLead } = await supabase
+    .from("leads")
+    .select("id, quiz_answers")
+    .eq("session_id", sessionId)
+    .maybeSingle();
+
+  const partial: Record<string, unknown> = {
+    ads_quiz: true,
+    ads_quiz_step: input.step_id,
+    ads_quiz_answers: input.answers,
+    ads_quiz_updated_at: now,
+  };
+
+  if (sessionLead) {
+    const prev = (sessionLead.quiz_answers ?? {}) as Record<string, unknown>;
+    await supabase
+      .from("leads")
+      .update({
+        utm: (input.utm ?? {}) as Json,
+        quiz_answers: { ...prev, ...buildQuizAnswers(tracking, partial) } as Json,
+        last_event_at: now,
+      })
+      .eq("id", sessionLead.id);
+    return sessionLead.id;
+  }
+
+  return null;
 }
