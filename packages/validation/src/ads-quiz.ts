@@ -284,9 +284,9 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
   landing: {
     eyebrow: "Diagnóstico gratuito · Ascend Club",
     headline:
-      "Veja se o Ascend Club resolve o que você busca: renda online, liberdade financeira e geográfica — sem precisar aparecer",
+      "Descubra como o **Ascend Club** monta seu plano de **renda online** com **loja pronta** e mentoria ao vivo",
     subheadline:
-      "Responda em poucos minutos. Entendemos seu momento e mostramos o plano adaptado: loja pronta com produtos selecionados, ensino de como vender e mentoria ao vivo. Não é curso gravado. Sem cartão.",
+      "Mesmo começando do zero, sem precisar aparecer, sem investir em anúncios e mesmo que você nunca tenha vendido nada online",
     ctaLabel: "COMEÇAR AGORA",
     socialProof: "⚡ Mais de 500 alunos já no programa — loja, vendas e mentoria ao vivo",
   },

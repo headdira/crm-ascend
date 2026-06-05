@@ -28,7 +28,7 @@ import { ensureLandingSession, trackEvent } from "@/lib/sales/track-client";
 import { buildPersonalizedCheckoutUrl } from "@/lib/sales/checkout-url";
 import { openCheckoutInNewTab } from "@/lib/sales/open-checkout";
 import { cn } from "@/lib/utils";
-import { QUIZ_LANDING_HEROES } from "@/lib/sales/media";
+import { MENTOR_KELVIN_IMAGE, MENTOR_ERICK_IMAGE } from "@/lib/sales/media";
 
 type Phase = "landing" | "steps" | "insight" | "calculating" | "result" | "contact";
 type ContactStep = "name" | "email" | "phone";
@@ -53,6 +53,58 @@ const funnel = {
   offerCard:
     "rounded-3xl border border-primary/25 bg-black p-6 sm:p-8 shadow-[0_0_72px_rgba(255,184,0,0.1)]",
 } as const;
+
+function renderHighlightedHeadline(text: string) {
+  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((segment, index) => {
+    if (segment.startsWith("**") && segment.endsWith("**")) {
+      return (
+        <span key={index} className="text-[#E8941C]">
+          {segment.slice(2, -2)}
+        </span>
+      );
+    }
+    return <span key={index}>{segment}</span>;
+  });
+}
+
+function QuizLandingBanner({ centerImage }: { centerImage: string }) {
+  return (
+    <div className="funnel-landing-banner relative w-full aspect-[5/3] rounded-2xl overflow-hidden bg-[#0a0a0a] shadow-[0_8px_32px_rgba(0,0,0,0.18)]">
+      <img
+        src="/media/quiz-hero-kelvin-paris.png"
+        alt=""
+        className="absolute -right-2 top-0 h-[72%] w-[58%] object-cover object-top opacity-80"
+        loading="eager"
+        decoding="async"
+      />
+      <img
+        src="/media/quiz-hero-erick-dubai.png"
+        alt=""
+        className="absolute -left-4 bottom-0 h-[68%] w-[52%] object-cover object-center opacity-75"
+        loading="eager"
+        decoding="async"
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/25" aria-hidden />
+
+      <img
+        src={centerImage}
+        alt=""
+        className="absolute bottom-0 left-1/2 z-10 h-[94%] w-auto max-w-[46%] -translate-x-1/2 object-contain object-bottom drop-shadow-[0_12px_40px_rgba(0,0,0,0.65)]"
+        loading="eager"
+        decoding="async"
+      />
+
+      <div className="absolute top-[9%] right-[7%] z-20 rounded-lg border border-white/10 bg-black/88 px-2.5 py-1.5 text-left shadow-lg">
+        <p className="text-[9px] font-semibold text-white sm:text-[10px]">Venda Aprovada!</p>
+        <p className="text-[10px] font-bold text-green-400 sm:text-xs">R$ 841,00</p>
+      </div>
+      <div className="absolute top-[36%] left-[5%] z-20 rounded-lg border border-white/10 bg-black/88 px-2 py-1 text-left shadow-lg">
+        <p className="text-[8px] text-white/75 sm:text-[9px]">PIX recebido</p>
+        <p className="text-[9px] font-bold text-green-400 sm:text-[10px]">R$ 2.554,00</p>
+      </div>
+    </div>
+  );
+}
 
 function FunnelEyebrow({ children }: { children: string }) {
   return (
@@ -277,7 +329,7 @@ export default function AdsQuizFunnel() {
   const [multiDraft, setMultiDraft] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const calculatingStarted = useRef(false);
-  const landingHeroRef = useRef<string | null>(null);
+  const landingCenterRef = useRef<string | null>(null);
 
   useEffect(() => {
     void ensureLandingSession().then(() => {
@@ -612,10 +664,9 @@ export default function AdsQuizFunnel() {
   }
 
   const { landing, contact } = config;
-  const landingHero =
-    landing.heroImageUrl ??
-    (landingHeroRef.current ??=
-      QUIZ_LANDING_HEROES[Math.floor(Math.random() * QUIZ_LANDING_HEROES.length)]);
+  const landingCenterImage =
+    landingCenterRef.current ??=
+      [MENTOR_KELVIN_IMAGE, MENTOR_ERICK_IMAGE][Math.floor(Math.random() * 2)];
   const stepLabel =
     phase === "landing"
       ? "Início"
@@ -630,9 +681,18 @@ export default function AdsQuizFunnel() {
             : `Pergunta ${stepIndex + 1}`;
 
   return (
-    <div className="form-funnel relative min-h-screen flex flex-col bg-black">
-      <div className={cn(funnel.glow, phase === "result" && "funnel-pulse-glow")} aria-hidden />
-      <div className={funnel.glowBottom} aria-hidden />
+    <div
+      className={cn(
+        "form-funnel relative min-h-screen flex flex-col",
+        phase === "landing" ? "bg-white" : "bg-black",
+      )}
+    >
+      {phase !== "landing" && (
+        <>
+          <div className={cn(funnel.glow, phase === "result" && "funnel-pulse-glow")} aria-hidden />
+          <div className={funnel.glowBottom} aria-hidden />
+        </>
+      )}
 
       {phase !== "landing" && (
         <header className="relative z-10 px-5 sm:px-6 pt-5 pb-3">
@@ -666,49 +726,52 @@ export default function AdsQuizFunnel() {
 
       <main
         className={cn(
-          "relative z-10 flex-1 w-full px-5 sm:px-6",
+          "relative z-10 flex-1 w-full px-4 sm:px-6",
           phase === "landing"
-            ? "flex flex-col items-center justify-center py-6 sm:py-8"
+            ? "flex flex-col items-center justify-center py-8 sm:py-12"
             : "max-w-lg mx-auto py-8 sm:py-10",
         )}
       >
         {phase === "landing" && (
           <StepShell stepKey="landing">
-            <div className="funnel-landing-frame text-center space-y-5 sm:space-y-6">
-              {landingHero && (
-                <div className="funnel-landing-hero">
+            <div className="funnel-landing-inlead mx-auto w-full max-w-[520px] text-center">
+              <h1 className="text-[1.3rem] font-extrabold leading-[1.28] tracking-tight text-[#111] sm:text-[1.55rem]">
+                {renderHighlightedHeadline(landing.headline)}
+              </h1>
+
+              <p className="mt-3 mb-5 text-sm italic leading-relaxed text-[#555] sm:text-[0.95rem]">
+                {landing.subheadline}
+              </p>
+
+              {landing.heroImageUrl ? (
+                <div className="funnel-landing-banner relative w-full aspect-[5/3] overflow-hidden rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.18)]">
                   <img
-                    src={landingHero}
+                    src={landing.heroImageUrl}
                     alt=""
-                    className="h-full w-full object-cover object-center"
+                    className="h-full w-full object-cover"
                     loading="eager"
                     decoding="async"
                   />
                 </div>
+              ) : (
+                <QuizLandingBanner centerImage={landingCenterImage} />
               )}
 
-              <div className="space-y-3">
-                <FunnelTitle as="h1" size="lg" gold>
-                  {landing.headline}
-                </FunnelTitle>
-                <p className="funnel-body text-white/60 font-inter text-base sm:text-[1.05rem] leading-relaxed">
-                  {landing.subheadline}
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={startQuiz}
+                className="funnel-landing-inlead-cta mt-5 w-full"
+              >
+                {landing.ctaLabel}
+                <ArrowRight className="h-5 w-5 shrink-0" aria-hidden />
+              </button>
 
-              <div className="space-y-3 pt-1">
-                <button type="button" onClick={startQuiz} className="funnel-landing-cta">
-                  {landing.ctaLabel}
-                  <ArrowRight className="w-5 h-5 shrink-0" aria-hidden />
-                </button>
-
-                {landing.socialProof && (
-                  <p className="text-sm text-white/45 font-inter leading-snug px-1">{landing.socialProof}</p>
-                )}
-              </div>
+              {landing.socialProof && (
+                <p className="mt-3 text-xs italic text-[#777] sm:text-sm">{landing.socialProof}</p>
+              )}
 
               {loadError && (
-                <p className="text-xs text-amber-400/70 font-inter text-center">
+                <p className="mt-3 text-center text-xs text-amber-600 font-inter">
                   Usando configuração padrão (não foi possível carregar do servidor).
                 </p>
               )}

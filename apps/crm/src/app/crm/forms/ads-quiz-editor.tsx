@@ -152,7 +152,7 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
             />
           </Field>
           <Field>
-            <FieldLabel>Foto da capa (URL, opcional)</FieldLabel>
+            <FieldLabel>Banner da capa (URL, opcional — substitui o collage)</FieldLabel>
             <Input
               value={landing.heroImageUrl ?? ""}
               placeholder="/media/quiz-hero-kelvin-paris.png"
