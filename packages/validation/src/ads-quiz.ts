@@ -217,15 +217,17 @@ const STALE_LANDING_MARKERS = [
   "Descubra como ser",
   "Ascend Club",
   "PIX semanais",
+  "Responda o quiz e veja se o modelo encaixa",
 ];
 
-function shouldRefreshLandingCopy(headline: string): boolean {
-  return STALE_LANDING_MARKERS.some((marker) => headline.includes(marker));
+function shouldRefreshLandingCopy(landing: AdsQuizConfig["landing"]): boolean {
+  const text = `${landing.headline} ${landing.subheadline}`;
+  return STALE_LANDING_MARKERS.some((marker) => text.includes(marker));
 }
 
 /** Corrige URLs de print quebradas em configs salvas no Supabase. */
 export function normalizeAdsQuizConfig(config: AdsQuizConfig): AdsQuizConfig {
-  const landing = shouldRefreshLandingCopy(config.landing.headline)
+  const landing = shouldRefreshLandingCopy(config.landing)
     ? { ...config.landing, ...DEFAULT_ADS_QUIZ_CONFIG.landing }
     : config.landing;
 
@@ -354,7 +356,7 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
     headline:
       "Você **não monta loja** nem caça produto — só vende. E pode receber até [[R$ 2.554/semana]] no **PIX**, com tudo pronto no nicho que escolher.",
     subheadline:
-      "Responda o quiz e veja se o modelo encaixa no seu perfil: loja entregue, produtos selecionados e mentoria ao vivo quando travar — mesmo zerado, sem aparecer e sem gastar com anúncio.",
+      "Em 2 minutos você descobre se encaixa: **loja montada no seu nicho**, produtos que já vendem e mentoria ao vivo pra destravar na hora — mesmo do zero, sem aparecer e sem gastar com anúncio.",
     ctaLabel: "QUERO MEU DIAGNÓSTICO",
     socialProof: "847 pessoas já fizeram · loja pronta + suporte ao vivo",
   },

@@ -5,7 +5,6 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
-  Globe2,
   Loader2,
   Lock,
   Quote,
@@ -107,25 +106,6 @@ function LandingUrgencyBadge({ label }: { label: string }) {
   );
 }
 
-function LandingPixPreview() {
-  return (
-    <div className="mx-auto mb-5 flex max-w-[340px] items-center gap-3 rounded-xl border border-[#00a650]/35 bg-gradient-to-r from-[#00a650]/10 to-emerald-50/80 px-4 py-3 text-left shadow-[0_4px_20px_rgba(0,166,80,0.12)]">
-      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#32BCAD] text-[11px] font-black tracking-tight text-white shadow-md">
-        PIX
-      </span>
-      <div className="min-w-0 flex-1">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#666]">
-          Entrou na conta · aluno verificado
-        </p>
-        <p className="text-xl font-black tabular-nums leading-none text-[#00a650] sm:text-[1.35rem]">
-          até R$ 2.554/semana
-        </p>
-      </div>
-      <Zap className="h-5 w-5 shrink-0 fill-[#f2a218] text-[#f2a218]" aria-hidden />
-    </div>
-  );
-}
-
 function NuvemshopSaleCard({ value, className }: { value: string; className?: string }) {
   return (
     <div
@@ -152,58 +132,59 @@ function NuvemshopSaleCard({ value, className }: { value: string; className?: st
   );
 }
 
+const FUNNEL_MAX_W = "max-w-5xl";
+const LANDING_MAX_W = "max-w-5xl";
+
+function ensureMinProofs(urls: readonly string[], min = 2): string[] {
+  const unique = [...new Set(urls.filter(Boolean))];
+  if (unique.length >= min) return unique;
+  const pool = [...QUIZ_RESULT_PROOFS, ...QUIZ_LANDING_PROOFS];
+  for (const url of pool) {
+    if (unique.length >= min) break;
+    if (!unique.includes(url)) unique.push(url);
+  }
+  return unique;
+}
+
 function EvidenceProofStrip({
   urls,
   label = "Resultado verificado",
   compact,
+  minProofs = 2,
 }: {
   urls: readonly string[];
   label?: string;
   compact?: boolean;
+  minProofs?: number;
 }) {
-  if (urls.length === 0) return null;
+  const resolved = ensureMinProofs(urls, minProofs);
+  if (resolved.length === 0) return null;
   return (
     <div className="space-y-2">
       <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#888]">
         <TrendingUp className="h-3.5 w-3.5 text-[#00a650]" aria-hidden />
         {label}
       </p>
-      <div className={cn("space-y-3", compact && "space-y-2")}>
-        {urls.map((src) => (
+      <div
+        className={cn(
+          "grid grid-cols-1 gap-3 sm:grid-cols-2",
+          compact && "gap-2",
+          resolved.length >= 3 && "lg:grid-cols-3",
+        )}
+      >
+        {resolved.map((src) => (
           <figure
             key={src}
             className="overflow-hidden rounded-xl border-2 border-[#00a650]/20 bg-white shadow-sm"
           >
             <img
               src={src}
-              alt="Print real de resultado Ascend Club"
+              alt="Print real de resultado"
               className="block h-auto w-full"
               loading="lazy"
               decoding="async"
             />
           </figure>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function EvidenceProofScroller({ urls }: { urls: readonly string[] }) {
-  if (urls.length === 0) return null;
-  return (
-    <div className="-mx-4 sm:mx-0">
-      <p className="mb-2 px-4 text-left text-[11px] font-bold uppercase tracking-wide text-[#888] sm:px-0">
-        +{urls.length} prints reais de alunos
-      </p>
-      <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory sm:px-0">
-        {urls.map((src) => (
-          <img
-            key={src}
-            src={src}
-            alt="Print de faturamento real"
-            className="h-44 w-auto shrink-0 snap-start rounded-lg border border-gray-200 bg-white object-contain shadow-sm sm:h-52"
-            loading="lazy"
-          />
         ))}
       </div>
     </div>
@@ -259,43 +240,68 @@ function TestimonialVideoRow({ videos, max = 3 }: { videos: QuizTestimonialVideo
   );
 }
 
+const HERO_BG_PRINTS = QUIZ_LANDING_PROOFS.slice(0, 6);
+
 function QuizLandingHero() {
   return (
-    <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-[#1c1c1c] shadow-[0_8px_28px_rgba(0,0,0,0.15)] sm:aspect-[16/11]">
+    <div className="quiz-landing-hero relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-[#0c0c0c] shadow-[0_12px_40px_rgba(0,0,0,0.22)] sm:aspect-[16/10]">
+      {/* Prints reais — colagem de fundo */}
+      <div className="absolute inset-0 grid grid-cols-3 grid-rows-2">
+        {HERO_BG_PRINTS.map((src) => (
+          <img
+            key={src}
+            src={src}
+            alt=""
+            className="h-full w-full object-cover object-top opacity-[0.28] saturate-[0.85]"
+            loading="eager"
+            decoding="async"
+          />
+        ))}
+      </div>
+
+      {/* Dubai + Paris — camada lifestyle atrás dos mentores */}
+      <img
+        src={QUIZ_HERO_ERICK_DUBAI}
+        alt=""
+        aria-hidden
+        className="absolute -left-[6%] top-0 z-[1] h-[90%] w-[58%] object-cover object-top opacity-[0.38] mix-blend-luminosity"
+        loading="eager"
+      />
+      <img
+        src={QUIZ_HERO_KELVIN_PARIS}
+        alt=""
+        aria-hidden
+        className="absolute -right-[6%] top-0 z-[1] h-[90%] w-[58%] object-cover object-top opacity-[0.38] mix-blend-luminosity"
+        loading="eager"
+      />
+
+      {/* Vinheta — foco no centro */}
+      <div className="absolute inset-0 z-[2] bg-gradient-to-t from-black/80 via-black/50 to-black/25" />
+      <div className="absolute inset-0 z-[2] bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(0,0,0,0.55)_100%)]" />
+
+      {/* Duo principal — protagonista */}
       <img
         src={HERO_IMAGE}
-        alt="Erick e Kelvin — Ascend Club"
-        className="absolute inset-0 h-full w-full object-contain object-center p-1 sm:p-2"
+        alt="Erick e Kelvin — Ascend"
+        className="absolute inset-0 z-[3] h-full w-full object-contain object-bottom px-1 pb-0 pt-2 sm:object-center sm:px-3 sm:pt-4"
         loading="eager"
         decoding="async"
       />
 
-      <div className="absolute left-2 top-2 h-9 w-9 overflow-hidden rounded-md border border-white/25 opacity-85 shadow-md sm:h-10 sm:w-10">
-        <img src={QUIZ_HERO_ERICK_DUBAI} alt="" className="h-full w-full object-cover object-top" loading="lazy" />
-      </div>
-      <div className="absolute right-2 top-2 h-9 w-9 overflow-hidden rounded-md border border-white/25 opacity-85 shadow-md sm:h-10 sm:w-10">
-        <img src={QUIZ_HERO_KELVIN_PARIS} alt="" className="h-full w-full object-cover object-top" loading="lazy" />
-      </div>
-      <div className="absolute bottom-2 left-2 h-8 w-8 overflow-hidden rounded-md border border-white/20 opacity-75 shadow sm:h-9 sm:w-9">
-        <img src={QUIZ_HERO_KELVIN_PARIS} alt="" className="h-full w-full object-cover object-top" loading="lazy" />
-      </div>
-      <div className="absolute bottom-2 right-2 h-8 w-8 overflow-hidden rounded-md border border-white/20 opacity-75 shadow sm:h-9 sm:w-9">
-        <img src={QUIZ_HERO_ERICK_DUBAI} alt="" className="h-full w-full object-cover object-top" loading="lazy" />
-      </div>
-
-      <NuvemshopSaleCard value="R$ 89,90" className="absolute left-2 top-[38%] scale-[0.92] sm:left-3" />
-      <NuvemshopSaleCard value="R$ 127,50" className="absolute right-2 top-[38%] scale-[0.92] sm:right-3" />
-      <NuvemshopSaleCard value="R$ 164,00" className="absolute bottom-3 left-1/2 -translate-x-1/2 scale-[0.92]" />
+      <NuvemshopSaleCard value="R$ 89,90" className="absolute left-2 top-[32%] z-20 scale-[0.92] sm:left-4 sm:top-[34%]" />
+      <NuvemshopSaleCard value="R$ 127,50" className="absolute right-2 top-[32%] z-20 scale-[0.92] sm:right-4 sm:top-[34%]" />
+      <NuvemshopSaleCard value="R$ 164,00" className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 scale-[0.92] sm:bottom-4" />
     </div>
   );
 }
 
 function QuizLandingProofs() {
   return (
-    <div className="space-y-4">
-      <EvidenceProofStrip urls={QUIZ_LANDING_PROOFS.slice(0, 4)} label="Faturamento real de alunos" />
-      <EvidenceProofScroller urls={QUIZ_LANDING_PROOFS.slice(4)} />
-    </div>
+    <EvidenceProofStrip
+      urls={QUIZ_LANDING_PROOFS.slice(0, 4)}
+      label="Faturamento real de alunos"
+      minProofs={4}
+    />
   );
 }
 
@@ -446,25 +452,11 @@ function InsightPanel({
         </ul>
 
         {isPrint && proofUrl && (
-          <div className="relative pt-2">
-            <div className="absolute left-3 top-0 z-10 inline-flex items-center gap-1.5 rounded-full bg-[#00a650] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md sm:text-[11px]">
-              <TrendingUp className="h-3.5 w-3.5" aria-hidden />
-              Faturamento comprovado
-            </div>
-            <figure className="overflow-hidden rounded-xl border-2 border-[#f2a218]/30 bg-white shadow-md">
-              <img
-                src={proofUrl}
-                alt="Resultado real de aluno Ascend Club"
-                className="block h-auto w-full"
-                loading="eager"
-                decoding="async"
-              />
-            </figure>
-            <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-[11px] font-medium text-[#888]">
-              <Globe2 className="h-3.5 w-3.5 text-[#f2a218]" aria-hidden />
-              Print verificado · resultado real
-            </p>
-          </div>
+          <EvidenceProofStrip
+            urls={ensureMinProofs([proofUrl, ...QUIZ_RESULT_PROOFS], 2)}
+            label="Faturamento comprovado · alunos reais"
+            compact
+          />
         )}
 
         {optionId === "desconfianca" && (
@@ -491,19 +483,11 @@ function InsightProof({ insight }: { insight: QuizOptionInsight }) {
   if (isPrint && proof.imageUrl) {
     const src = resolveQuizProofImageUrl(proof.imageUrl) ?? proof.imageUrl;
     return (
-      <figure className="overflow-hidden rounded-xl border border-gray-200 bg-white min-h-[12rem] shadow-sm">
-        <img
-          src={src}
-          alt={proof.imageCaption ?? "Print real de resultado"}
-          className="w-full max-h-[22rem] object-contain object-top bg-[#f5f5f5]"
-          loading="lazy"
-        />
-        {proof.imageCaption && (
-          <figcaption className="border-t border-gray-100 px-4 py-3 text-[11px] uppercase tracking-wider text-[#888] font-inter">
-            {proof.imageCaption}
-          </figcaption>
-        )}
-      </figure>
+      <EvidenceProofStrip
+        urls={ensureMinProofs([src, ...QUIZ_RESULT_PROOFS], 2)}
+        label="Resultado verificado"
+        compact
+      />
     );
   }
 
@@ -954,7 +938,7 @@ export default function AdsQuizFunnel() {
     <div className="form-funnel form-funnel-inlead relative flex min-h-screen flex-col bg-white">
       {phase !== "landing" && (
         <header className="relative z-10 px-4 sm:px-6 pt-5 pb-3">
-          <div className="mx-auto flex max-w-lg items-center justify-between gap-4">
+          <div className={cn("mx-auto flex items-center justify-between gap-4 px-4 sm:px-6", FUNNEL_MAX_W)}>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f2a218]">Ascend</p>
               {progressDone > 0 && (
@@ -970,7 +954,7 @@ export default function AdsQuizFunnel() {
           </div>
 
           {progressDone > 0 && (
-            <div className="mx-auto mt-4 max-w-lg">
+            <div className={cn("mx-auto mt-4", FUNNEL_MAX_W)}>
               <div className="h-1.5 overflow-hidden rounded-full bg-gray-100">
                 <div
                   className="h-full rounded-full bg-[#f2a218] transition-all duration-500 ease-out"
@@ -987,22 +971,20 @@ export default function AdsQuizFunnel() {
           "relative z-10 flex-1 w-full px-4 sm:px-6",
           phase === "landing"
             ? "flex flex-col items-center justify-center py-8 sm:py-12"
-            : "mx-auto max-w-lg py-8 sm:py-10",
+            : cn("mx-auto py-8 sm:py-10", FUNNEL_MAX_W, "px-4 sm:px-6"),
         )}
       >
         {phase === "landing" && (
           <StepShell stepKey="landing">
-            <div className="funnel-landing-inlead mx-auto w-full max-w-[640px] text-center">
+            <div className={cn("funnel-landing-inlead mx-auto w-full text-center", LANDING_MAX_W)}>
               <LandingUrgencyBadge label={landing.eyebrow} />
 
               <h1 className="text-[1.35rem] font-extrabold leading-[1.26] tracking-tight text-[#111] sm:text-[1.65rem]">
                 {renderHighlightedHeadline(landing.headline)}
               </h1>
 
-              <LandingPixPreview />
-
-              <p className="mb-5 text-sm font-medium leading-relaxed text-[#444] sm:text-base">
-                {landing.subheadline}
+              <p className="mb-5 mt-4 text-sm font-semibold leading-relaxed text-[#333] sm:text-[1.05rem]">
+                {renderHighlightedHeadline(landing.subheadline)}
               </p>
 
               {landing.heroImageUrl ? (
@@ -1111,13 +1093,17 @@ export default function AdsQuizFunnel() {
                 <EvidenceProofStrip
                   urls={
                     currentStep.imageUrl
-                      ? [
-                          resolveQuizProofImageUrl(currentStep.imageUrl) ?? currentStep.imageUrl,
-                          ...QUIZ_RESULT_PROOFS.slice(0, 2),
-                        ]
+                      ? ensureMinProofs(
+                          [
+                            resolveQuizProofImageUrl(currentStep.imageUrl) ?? currentStep.imageUrl,
+                            ...QUIZ_RESULT_PROOFS,
+                          ],
+                          3,
+                        )
                       : QUIZ_RESULT_PROOFS.slice(0, 3)
                   }
                   label="Prints reais — adaptados ao seu perfil"
+                  minProofs={3}
                   compact
                 />
                 <div className={cn(funnel.card, "funnel-marker-solid")}>
@@ -1137,8 +1123,14 @@ export default function AdsQuizFunnel() {
                 <FunnelEyebrow>PROVA REAL ANTES DO SEU PLANO</FunnelEyebrow>
                 <TestimonialVideoRow videos={QUIZ_TESTIMONIAL_VIDEOS} max={2} />
                 <EvidenceProofStrip
-                  urls={[QUIZ_PROOF_FATURAMENTO[5], QUIZ_PROOF_NOTIFICACOES[2], QUIZ_PROOF_FATURAMENTO[12]]}
+                  urls={[
+                    QUIZ_PROOF_FATURAMENTO[5],
+                    QUIZ_PROOF_NOTIFICACOES[2],
+                    QUIZ_PROOF_FATURAMENTO[12],
+                    QUIZ_PROOF_NOTIFICACOES[8],
+                  ]}
                   label="Vendas e faturamento de alunos"
+                  minProofs={4}
                   compact
                 />
                 <FunnelTitle>{currentStep.title}</FunnelTitle>
@@ -1280,8 +1272,13 @@ export default function AdsQuizFunnel() {
                 ))}
               </div>
               <EvidenceProofStrip
-                urls={[QUIZ_RESULT_PROOFS[calcMsgIndex % QUIZ_RESULT_PROOFS.length]]}
+                urls={[
+                  QUIZ_RESULT_PROOFS[calcMsgIndex % QUIZ_RESULT_PROOFS.length],
+                  QUIZ_RESULT_PROOFS[(calcMsgIndex + 1) % QUIZ_RESULT_PROOFS.length],
+                  QUIZ_RESULT_PROOFS[(calcMsgIndex + 2) % QUIZ_RESULT_PROOFS.length],
+                ]}
                 label="Enquanto montamos seu plano…"
+                minProofs={3}
                 compact
               />
             </div>
@@ -1394,7 +1391,12 @@ export default function AdsQuizFunnel() {
                     </div>
                   ))}
                 </div>
-                <EvidenceProofStrip urls={QUIZ_RESULT_PROOFS} label="Mais resultados verificados" compact />
+                <EvidenceProofStrip
+                  urls={QUIZ_RESULT_PROOFS}
+                  label="Mais resultados verificados"
+                  minProofs={4}
+                  compact
+                />
               </div>
             )}
 

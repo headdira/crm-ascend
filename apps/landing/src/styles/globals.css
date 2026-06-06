@@ -202,6 +202,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+.form-funnel .quiz-landing-hero {
+  isolation: isolate;
+}
+
 .form-funnel-inlead .funnel-marker-solid {
   background: rgba(242, 162, 24, 0.1);
   border-left: 3px solid #f2a218;
