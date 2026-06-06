@@ -28,7 +28,7 @@ import { ensureLandingSession, trackEvent } from "@/lib/sales/track-client";
 import { buildPersonalizedCheckoutUrl } from "@/lib/sales/checkout-url";
 import { openCheckoutInNewTab } from "@/lib/sales/open-checkout";
 import { cn } from "@/lib/utils";
-import { MENTOR_KELVIN_IMAGE, MENTOR_ERICK_IMAGE } from "@/lib/sales/media";
+import { MENTOR_KELVIN_IMAGE, MENTOR_ERICK_IMAGE, PROOF_IMAGES } from "@/lib/sales/media";
 
 type Phase = "landing" | "steps" | "insight" | "calculating" | "result" | "contact";
 type ContactStep = "name" | "email" | "phone";
@@ -67,24 +67,79 @@ function renderHighlightedHeadline(text: string) {
   });
 }
 
+function NuvemshopSaleCard({ value, className }: { value: string; className?: string }) {
+  return (
+    <div
+      className={cn(
+        "z-20 min-w-[92px] max-w-[108px] overflow-hidden rounded-lg border border-white/40 bg-white shadow-[0_6px_20px_rgba(0,0,0,0.35)]",
+        className,
+      )}
+    >
+      <div className="flex items-center border-b border-gray-100 bg-[#f5f8fb] px-1.5 py-0.5">
+        <span className="text-[7px] font-bold lowercase tracking-tight text-[#0084ff] sm:text-[8px]">
+          nuvemshop
+        </span>
+      </div>
+      <div className="px-1.5 py-1">
+        <div className="mb-0.5 flex items-center gap-0.5">
+          <span className="inline-flex h-2.5 w-2.5 shrink-0 items-center justify-center rounded-full bg-[#00a650] text-[6px] font-bold text-white">
+            ✓
+          </span>
+          <p className="text-[7px] font-semibold leading-tight text-[#222] sm:text-[8px]">Venda realizada</p>
+        </div>
+        <p className="text-[9px] font-bold text-[#00a650] sm:text-[10px]">{value}</p>
+      </div>
+    </div>
+  );
+}
+
 function QuizLandingBanner({ centerImage }: { centerImage: string }) {
   return (
     <div className="funnel-landing-banner relative w-full aspect-[5/3] rounded-2xl overflow-hidden bg-[#0a0a0a] shadow-[0_8px_32px_rgba(0,0,0,0.18)]">
       <img
         src="/media/quiz-hero-kelvin-paris.png"
         alt=""
-        className="absolute -right-2 top-0 h-[72%] w-[58%] object-cover object-top opacity-80"
+        className="absolute -right-2 top-0 h-[72%] w-[58%] object-cover object-top opacity-70"
         loading="eager"
         decoding="async"
       />
       <img
         src="/media/quiz-hero-erick-dubai.png"
         alt=""
-        className="absolute -left-4 bottom-0 h-[68%] w-[52%] object-cover object-center opacity-75"
+        className="absolute -left-4 bottom-0 h-[68%] w-[52%] object-cover object-center opacity-65"
         loading="eager"
         decoding="async"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/55 to-black/25" aria-hidden />
+
+      <div className="absolute left-[3%] top-[5%] z-[5] w-[24%] -rotate-[7deg] overflow-hidden rounded-md border border-white/25 shadow-lg">
+        <img
+          src={PROOF_IMAGES[0]}
+          alt=""
+          className="aspect-[9/16] w-full object-cover object-top"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+      <div className="absolute bottom-[6%] left-[2%] z-[5] w-[21%] -rotate-[4deg] overflow-hidden rounded-md border border-white/25 shadow-lg">
+        <img
+          src={PROOF_IMAGES[2]}
+          alt=""
+          className="aspect-[9/16] w-full object-cover object-top"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+      <div className="absolute right-[2%] top-[38%] z-[5] w-[20%] rotate-[6deg] overflow-hidden rounded-md border border-white/25 shadow-lg">
+        <img
+          src={PROOF_IMAGES[5]}
+          alt=""
+          className="aspect-[9/16] w-full object-cover object-top"
+          loading="lazy"
+          decoding="async"
+        />
+      </div>
+
+      <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/60 to-black/30" aria-hidden />
 
       <img
         src={centerImage}
@@ -94,14 +149,9 @@ function QuizLandingBanner({ centerImage }: { centerImage: string }) {
         decoding="async"
       />
 
-      <div className="absolute top-[9%] right-[7%] z-20 rounded-lg border border-white/10 bg-black/88 px-2.5 py-1.5 text-left shadow-lg">
-        <p className="text-[9px] font-semibold text-white sm:text-[10px]">Venda Aprovada!</p>
-        <p className="text-[10px] font-bold text-green-400 sm:text-xs">R$ 841,00</p>
-      </div>
-      <div className="absolute top-[36%] left-[5%] z-20 rounded-lg border border-white/10 bg-black/88 px-2 py-1 text-left shadow-lg">
-        <p className="text-[8px] text-white/75 sm:text-[9px]">PIX recebido</p>
-        <p className="text-[9px] font-bold text-green-400 sm:text-[10px]">R$ 2.554,00</p>
-      </div>
+      <NuvemshopSaleCard value="R$ 127,50" className="absolute right-[6%] top-[8%]" />
+      <NuvemshopSaleCard value="R$ 89,90" className="absolute left-[5%] top-[38%]" />
+      <NuvemshopSaleCard value="R$ 186,30" className="absolute bottom-[10%] right-[8%]" />
     </div>
   );
 }

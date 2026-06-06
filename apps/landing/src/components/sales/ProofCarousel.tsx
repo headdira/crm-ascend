@@ -5,21 +5,9 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
 import { trackEvent } from "@/lib/sales/track-client";
 import LightImageGallery from "./LightImageGallery";
+import { PROOF_IMAGES } from "@/lib/sales/media";
 
-const proofImages = [
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/3b767c484_WhatsAppImage2026-04-07at1736091.jpeg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/1b4072a11_WhatsAppImage2026-04-07at1736072.jpg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/6505d4f64_WhatsAppImage2026-04-07at173605.jpeg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/e01fb5171_WhatsAppImage2026-04-07at173322.jpeg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/e7406693d_WhatsAppImage2026-04-07at173248.jpeg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/217fb4eca_WhatsAppImage2026-04-07at1732481.jpeg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/f51025a66_WhatsAppImage2026-04-05at221549.jpeg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/c4cb3a1b5_WhatsAppImage2026-04-07at1734081.jpg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/152cafdb7_WhatsAppImage2026-04-07at173409.jpg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/dbced6810_WhatsAppImage2026-04-07at1734082.jpg",
-];
-
-const gallerySlides = proofImages.map((src, i) => ({
+const gallerySlides = PROOF_IMAGES.map((src, i) => ({
   src,
   label: `Print de resultado ${i + 1}`,
 }));
@@ -43,9 +31,9 @@ export default function ProofCarousel() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const visibleCount = useVisibleCount();
 
-  const prev = () => setCurrent((c) => (c - 1 + proofImages.length) % proofImages.length);
+  const prev = () => setCurrent((c) => (c - 1 + PROOF_IMAGES.length) % PROOF_IMAGES.length);
   const next = useCallback(
-    () => setCurrent((c) => (c + 1) % proofImages.length),
+    () => setCurrent((c) => (c + 1) % PROOF_IMAGES.length),
     [],
   );
 
@@ -57,8 +45,8 @@ export default function ProofCarousel() {
 
   const getVisible = () =>
     Array.from({ length: visibleCount }, (_, i) => ({
-      src: proofImages[(current + i) % proofImages.length],
-      globalIndex: (current + i) % proofImages.length,
+      src: PROOF_IMAGES[(current + i) % PROOF_IMAGES.length],
+      globalIndex: (current + i) % PROOF_IMAGES.length,
     }));
 
   return (
@@ -121,7 +109,7 @@ export default function ProofCarousel() {
       </div>
 
       <div className="flex justify-center gap-2 mt-5">
-        {proofImages.map((_, i) => (
+        {PROOF_IMAGES.map((_, i) => (
           <button
             key={i}
             type="button"
