@@ -206,6 +206,20 @@ body {
   isolation: isolate;
 }
 
+.form-funnel .phone-proof-gallery {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(242, 162, 24, 0.45) transparent;
+}
+
+.form-funnel .phone-proof-gallery::-webkit-scrollbar {
+  height: 6px;
+}
+
+.form-funnel .phone-proof-gallery::-webkit-scrollbar-thumb {
+  background: rgba(242, 162, 24, 0.45);
+  border-radius: 999px;
+}
+
 .form-funnel-inlead .funnel-marker-solid {
   background: rgba(242, 162, 24, 0.1);
   border-left: 3px solid #f2a218;

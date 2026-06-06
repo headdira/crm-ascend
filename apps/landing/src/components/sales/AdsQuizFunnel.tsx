@@ -41,9 +41,8 @@ import {
 } from "@/lib/sales/media";
 import {
   QUIZ_INSIGHT_PROOFS,
-  QUIZ_LANDING_PROOFS,
-  QUIZ_PROOF_FATURAMENTO,
-  QUIZ_PROOF_NOTIFICACOES,
+  QUIZ_PHONE_LANDING_PROOFS,
+  QUIZ_PHONE_PROOFS,
   QUIZ_RESULT_PROOFS,
   QUIZ_TESTIMONIAL_VIDEOS,
   type QuizTestimonialVideo,
@@ -138,7 +137,7 @@ const LANDING_MAX_W = "max-w-5xl";
 function ensureMinProofs(urls: readonly string[], min = 2): string[] {
   const unique = [...new Set(urls.filter(Boolean))];
   if (unique.length >= min) return unique;
-  const pool = [...QUIZ_RESULT_PROOFS, ...QUIZ_LANDING_PROOFS];
+  const pool = [...QUIZ_PHONE_PROOFS, ...QUIZ_PHONE_LANDING_PROOFS];
   for (const url of pool) {
     if (unique.length >= min) break;
     if (!unique.includes(url)) unique.push(url);
@@ -146,48 +145,88 @@ function ensureMinProofs(urls: readonly string[], min = 2): string[] {
   return unique;
 }
 
+function PhoneProofCard({
+  src,
+  className,
+  eager,
+}: {
+  src: string;
+  className?: string;
+  eager?: boolean;
+}) {
+  return (
+    <figure
+      className={cn(
+        "phone-proof-frame overflow-hidden rounded-[1.35rem] border-[3px] border-neutral-800 bg-neutral-950 shadow-[0_12px_32px_rgba(0,0,0,0.28)] ring-1 ring-white/15",
+        className,
+      )}
+    >
+      <div className="relative aspect-[9/19.5] w-full">
+        <img
+          src={src}
+          alt="Print real no celular"
+          className="absolute inset-0 h-full w-full object-contain object-top bg-neutral-950"
+          loading={eager ? "eager" : "lazy"}
+          decoding="async"
+        />
+      </div>
+    </figure>
+  );
+}
+
+function PhoneProofGallery({
+  urls,
+  label = "Resultado verificado",
+  minProofs = 2,
+  eager,
+}: {
+  urls: readonly string[];
+  label?: string;
+  minProofs?: number;
+  eager?: boolean;
+}) {
+  const resolved = ensureMinProofs(urls, minProofs);
+  if (resolved.length === 0) return null;
+  return (
+    <div className="space-y-2.5">
+      <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#888]">
+        <TrendingUp className="h-3.5 w-3.5 text-[#00a650]" aria-hidden />
+        {label}
+      </p>
+      <div className="phone-proof-gallery flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 lg:grid-cols-4">
+        {resolved.map((src) => (
+          <PhoneProofCard
+            key={src}
+            src={src}
+            eager={eager}
+            className="w-[46vw] max-w-[210px] shrink-0 snap-center sm:w-full sm:max-w-none"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function EvidenceProofStrip({
   urls,
   label = "Resultado verificado",
   compact,
   minProofs = 2,
+  eager,
 }: {
   urls: readonly string[];
   label?: string;
   compact?: boolean;
   minProofs?: number;
+  eager?: boolean;
 }) {
-  const resolved = ensureMinProofs(urls, minProofs);
-  if (resolved.length === 0) return null;
   return (
-    <div className="space-y-2">
-      <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#888]">
-        <TrendingUp className="h-3.5 w-3.5 text-[#00a650]" aria-hidden />
-        {label}
-      </p>
-      <div
-        className={cn(
-          "grid grid-cols-1 gap-3 sm:grid-cols-2",
-          compact && "gap-2",
-          resolved.length >= 3 && "lg:grid-cols-3",
-        )}
-      >
-        {resolved.map((src) => (
-          <figure
-            key={src}
-            className="overflow-hidden rounded-xl border-2 border-[#00a650]/20 bg-white shadow-sm"
-          >
-            <img
-              src={src}
-              alt="Print real de resultado"
-              className="block h-auto w-full"
-              loading="lazy"
-              decoding="async"
-            />
-          </figure>
-        ))}
-      </div>
-    </div>
+    <PhoneProofGallery
+      urls={urls}
+      label={label}
+      minProofs={minProofs}
+      eager={eager}
+    />
   );
 }
 
@@ -240,67 +279,81 @@ function TestimonialVideoRow({ videos, max = 3 }: { videos: QuizTestimonialVideo
   );
 }
 
-const HERO_BG_PRINTS = QUIZ_LANDING_PROOFS.slice(0, 6);
+const HERO_PHONE_DECOR: { src: string; className: string }[] = [
+  {
+    src: QUIZ_PHONE_PROOFS[0],
+    className: "absolute left-[2%] top-[5%] z-[4] w-[19%] -rotate-12 opacity-85",
+  },
+  {
+    src: QUIZ_PHONE_PROOFS[1],
+    className: "absolute right-[2%] top-[6%] z-[4] w-[19%] rotate-12 opacity-85",
+  },
+  {
+    src: QUIZ_PHONE_PROOFS[4],
+    className: "absolute bottom-[10%] left-[6%] z-[4] w-[16%] rotate-6 opacity-70",
+  },
+  {
+    src: QUIZ_PHONE_PROOFS[5],
+    className: "absolute bottom-[8%] right-[6%] z-[4] w-[16%] -rotate-6 opacity-70",
+  },
+];
 
 function QuizLandingHero() {
   return (
-    <div className="quiz-landing-hero relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-[#0c0c0c] shadow-[0_12px_40px_rgba(0,0,0,0.22)] sm:aspect-[16/10]">
-      {/* Prints reais — colagem de fundo */}
-      <div className="absolute inset-0 grid grid-cols-3 grid-rows-2">
-        {HERO_BG_PRINTS.map((src) => (
-          <img
-            key={src}
-            src={src}
-            alt=""
-            className="h-full w-full object-cover object-top opacity-[0.28] saturate-[0.85]"
-            loading="eager"
-            decoding="async"
-          />
-        ))}
-      </div>
-
-      {/* Dubai + Paris — camada lifestyle atrás dos mentores */}
+    <div className="quiz-landing-hero relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-neutral-950 shadow-[0_12px_40px_rgba(0,0,0,0.25)] sm:aspect-[21/10] sm:min-h-[380px]">
+      {/* Dubai + Paris — fundo lifestyle visível */}
       <img
         src={QUIZ_HERO_ERICK_DUBAI}
         alt=""
         aria-hidden
-        className="absolute -left-[6%] top-0 z-[1] h-[90%] w-[58%] object-cover object-top opacity-[0.38] mix-blend-luminosity"
+        className="absolute inset-y-0 left-0 z-[1] w-[52%] object-cover object-top opacity-[0.62]"
         loading="eager"
       />
       <img
         src={QUIZ_HERO_KELVIN_PARIS}
         alt=""
         aria-hidden
-        className="absolute -right-[6%] top-0 z-[1] h-[90%] w-[58%] object-cover object-top opacity-[0.38] mix-blend-luminosity"
+        className="absolute inset-y-0 right-0 z-[1] w-[52%] object-cover object-top opacity-[0.62]"
         loading="eager"
       />
 
-      {/* Vinheta — foco no centro */}
-      <div className="absolute inset-0 z-[2] bg-gradient-to-t from-black/80 via-black/50 to-black/25" />
-      <div className="absolute inset-0 z-[2] bg-[radial-gradient(ellipse_at_center,transparent_20%,rgba(0,0,0,0.55)_100%)]" />
+      {/* Vinheta suave — centro livre pros mentores */}
+      <div className="absolute inset-0 z-[2] bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
+      <div className="absolute inset-0 z-[2] bg-[radial-gradient(ellipse_75%_85%_at_50%_60%,transparent_30%,rgba(0,0,0,0.4)_100%)]" />
 
-      {/* Duo principal — protagonista */}
+      {/* Prints de celular nos cantos — colagem Bottrel */}
+      {HERO_PHONE_DECOR.map(({ src, className }) => (
+        <PhoneProofCard
+          key={src}
+          src={src}
+          className={cn(className, "pointer-events-none shadow-lg")}
+          eager
+        />
+      ))}
+
+      {/* Duo principal */}
       <img
         src={HERO_IMAGE}
         alt="Erick e Kelvin — Ascend"
-        className="absolute inset-0 z-[3] h-full w-full object-contain object-bottom px-1 pb-0 pt-2 sm:object-center sm:px-3 sm:pt-4"
+        className="absolute inset-x-0 bottom-0 z-[5] h-[88%] w-full object-contain object-bottom px-2 sm:h-[95%] sm:object-center sm:px-6"
         loading="eager"
         decoding="async"
       />
 
-      <NuvemshopSaleCard value="R$ 89,90" className="absolute left-2 top-[32%] z-20 scale-[0.92] sm:left-4 sm:top-[34%]" />
-      <NuvemshopSaleCard value="R$ 127,50" className="absolute right-2 top-[32%] z-20 scale-[0.92] sm:right-4 sm:top-[34%]" />
-      <NuvemshopSaleCard value="R$ 164,00" className="absolute bottom-3 left-1/2 z-20 -translate-x-1/2 scale-[0.92] sm:bottom-4" />
+      <NuvemshopSaleCard value="R$ 89,90" className="absolute left-2 top-[28%] z-20 scale-[0.92] sm:left-5 sm:top-[30%]" />
+      <NuvemshopSaleCard value="R$ 127,50" className="absolute right-2 top-[28%] z-20 scale-[0.92] sm:right-5 sm:top-[30%]" />
+      <NuvemshopSaleCard value="R$ 164,00" className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 scale-[0.92] sm:bottom-5" />
     </div>
   );
 }
 
 function QuizLandingProofs() {
   return (
-    <EvidenceProofStrip
-      urls={QUIZ_LANDING_PROOFS.slice(0, 4)}
+    <PhoneProofGallery
+      urls={QUIZ_PHONE_LANDING_PROOFS}
       label="Faturamento real de alunos"
-      minProofs={4}
+      minProofs={3}
+      eager
     />
   );
 }
@@ -1000,7 +1053,6 @@ export default function AdsQuizFunnel() {
               ) : (
                 <div className="funnel-landing-banner w-full space-y-4">
                   <QuizLandingHero />
-                  <QuizLandingProofs />
                 </div>
               )}
 
@@ -1012,6 +1064,12 @@ export default function AdsQuizFunnel() {
                 {landing.ctaLabel}
                 <ArrowRight className="h-5 w-5 shrink-0" aria-hidden />
               </button>
+
+              {!landing.heroImageUrl && (
+                <div className="mt-5">
+                  <QuizLandingProofs />
+                </div>
+              )}
 
               {landing.socialProof && (
                 <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-[#666] sm:text-sm">
@@ -1124,10 +1182,10 @@ export default function AdsQuizFunnel() {
                 <TestimonialVideoRow videos={QUIZ_TESTIMONIAL_VIDEOS} max={2} />
                 <EvidenceProofStrip
                   urls={[
-                    QUIZ_PROOF_FATURAMENTO[5],
-                    QUIZ_PROOF_NOTIFICACOES[2],
-                    QUIZ_PROOF_FATURAMENTO[12],
-                    QUIZ_PROOF_NOTIFICACOES[8],
+                    QUIZ_PHONE_PROOFS[0],
+                    QUIZ_PHONE_PROOFS[1],
+                    QUIZ_PHONE_PROOFS[2],
+                    QUIZ_PHONE_PROOFS[3],
                   ]}
                   label="Vendas e faturamento de alunos"
                   minProofs={4}

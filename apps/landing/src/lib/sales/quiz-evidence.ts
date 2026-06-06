@@ -503,16 +503,27 @@ export const QUIZ_ALL_PROOFS = [
   "/media/quiz-evidence/proof/mencoes-erick/erick-29.jpeg",
   "/media/quiz-evidence/proof/mencoes-erick/erick-30.jpeg"
 ] as const;
-export const QUIZ_LANDING_PROOFS = [
-  "/media/quiz-evidence/proof/faturamento/fat-03.jpeg",
-  "/media/quiz-evidence/proof/faturamento/fat-05.jpeg",
-  "/media/quiz-evidence/proof/faturamento/fat-09.jpeg",
-  "/media/quiz-evidence/proof/notificacoes/notif-01.jpeg",
-  "/media/quiz-evidence/proof/notificacoes/notif-06.jpeg",
-  "/media/quiz-evidence/proof/faturamento/fat-13.jpeg",
-  "/media/quiz-evidence/proof/notificacoes/notif-100.jpeg",
-  "/media/quiz-evidence/proof/mencoes-erick/erick-01.jpeg"
+
+/** Prints verticais (WhatsApp / celular) — legíveis em moldura de telefone. */
+export const QUIZ_PHONE_LANDING_PROOFS = [
+  "/media/quiz-evidence/proof/faturamento/fat-01.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-10.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-116.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-36.jpeg",
 ] as const;
+
+export const QUIZ_PHONE_PROOFS = [
+  "/media/quiz-evidence/proof/faturamento/fat-01.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-10.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-23.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-29.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-116.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-104.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-08.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-36.jpeg",
+] as const;
+
+export const QUIZ_LANDING_PROOFS = QUIZ_PHONE_LANDING_PROOFS;
 export const QUIZ_INSIGHT_PROOFS: Record<string, string> = {
   "renda_extra": "/media/quiz-evidence/proof/faturamento/fat-01.jpeg",
   "liberdade_fin": "/media/quiz-evidence/proof/faturamento/fat-04.jpeg",
@@ -599,10 +610,4 @@ export const QUIZ_TESTIMONIAL_VIDEOS: QuizTestimonialVideo[] = [
   }
 ];
 
-export const QUIZ_RESULT_PROOFS = [
-  "/media/quiz-evidence/proof/faturamento/fat-07.jpeg",
-  "/media/quiz-evidence/proof/notificacoes/notif-04.jpeg",
-  "/media/quiz-evidence/proof/faturamento/fat-19.jpeg",
-  "/media/quiz-evidence/proof/mencoes-erick/erick-05.jpeg",
-  "/media/quiz-evidence/proof/notificacoes/notif-105.jpeg"
-] as const;
+export const QUIZ_RESULT_PROOFS = QUIZ_PHONE_PROOFS.slice(0, 5);
