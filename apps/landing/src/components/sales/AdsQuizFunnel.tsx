@@ -42,20 +42,15 @@ const DEFAULT_CALCULATING = DEFAULT_ADS_QUIZ_CONFIG.calculating!;
 const DEFAULT_RESULT = DEFAULT_ADS_QUIZ_CONFIG.result!;
 
 const funnel = {
-  glow: "pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-10%,rgba(255,184,0,0.18),transparent_55%)]",
-  glowBottom:
-    "pointer-events-none absolute inset-x-0 bottom-0 h-48 bg-[radial-gradient(ellipse_70%_80%_at_50%_100%,rgba(255,184,0,0.08),transparent)]",
   choice:
-    "group w-full text-left rounded-2xl border border-white/[0.08] bg-[#0a0a0a] px-5 py-5 sm:px-6 sm:py-5 transition-all duration-200 hover:border-primary/55 hover:bg-primary/[0.06] hover:shadow-[0_0_40px_rgba(255,184,0,0.14)] active:scale-[0.985]",
-  choiceSelected:
-    "border-primary/65 bg-primary/[0.08] shadow-[0_0_44px_rgba(255,184,0,0.18)]",
+    "group w-full text-left rounded-xl border border-gray-200 bg-white px-5 py-4 sm:py-5 transition-all duration-200 hover:border-[#f2a218] hover:bg-orange-50/60 shadow-sm active:scale-[0.99]",
+  choiceSelected: "border-[#f2a218] bg-orange-50 ring-1 ring-[#f2a218]/25",
   input:
-    "w-full rounded-2xl bg-black border border-white/[0.1] px-5 py-5 text-white text-lg font-inter placeholder:text-white/25 focus:border-primary/60 focus:outline-none focus:shadow-[0_0_0_3px_rgba(255,184,0,0.15)] transition-all",
-  cta: "funnel-display inline-flex items-center justify-center gap-2.5 w-full rounded-2xl bg-primary px-6 py-6 min-h-[58px] text-[#0a0a0a] font-bold uppercase tracking-[0.12em] text-base sm:text-lg hover:brightness-110 shadow-[0_0_56px_rgba(255,184,0,0.32)] transition-all disabled:opacity-35 disabled:shadow-none disabled:cursor-not-allowed",
-  ctaShimmer:
-    "funnel-cta-shimmer funnel-display inline-flex items-center justify-center gap-2.5 w-full rounded-2xl px-6 py-6 min-h-[58px] text-[#0a0a0a] font-bold uppercase tracking-[0.12em] text-base sm:text-lg hover:brightness-110 shadow-[0_0_56px_rgba(255,184,0,0.32)] transition-all disabled:opacity-35 disabled:shadow-none disabled:cursor-not-allowed",
-  offerCard:
-    "rounded-3xl border border-primary/25 bg-black p-6 sm:p-8 shadow-[0_0_72px_rgba(255,184,0,0.1)]",
+    "w-full rounded-xl bg-white border border-gray-300 px-5 py-4 text-[#111] text-lg font-inter placeholder:text-gray-400 focus:border-[#f2a218] focus:outline-none focus:ring-2 focus:ring-[#f2a218]/20 transition-all",
+  cta: "funnel-landing-inlead-cta w-full",
+  offerCard: "rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm",
+  card: "rounded-xl border border-gray-200 bg-gray-50 px-5 py-5",
+  chip: "inline-flex rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] text-[#555] font-inter",
 } as const;
 
 function renderHighlightedHeadline(text: string) {
@@ -97,7 +92,15 @@ function NuvemshopSaleCard({ value, className }: { value: string; className?: st
   );
 }
 
-function ProofPrintFrame({ src, className }: { src: string; className?: string }) {
+function ProofPrintFrame({
+  src,
+  className,
+  size = "md",
+}: {
+  src: string;
+  className?: string;
+  size?: "sm" | "md";
+}) {
   return (
     <div
       className={cn(
@@ -108,13 +111,25 @@ function ProofPrintFrame({ src, className }: { src: string; className?: string }
       <img
         src={src}
         alt="Print de resultado"
-        className="block w-full max-h-[100px] bg-[#ececec] object-contain object-top sm:max-h-[120px]"
+        className={cn(
+          "block w-full bg-[#ececec] object-contain object-top",
+          size === "sm" ? "max-h-[76px] sm:max-h-[88px]" : "max-h-[108px] sm:max-h-[128px]",
+        )}
         loading="lazy"
         decoding="async"
       />
     </div>
   );
 }
+
+/** Prints reais distribuídos no banner — Dubai (esq) e Paris (dir) */
+const BANNER_PRINTS = [
+  { src: PROOF_IMAGES[0], className: "absolute bottom-2 left-[3%] w-[32%] sm:bottom-3", size: "md" as const },
+  { src: PROOF_IMAGES[1], className: "absolute top-[5%] left-[4%] w-[24%]", size: "sm" as const },
+  { src: PROOF_IMAGES[2], className: "absolute bottom-2 right-[3%] w-[32%] sm:bottom-3", size: "md" as const },
+  { src: PROOF_IMAGES[3], className: "absolute top-[5%] right-[4%] w-[24%]", size: "sm" as const },
+  { src: PROOF_IMAGES[4], className: "absolute bottom-[30%] left-1/2 z-[11] w-[20%] -translate-x-1/2", size: "sm" as const },
+] as const;
 
 function QuizLandingBanner() {
   return (
@@ -142,28 +157,22 @@ function QuizLandingBanner() {
         </div>
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 top-[38%] bg-gradient-to-t from-black/75 via-black/25 to-transparent" aria-hidden />
+      <div className="absolute inset-x-0 bottom-0 top-[32%] bg-gradient-to-t from-black/80 via-black/30 to-transparent" aria-hidden />
 
-      {/* Prints legíveis — um em cada metade, grande e sem rotação */}
-      <ProofPrintFrame
-        src={PROOF_IMAGES[0]}
-        className="absolute bottom-2 left-[4%] w-[38%] sm:bottom-3"
-      />
-      <ProofPrintFrame
-        src={PROOF_IMAGES[2]}
-        className="absolute bottom-2 right-[4%] w-[38%] sm:bottom-3"
-      />
+      {BANNER_PRINTS.map((slot) => (
+        <ProofPrintFrame key={slot.src} src={slot.src} className={slot.className} size={slot.size} />
+      ))}
 
-      <NuvemshopSaleCard value="R$ 89,90" className="absolute bottom-[42%] left-[6%] sm:bottom-[44%]" />
-      <NuvemshopSaleCard value="R$ 127,50" className="absolute bottom-[42%] right-[6%] sm:bottom-[44%]" />
-      <NuvemshopSaleCard value="R$ 164,00" className="absolute left-1/2 top-[5%] -translate-x-1/2 sm:top-[7%]" />
+      <NuvemshopSaleCard value="R$ 89,90" className="absolute left-[34%] top-[3%] sm:top-[4%]" />
+      <NuvemshopSaleCard value="R$ 127,50" className="absolute right-[34%] top-[3%] sm:top-[4%]" />
+      <NuvemshopSaleCard value="R$ 164,00" className="absolute left-1/2 top-[18%] -translate-x-1/2" />
     </div>
   );
 }
 
 function FunnelEyebrow({ children }: { children: string }) {
   return (
-    <p className="funnel-display funnel-eyebrow-strip text-xs sm:text-sm font-bold uppercase tracking-[0.2em] text-primary">
+    <p className="funnel-eyebrow-strip text-xs sm:text-sm font-bold uppercase tracking-[0.15em]">
       {children}
     </p>
   );
@@ -183,18 +192,18 @@ function FunnelTitle({
   return (
     <Tag
       className={cn(
-        "funnel-display font-bold uppercase leading-[1.02] tracking-tight",
-        size === "xl" ? "text-[2.1rem] sm:text-[2.85rem]" : "text-[1.75rem] sm:text-[2.25rem]",
-        gold ? "funnel-headline-gold" : "text-white",
+        "font-bold leading-snug tracking-tight text-[#111]",
+        size === "xl" ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl",
+        gold && "text-[#E8941C]",
       )}
     >
-      <span className={gold ? undefined : "funnel-title-mark"}>{children}</span>
+      {children}
     </Tag>
   );
 }
 
 function FunnelHint({ children }: { children: ReactNode }) {
-  return <p className="funnel-body text-white/55 font-inter mt-3">{children}</p>;
+  return <p className="mt-2 text-sm italic leading-relaxed text-[#666] sm:text-base">{children}</p>;
 }
 
 function readUtm() {
@@ -272,15 +281,15 @@ function InsightProof({ insight }: { insight: QuizOptionInsight }) {
 
   if (isPrint && proof.imageUrl) {
     return (
-      <figure className="rounded-2xl border border-white/[0.08] bg-[#060606] overflow-hidden min-h-[12rem]">
+      <figure className="overflow-hidden rounded-xl border border-gray-200 bg-white min-h-[12rem] shadow-sm">
         <img
           src={proof.imageUrl}
           alt={proof.imageCaption ?? "Print real de resultado"}
-          className="w-full max-h-[22rem] object-cover object-top"
+          className="w-full max-h-[22rem] object-contain object-top bg-[#f5f5f5]"
           loading="lazy"
         />
         {proof.imageCaption && (
-          <figcaption className="px-4 py-3 text-[11px] uppercase tracking-wider text-white/40 font-inter border-t border-white/[0.06]">
+          <figcaption className="border-t border-gray-100 px-4 py-3 text-[11px] uppercase tracking-wider text-[#888] font-inter">
             {proof.imageCaption}
           </figcaption>
         )}
@@ -290,35 +299,35 @@ function InsightProof({ insight }: { insight: QuizOptionInsight }) {
 
   if (insight.variant === "stat" && proof.statLabel) {
     return (
-      <div className="rounded-2xl border border-primary/20 bg-primary/[0.04] px-4 py-4 min-h-[4.5rem] flex items-center gap-3">
-        <Users className="w-5 h-5 text-primary shrink-0" />
-        <p className="text-sm font-bold text-primary font-inter">{proof.statLabel}</p>
+      <div className="flex min-h-[4.5rem] items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-4">
+        <Users className="h-5 w-5 shrink-0 text-[#f2a218]" />
+        <p className="text-sm font-bold text-[#c27800] font-inter">{proof.statLabel}</p>
       </div>
     );
   }
 
   if (proof.quote) {
     return (
-      <blockquote className="rounded-2xl border border-white/[0.06] bg-[#060606] px-4 py-4 min-h-[5.5rem]">
+      <blockquote className="min-h-[5.5rem] rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
         <div className="flex gap-3">
           {proof.imageUrl ? (
             <img
               src={proof.imageUrl}
               alt={proof.name ?? ""}
-              className="w-11 h-11 rounded-full object-cover border border-white/10 shrink-0"
+              className="h-11 w-11 shrink-0 rounded-full border border-gray-200 object-cover"
             />
           ) : (
-            <span className="w-11 h-11 rounded-full bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
-              <Quote className="w-4 h-4 text-primary/80" />
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-orange-200 bg-orange-50">
+              <Quote className="h-4 w-4 text-[#f2a218]" />
             </span>
           )}
           <div>
-            <p className="text-sm text-white/65 font-inter italic leading-relaxed">
+            <p className="text-sm italic leading-relaxed text-[#555] font-inter">
               &ldquo;{proof.quote}&rdquo;
             </p>
             {(proof.name || proof.role) && (
-              <footer className="mt-2 text-xs text-white/35 font-inter">
-                {proof.name && <span className="text-white/55 font-semibold">{proof.name}</span>}
+              <footer className="mt-2 text-xs text-[#888] font-inter">
+                {proof.name && <span className="font-semibold text-[#444]">{proof.name}</span>}
                 {proof.role ? ` · ${proof.role}` : ""}
               </footer>
             )}
@@ -341,22 +350,22 @@ function StepShell({ children, stepKey }: { children: React.ReactNode; stepKey: 
 
 function TrustFooter() {
   return (
-    <footer className="mt-10 pt-6 border-t border-white/[0.04] space-y-3">
-      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[10px] uppercase tracking-wider text-white/30 font-inter">
+    <footer className="mt-10 space-y-3 border-t border-gray-200 pt-6">
+      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[10px] uppercase tracking-wider text-[#999] font-inter">
         <span className="inline-flex items-center gap-1.5">
-          <Lock className="w-3 h-3 text-primary/70" />
+          <Lock className="h-3 w-3 text-[#f2a218]" />
           Sem cartão agora
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <ShieldCheck className="w-3 h-3 text-primary/70" />
+          <ShieldCheck className="h-3 w-3 text-[#f2a218]" />
           Dados protegidos
         </span>
         <span className="inline-flex items-center gap-1.5">
-          <Sparkles className="w-3 h-3 text-primary/70" />
+          <Sparkles className="h-3 w-3 text-[#f2a218]" />
           Pagamento Kiwify
         </span>
       </div>
-      <p className="text-center text-[10px] text-white/20 font-inter leading-relaxed max-w-sm mx-auto">
+      <p className="mx-auto max-w-sm text-center text-[10px] leading-relaxed text-[#aaa] font-inter">
         Ao continuar, você concorda em receber comunicações sobre o programa. Seus dados não são
         compartilhados com terceiros.
       </p>
@@ -711,8 +720,8 @@ export default function AdsQuizFunnel() {
 
   if (!config) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-black">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="flex min-h-screen items-center justify-center bg-white">
+        <Loader2 className="h-8 w-8 animate-spin text-[#f2a218]" />
       </div>
     );
   }
@@ -732,41 +741,29 @@ export default function AdsQuizFunnel() {
             : `Pergunta ${stepIndex + 1}`;
 
   return (
-    <div
-      className={cn(
-        "form-funnel relative min-h-screen flex flex-col",
-        phase === "landing" ? "bg-white" : "bg-black",
-      )}
-    >
+    <div className="form-funnel form-funnel-inlead relative flex min-h-screen flex-col bg-white">
       {phase !== "landing" && (
-        <>
-          <div className={cn(funnel.glow, phase === "result" && "funnel-pulse-glow")} aria-hidden />
-          <div className={funnel.glowBottom} aria-hidden />
-        </>
-      )}
-
-      {phase !== "landing" && (
-        <header className="relative z-10 px-5 sm:px-6 pt-5 pb-3">
-          <div className="max-w-lg mx-auto flex items-center justify-between gap-4">
+        <header className="relative z-10 px-4 sm:px-6 pt-5 pb-3">
+          <div className="mx-auto flex max-w-lg items-center justify-between gap-4">
             <div>
-              <p className="funnel-display text-xs tracking-[0.35em] uppercase text-primary font-bold">Ascend Club</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f2a218]">Ascend Club</p>
               {progressDone > 0 && (
-                <p className="text-[10px] text-white/30 font-inter mt-0.5">{stepLabel}</p>
+                <p className="mt-0.5 text-[10px] text-[#999] font-inter">{stepLabel}</p>
               )}
             </div>
             {progressDone > 0 && (
               <div className="text-right">
-                <p className="text-[10px] uppercase tracking-wider text-white/30 font-inter">Progresso</p>
-                <p className="funnel-display text-lg font-bold text-primary tabular-nums">{progressPct}%</p>
+                <p className="text-[10px] uppercase tracking-wider text-[#999] font-inter">Progresso</p>
+                <p className="text-lg font-bold tabular-nums text-[#f2a218]">{progressPct}%</p>
               </div>
             )}
           </div>
 
           {progressDone > 0 && (
-            <div className="max-w-lg mx-auto mt-4">
-              <div className="h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+            <div className="mx-auto mt-4 max-w-lg">
+              <div className="h-1.5 overflow-hidden rounded-full bg-gray-100">
                 <div
-                  className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary shadow-[0_0_12px_rgba(255,184,0,0.5)] transition-all duration-500 ease-out"
+                  className="h-full rounded-full bg-[#f2a218] transition-all duration-500 ease-out"
                   style={{ width: `${phase === "calculating" ? calcProgress : progressPct}%` }}
                 />
               </div>
@@ -780,7 +777,7 @@ export default function AdsQuizFunnel() {
           "relative z-10 flex-1 w-full px-4 sm:px-6",
           phase === "landing"
             ? "flex flex-col items-center justify-center py-8 sm:py-12"
-            : "max-w-lg mx-auto py-8 sm:py-10",
+            : "mx-auto max-w-lg py-8 sm:py-10",
         )}
       >
         {phase === "landing" && (
@@ -848,11 +845,9 @@ export default function AdsQuizFunnel() {
                         onClick={() => pickOption(currentStep.id, opt.id, opt.insight)}
                         className={cn(funnel.choice, selected && funnel.choiceSelected)}
                       >
-                        <p className="funnel-display font-bold text-white text-lg sm:text-xl uppercase tracking-wide">
-                          {opt.label}
-                        </p>
+                        <p className="text-base font-semibold text-[#111] sm:text-lg">{opt.label}</p>
                         {opt.subtitle && (
-                          <p className="text-sm text-white/45 mt-1.5 font-inter group-hover:text-white/60 transition-colors">
+                          <p className="mt-1.5 text-sm text-[#777] font-inter transition-colors group-hover:text-[#555]">
                             {opt.subtitle}
                           </p>
                         )}
@@ -870,18 +865,16 @@ export default function AdsQuizFunnel() {
                   <img
                     src={currentStep.imageUrl}
                     alt="Mentores Ascend Club"
-                    className="w-full max-h-56 object-cover object-top rounded-2xl border border-white/[0.08]"
+                    className="w-full max-h-56 rounded-xl border border-gray-200 object-cover object-top"
                   />
                 )}
                 <div
                   className={cn(
-                    "rounded-2xl border px-5 py-5",
-                    currentStep.variant === "story"
-                      ? "border-primary/15 bg-primary/[0.03]"
-                      : "border-white/[0.05] bg-[#060606]",
+                    funnel.card,
+                    currentStep.variant === "story" && "border-orange-200 bg-orange-50/50",
                   )}
                 >
-                  <p className="funnel-body text-white/65 font-inter whitespace-pre-line">
+                  <p className="whitespace-pre-line text-base leading-relaxed text-[#444] font-inter">
                     {currentStep.body}
                   </p>
                 </div>
@@ -896,17 +889,17 @@ export default function AdsQuizFunnel() {
               <>
                 <FunnelTitle>{currentStep.title}</FunnelTitle>
                 {currentStep.imageUrl && (
-                  <figure className="rounded-2xl border border-white/[0.08] bg-[#060606] overflow-hidden">
+                  <figure className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
                     <img
                       src={currentStep.imageUrl}
                       alt="Print real de resultado"
-                      className="w-full max-h-48 object-cover object-top"
+                      className="max-h-48 w-full object-contain object-top bg-[#f5f5f5]"
                       loading="lazy"
                     />
                   </figure>
                 )}
-                <div className="funnel-marker-solid rounded-2xl">
-                  <p className="funnel-body text-white/75 font-inter whitespace-pre-line">
+                <div className={cn(funnel.card, "funnel-marker-solid")}>
+                  <p className="whitespace-pre-line text-base leading-relaxed text-[#444] font-inter">
                     {resolveDynamicBody(currentStep.body, answers, questionSteps)}
                   </p>
                 </div>
@@ -923,25 +916,18 @@ export default function AdsQuizFunnel() {
                 {currentStep.intro && <FunnelHint>{currentStep.intro}</FunnelHint>}
                 <div className="space-y-3">
                   {currentStep.mechanismSteps.map((item, i) => (
-                    <div
-                      key={`${item.title}-${i}`}
-                      className="rounded-2xl border border-white/[0.06] bg-[#060606] px-5 py-4"
-                    >
+                    <div key={`${item.title}-${i}`} className={cn(funnel.card, "bg-white")}>
                       <div className="flex items-start gap-3">
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/15 border border-primary/30 text-sm font-black text-primary">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-orange-200 bg-orange-50 text-sm font-black text-[#f2a218]">
                           {i + 1}
                         </span>
                         <div>
-                          <p className="funnel-display font-bold text-white text-lg uppercase tracking-wide">
-                            {item.title}
-                          </p>
+                          <p className="text-lg font-bold text-[#111]">{item.title}</p>
                           {item.subtitle && (
-                            <p className="text-sm text-white/50 mt-1 font-inter">{item.subtitle}</p>
+                            <p className="mt-1 text-sm text-[#666] font-inter">{item.subtitle}</p>
                           )}
                           {item.highlight && (
-                            <p className="funnel-display text-sm font-bold text-primary mt-2 uppercase tracking-wider">
-                              <span className="funnel-marker">{item.highlight}</span>
-                            </p>
+                            <p className="mt-2 text-sm font-bold text-[#E8941C]">{item.highlight}</p>
                           )}
                         </div>
                       </div>
@@ -949,10 +935,10 @@ export default function AdsQuizFunnel() {
                   ))}
                 </div>
                 {currentStep.bullets && currentStep.bullets.length > 0 && (
-                  <ul className="space-y-2.5 funnel-body text-white/50 font-inter">
+                  <ul className="space-y-2.5 text-[#666] font-inter">
                     {currentStep.bullets.map((b) => (
                       <li key={b} className="flex items-start gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-primary/80 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#f2a218]" />
                         {b}
                       </li>
                     ))}
@@ -986,13 +972,13 @@ export default function AdsQuizFunnel() {
                             className={cn(
                               "flex h-5 w-5 shrink-0 items-center justify-center rounded border",
                               selected
-                                ? "border-primary bg-primary text-[#0a0a0a]"
-                                : "border-white/20",
+                                ? "border-[#f2a218] bg-[#f2a218] text-white"
+                                : "border-gray-300",
                             )}
                           >
-                            {selected ? <Check className="w-3 h-3" /> : null}
+                            {selected ? <Check className="h-3 w-3" /> : null}
                           </span>
-                          <p className="funnel-display font-bold text-white text-lg uppercase tracking-wide text-left">
+                          <p className="text-left text-base font-semibold text-[#111] sm:text-lg">
                             {opt.label}
                           </p>
                         </div>
@@ -1020,13 +1006,11 @@ export default function AdsQuizFunnel() {
             <FunnelTitle>{activeInsight.title}</FunnelTitle>
             <div
               className={cn(
-                "rounded-2xl border px-5 py-5 sm:px-6 sm:py-6",
-                activeInsight.variant === "objection"
-                  ? "funnel-marker-solid border-primary/20"
-                  : "border-white/[0.08] bg-black",
+                funnel.card,
+                activeInsight.variant === "objection" && "funnel-marker-solid border-orange-200 bg-orange-50/60",
               )}
             >
-              <p className="funnel-body text-white/70 font-inter whitespace-pre-line">
+              <p className="whitespace-pre-line text-base leading-relaxed text-[#444] font-inter">
                 {activeInsight.body}
               </p>
             </div>
@@ -1040,38 +1024,38 @@ export default function AdsQuizFunnel() {
 
         {phase === "calculating" && (
           <StepShell stepKey="calculating">
-            <div className="text-center space-y-8 py-6">
-              <div className="mx-auto w-16 h-16 rounded-full border-2 border-primary/30 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+            <div className="space-y-8 py-6 text-center">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border-2 border-orange-200">
+                <Loader2 className="h-8 w-8 animate-spin text-[#f2a218]" />
               </div>
               <div>
-                <p className="funnel-display funnel-eyebrow-strip inline-block text-sm uppercase tracking-[0.25em] text-primary font-bold mb-4">
+                <p className="funnel-eyebrow-strip mb-4 inline-block text-sm font-bold uppercase tracking-[0.2em]">
                   Processando
                 </p>
-                <p className="funnel-display text-xl sm:text-2xl font-bold text-white min-h-[3.5rem] transition-opacity duration-300 uppercase tracking-wide">
-                  <span className="funnel-marker">{calculatingMessages[calcMsgIndex]}</span>
+                <p className="min-h-[3.5rem] text-xl font-bold text-[#111] transition-opacity duration-300 sm:text-2xl">
+                  {calculatingMessages[calcMsgIndex]}
                 </p>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 text-left">
                 {calculatingMessages.map((msg, i) => (
                   <div
                     key={msg}
                     className={cn(
                       "flex items-center gap-2 text-base font-inter transition-all duration-300",
-                      i <= calcMsgIndex ? "text-white/75" : "text-white/15",
+                      i <= calcMsgIndex ? "text-[#444]" : "text-[#ccc]",
                     )}
                   >
                     <span
                       className={cn(
                         "flex h-5 w-5 items-center justify-center rounded-full border text-[10px]",
                         i < calcMsgIndex
-                          ? "border-primary bg-primary text-[#0a0a0a]"
+                          ? "border-[#f2a218] bg-[#f2a218] text-white"
                           : i === calcMsgIndex
-                            ? "border-primary/60 text-primary"
-                            : "border-white/10",
+                            ? "border-[#f2a218]/60 text-[#f2a218]"
+                            : "border-gray-200",
                       )}
                     >
-                      {i < calcMsgIndex ? <Check className="w-3 h-3" /> : i + 1}
+                      {i < calcMsgIndex ? <Check className="h-3 w-3" /> : i + 1}
                     </span>
                     {msg}
                   </div>
@@ -1089,33 +1073,30 @@ export default function AdsQuizFunnel() {
             </FunnelTitle>
             {resultConfig.badge && (
               <div className="inline-flex items-center gap-2 funnel-eyebrow-strip px-5 py-2.5">
-                <Sparkles className="w-5 h-5 text-primary" />
-                <span className="funnel-display text-sm font-bold uppercase tracking-[0.18em] text-primary">
+                <Sparkles className="h-5 w-5 text-[#f2a218]" />
+                <span className="text-sm font-bold uppercase tracking-[0.15em] text-[#c27800]">
                   {resultConfig.badge}
                 </span>
               </div>
             )}
             {resultConfig.highlights && resultConfig.highlights.length > 0 && (
-              <ul className="space-y-3 funnel-marker-solid rounded-2xl">
+              <ul className="funnel-marker-solid space-y-3 rounded-xl">
                 {resultConfig.highlights.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 funnel-body text-white/70 font-inter">
-                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <li key={item} className="flex items-start gap-2.5 text-[#444] font-inter">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#f2a218]" />
                     {item}
                   </li>
                 ))}
               </ul>
             )}
             {resultConfig.reassurance && (
-              <p className="text-sm text-white/50 font-inter leading-relaxed">{resultConfig.reassurance}</p>
+              <p className="text-sm leading-relaxed text-[#666] font-inter">{resultConfig.reassurance}</p>
             )}
 
             {answerChips.length > 0 && (
               <div className="flex flex-wrap gap-2">
                 {answerChips.map((chip) => (
-                  <span
-                    key={chip.key}
-                    className="inline-flex rounded-full border border-white/[0.08] bg-white/[0.03] px-3 py-1.5 text-[11px] text-white/60 font-inter"
-                  >
+                  <span key={chip.key} className={funnel.chip}>
                     {chip.text}
                   </span>
                 ))}
@@ -1123,40 +1104,38 @@ export default function AdsQuizFunnel() {
             )}
 
             <div className={funnel.offerCard}>
-              <h3 className="funnel-display text-xl sm:text-2xl font-bold text-white uppercase tracking-tight">
-                {offerStep.title}
-              </h3>
-              <p className="funnel-body text-white/55 font-inter mt-3">{offerStep.body}</p>
+              <h3 className="text-xl font-bold text-[#111] sm:text-2xl">{offerStep.title}</h3>
+              <p className="mt-3 text-[#666] font-inter">{offerStep.body}</p>
 
               {offerStep.urgencyNote && (
-                <div className="mt-4 rounded-xl border border-red-500/25 bg-red-500/[0.06] px-4 py-2.5">
-                  <p className="text-xs font-bold uppercase tracking-wider text-red-400 font-inter">
+                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
+                  <p className="text-xs font-bold uppercase tracking-wider text-red-600 font-inter">
                     {offerStep.urgencyNote}
                   </p>
                 </div>
               )}
 
-              <div className="mt-5 flex items-end gap-3 min-h-[4.5rem]">
+              <div className="mt-5 flex min-h-[4.5rem] items-end gap-3">
                 {offerStep.originalPriceLabel && (
-                  <p className="text-lg text-white/30 font-inter line-through pb-1">
+                  <p className="pb-1 text-lg text-[#bbb] font-inter line-through">
                     {offerStep.originalPriceLabel}
                   </p>
                 )}
-                <p className="funnel-display text-6xl sm:text-7xl font-bold text-primary leading-none drop-shadow-[0_0_32px_rgba(255,184,0,0.5)] funnel-price-pop tabular-nums">
+                <p className="funnel-price-pop text-6xl font-bold leading-none text-[#f2a218] sm:text-7xl tabular-nums">
                   {animatedPrice}
                 </p>
               </div>
 
               {offerStep.priceNote && (
-                <p className="text-xs text-white/35 font-inter mt-2 uppercase tracking-wide">
+                <p className="mt-2 text-xs uppercase tracking-wide text-[#999] font-inter">
                   {offerStep.priceNote}
                 </p>
               )}
 
-              <ul className="space-y-2.5 mt-6 pt-5 border-t border-white/[0.06]">
+              <ul className="mt-6 space-y-2.5 border-t border-gray-100 pt-5">
                 {offerStep.bullets.map((b) => (
-                  <li key={b} className="flex items-start gap-2.5 text-sm text-white/65 font-inter">
-                    <CheckCircle2 className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <li key={b} className="flex items-start gap-2.5 text-sm text-[#555] font-inter">
+                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#f2a218]" />
                     {b}
                   </li>
                 ))}
@@ -1168,13 +1147,13 @@ export default function AdsQuizFunnel() {
                 {testimonials.map((t) => (
                   <blockquote
                     key={`${t.name}-${t.quote.slice(0, 24)}`}
-                    className="rounded-2xl border border-white/[0.05] bg-[#060606] px-4 py-4"
+                    className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4"
                   >
-                    <p className="text-sm text-white/60 font-inter italic leading-relaxed">
+                    <p className="text-sm italic leading-relaxed text-[#555] font-inter">
                       &ldquo;{t.quote}&rdquo;
                     </p>
-                    <footer className="mt-2 text-xs text-white/35 font-inter">
-                      <span className="text-white/55 font-semibold">{t.name}</span>
+                    <footer className="mt-2 text-xs text-[#888] font-inter">
+                      <span className="font-semibold text-[#444]">{t.name}</span>
                       {t.role ? ` · ${t.role}` : ""}
                     </footer>
                   </blockquote>
@@ -1182,7 +1161,7 @@ export default function AdsQuizFunnel() {
               </div>
             )}
 
-            <button type="button" onClick={() => setPhase("contact")} className={funnel.ctaShimmer}>
+            <button type="button" onClick={() => setPhase("contact")} className={funnel.cta}>
               {offerStep.ctaLabel}
               <ArrowRight className="w-5 h-5" />
             </button>
@@ -1200,7 +1179,7 @@ export default function AdsQuizFunnel() {
                     ? contact.emailTitle
                     : contact.phoneTitle}
               </FunnelTitle>
-              <p className="funnel-body text-white/55 font-inter mt-2">
+              <p className="mt-2 text-[#666] font-inter">
                 {contactStep === "name"
                   ? contact.nameHint
                   : contactStep === "email"
@@ -1218,8 +1197,8 @@ export default function AdsQuizFunnel() {
                     (contactStep === "name" && i === 0) ||
                       (contactStep === "email" && i <= 1) ||
                       (contactStep === "phone" && i <= 2)
-                      ? "bg-primary shadow-[0_0_8px_rgba(255,184,0,0.4)]"
-                      : "bg-white/[0.06]",
+                      ? "bg-[#f2a218]"
+                      : "bg-gray-200",
                   )}
                 />
               ))}
@@ -1284,7 +1263,7 @@ export default function AdsQuizFunnel() {
                 onClick={() =>
                   setContactStep(contactStep === "phone" ? "email" : "name")
                 }
-                className="w-full text-xs font-inter uppercase tracking-wider text-white/30 hover:text-white/50 transition-colors py-2"
+                className="w-full py-2 text-xs uppercase tracking-wider text-[#999] transition-colors hover:text-[#666] font-inter"
               >
                 Voltar
               </button>
