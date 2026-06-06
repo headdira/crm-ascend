@@ -143,8 +143,8 @@ const quizStepSchema = z.discriminatedUnion("type", [
         z.object({
           name: z.string().min(1).max(80),
           niche: z.string().max(120).optional(),
-          imageUrl: z.string().max(500),
-          storeUrl: z.string().max(500).optional(),
+          imageUrl: z.string().max(500).optional(),
+          storeUrl: z.string().min(1).max(500),
         }),
       )
       .min(1)
@@ -195,6 +195,7 @@ export const adsQuizConfigSchema = z.object({
     z.literal(16),
     z.literal(17),
     z.literal(18),
+    z.literal(19),
   ]),
   landing: z.object({
     eyebrow: z.string().max(120),
@@ -287,7 +288,7 @@ function normalizeInsightProof(
 }
 
 /** Versão do copy — configs com version menor recebem DEFAULT completo ao carregar. */
-const CURRENT_ADS_QUIZ_COPY_VERSION = 18;
+const CURRENT_ADS_QUIZ_COPY_VERSION = 19;
 
 const STALE_LANDING_MARKERS = [
   "monta seu plano",
@@ -452,7 +453,7 @@ export function resolveResultDisplay(
 }
 
 export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
-  version: 18,
+  version: 19,
   landing: {
     eyebrow: "",
     headline:
@@ -782,35 +783,22 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
       id: "lojas_exemplo",
       type: "store_showcase",
       title: "É assim que entregamos sua loja",
-      intro: "Lojas de alunos de verdade — logo, banner, produtos e visual profissional. Você não mexe em nada disso.",
+      intro: "Lojas reais de alunos — navegue pelo site como se fosse o seu. Use as setas para ver outra loja.",
       stores: [
         {
           name: "Arven",
           niche: "Moda masculina",
-          imageUrl: "/media/quiz-store-examples/arven.png",
           storeUrl: "https://www.lojaarven.com.br/",
         },
         {
           name: "Nivra",
           niche: "Moda feminina",
-          imageUrl: "/media/quiz-store-examples/nivra.png",
           storeUrl: "https://usenivra.com/",
         },
         {
           name: "SerMente",
           niche: "Saúde & performance",
-          imageUrl: "/media/quiz-store-examples/sermente.png",
           storeUrl: "https://www.sermentesaude.com/",
-        },
-        {
-          name: "VEZZ",
-          niche: "Moda masculina",
-          imageUrl: "/media/quiz-store-examples/vezz.png",
-        },
-        {
-          name: "ZHELA",
-          niche: "Semijoias",
-          imageUrl: "/media/quiz-store-examples/zhela.png",
         },
       ],
       ctaLabel: "Continuar",

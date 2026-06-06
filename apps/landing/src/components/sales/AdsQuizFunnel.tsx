@@ -10,7 +10,6 @@ import {
   Sparkles,
   TrendingUp,
   Users,
-  Play,
   ChevronLeft,
   ChevronRight,
   Store,
@@ -41,6 +40,7 @@ import {
   stripPhoneDigits,
 } from "@/lib/sales/br-phone";
 import { QUIZ_LANDING_BANNER } from "@/lib/sales/media";
+import { buildStoreProxyPath } from "@/lib/sales/store-proxy";
 import {
   type QuizTestimonialVideo,
 } from "@/lib/sales/quiz-evidence";
@@ -191,6 +191,27 @@ function TestimonialVideoPage({
   title: string;
   intro?: string;
 }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const playWithSound = () => {
+      video.muted = false;
+      video.defaultMuted = false;
+      video.volume = 1;
+      void video.play().catch(() => {
+        /* alguns browsers bloqueiam até haver gesto no vídeo */
+      });
+    };
+
+    playWithSound();
+    video.addEventListener("canplay", playWithSound, { once: true });
+
+    return () => video.removeEventListener("canplay", playWithSound);
+  }, [item.videoUrl]);
+
   return (
     <div className="space-y-4">
       <FunnelTitle>{title}</FunnelTitle>
@@ -199,14 +220,22 @@ function TestimonialVideoPage({
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-[#111] shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
           <div className="relative aspect-[9/16] max-h-[min(72vh,640px)] w-full">
             <video
+              ref={videoRef}
               src={item.videoUrl}
+              autoPlay
               controls
               playsInline
-              preload="metadata"
+              preload="auto"
               className="absolute inset-0 h-full w-full object-contain"
+              onPointerDown={() => {
+                const video = videoRef.current;
+                if (!video) return;
+                video.muted = false;
+                video.volume = 1;
+                void video.play();
+              }}
             />
             <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/65 px-2.5 py-1 text-[10px] font-bold uppercase text-white">
-              <Play className="h-3 w-3 fill-white" aria-hidden />
               Depoimento
             </span>
           </div>
@@ -337,56 +366,89 @@ function ProofGalleryPage({
 type StoreExample = {
   name: string;
   niche?: string;
-  imageUrl: string;
-  storeUrl?: string;
+  imageUrl?: string;
+  storeUrl: string;
 };
 
+function storeHostname(url: string): string {
+  try {
+    return new URL(url).hostname.replace(/^www\./, "");
+  } catch {
+    return url;
+  }
+}
+
 function StoreShowcaseCarousel({ stores }: { stores: StoreExample[] }) {
+  const liveStores = stores.filter((s) => s.storeUrl?.trim());
   const [index, setIndex] = useState(0);
-  const total = stores.length;
+  const [frameLoading, setFrameLoading] = useState(true);
+  const total = liveStores.length;
+
+  useEffect(() => {
+    setFrameLoading(true);
+  }, [index]);
+
   if (total === 0) return null;
 
-  const current = stores[index]!;
+  const current = liveStores[index]!;
+  const proxySrc = buildStoreProxyPath(current.storeUrl);
+  const host = storeHostname(current.storeUrl);
 
   return (
     <div className="space-y-3">
       <p className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#888]">
         <Store className="h-3.5 w-3.5 text-[#f2a218]" aria-hidden />
-        Loja de cliente · exemplo real
+        Loja real · navegue pelo site
       </p>
 
       <div className="relative mx-auto w-full max-w-md">
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_10px_36px_rgba(0,0,0,0.12)]">
-          <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-4 py-2.5">
+          <div className="flex items-center gap-2 border-b border-gray-200 bg-[#f4f4f5] px-3 py-2">
+            <div className="flex shrink-0 gap-1" aria-hidden>
+              <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
+              <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
+            </div>
+            <div className="min-w-0 flex-1 truncate rounded-md border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-[#555]">
+              {host}
+            </div>
+            <a
+              href={current.storeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 text-[#888] transition-colors hover:text-[#f2a218]"
+              aria-label={`Abrir ${current.name} em nova aba`}
+            >
+              <ExternalLink className="h-3.5 w-3.5" aria-hidden />
+            </a>
+          </div>
+
+          <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-3 py-2">
             <div className="min-w-0 text-left">
               <p className="truncate text-sm font-bold text-[#111]">{current.name}</p>
               {current.niche ? (
                 <p className="truncate text-[11px] text-[#888]">{current.niche}</p>
-              ) : null}
-              {current.storeUrl ? (
-                <a
-                  href={current.storeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-[#aaa] transition-colors hover:text-[#f2a218]"
-                >
-                  Ver loja ao vivo
-                  <ExternalLink className="h-2.5 w-2.5 shrink-0" aria-hidden />
-                </a>
               ) : null}
             </div>
             <span className="shrink-0 rounded-full bg-[#f2a218]/15 px-2 py-0.5 text-[10px] font-bold tabular-nums text-[#c27800]">
               {index + 1}/{total}
             </span>
           </div>
-          <div className="relative h-[min(52vh,440px)] w-full overflow-hidden bg-[#ececec]">
-            <img
-              key={current.imageUrl}
-              src={current.imageUrl}
-              alt={`Loja online ${current.name}`}
-              className="h-full w-full object-cover object-top"
-              loading="lazy"
-              decoding="async"
+
+          <div className="relative h-[min(58vh,480px)] w-full bg-[#ececec]">
+            {frameLoading ? (
+              <div className="absolute inset-0 z-[1] flex items-center justify-center bg-white/80">
+                <Loader2 className="h-7 w-7 animate-spin text-[#f2a218]" aria-hidden />
+                <span className="sr-only">Carregando loja…</span>
+              </div>
+            ) : null}
+            <iframe
+              key={proxySrc}
+              title={`Loja ${current.name}`}
+              src={proxySrc}
+              className="h-full w-full border-0 bg-white"
+              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+              onLoad={() => setFrameLoading(false)}
             />
           </div>
         </div>
@@ -397,7 +459,7 @@ function StoreShowcaseCarousel({ stores }: { stores: StoreExample[] }) {
               type="button"
               aria-label="Loja anterior"
               onClick={() => setIndex((i) => (i - 1 + total) % total)}
-              className="absolute left-1 top-[calc(50%+12px)] z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-[#444] shadow-md active:scale-95"
+              className="absolute left-1 top-[calc(50%+20px)] z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-[#444] shadow-md active:scale-95"
             >
               <ChevronLeft className="h-5 w-5" aria-hidden />
             </button>
@@ -405,7 +467,7 @@ function StoreShowcaseCarousel({ stores }: { stores: StoreExample[] }) {
               type="button"
               aria-label="Próxima loja"
               onClick={() => setIndex((i) => (i + 1) % total)}
-              className="absolute right-1 top-[calc(50%+12px)] z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-[#444] shadow-md active:scale-95"
+              className="absolute right-1 top-[calc(50%+20px)] z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-[#444] shadow-md active:scale-95"
             >
               <ChevronRight className="h-5 w-5" aria-hidden />
             </button>
@@ -414,43 +476,30 @@ function StoreShowcaseCarousel({ stores }: { stores: StoreExample[] }) {
       </div>
 
       {total > 1 && (
-        <div className="flex items-center justify-center gap-2">
-          {stores.map((store, i) => (
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {liveStores.map((store, i) => (
             <button
-              key={store.imageUrl}
+              key={store.storeUrl}
               type="button"
               aria-label={`Ver loja ${store.name}`}
               aria-current={i === index ? "true" : undefined}
               onClick={() => setIndex(i)}
               className={cn(
-                "h-2 rounded-full transition-all duration-200",
-                i === index ? "w-6 bg-[#f2a218]" : "w-2 bg-gray-300",
+                "rounded-full border px-3 py-1.5 text-xs font-semibold transition-all",
+                i === index
+                  ? "border-[#f2a218] bg-[#f2a218]/10 text-[#c27800]"
+                  : "border-gray-200 bg-white text-[#666] hover:border-[#f2a218]/40",
               )}
-            />
+            >
+              {store.name}
+            </button>
           ))}
         </div>
       )}
 
-      <div className="store-showcase-scroll flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1">
-        {stores.map((store, i) => (
-          <button
-            key={store.imageUrl}
-            type="button"
-            onClick={() => setIndex(i)}
-            className={cn(
-              "w-[28%] min-w-[88px] shrink-0 snap-center overflow-hidden rounded-lg border-2 transition-all",
-              i === index ? "border-[#f2a218] shadow-md" : "border-transparent opacity-70",
-            )}
-          >
-            <img
-              src={store.imageUrl}
-              alt=""
-              className="aspect-[3/4] h-auto w-full object-cover object-top"
-              loading="lazy"
-            />
-          </button>
-        ))}
-      </div>
+      <p className="text-center text-[11px] text-[#999]">
+        Toque nos links dentro da loja para navegar — igual quando a sua estiver no ar.
+      </p>
     </div>
   );
 }
