@@ -28,7 +28,11 @@ import { ensureLandingSession, trackEvent } from "@/lib/sales/track-client";
 import { buildPersonalizedCheckoutUrl } from "@/lib/sales/checkout-url";
 import { openCheckoutInNewTab } from "@/lib/sales/open-checkout";
 import { cn } from "@/lib/utils";
-import { MENTOR_KELVIN_IMAGE, MENTOR_ERICK_IMAGE, PROOF_IMAGES } from "@/lib/sales/media";
+import {
+  PROOF_IMAGES,
+  QUIZ_HERO_ERICK_DUBAI,
+  QUIZ_HERO_KELVIN_PARIS,
+} from "@/lib/sales/media";
 
 type Phase = "landing" | "steps" | "insight" | "calculating" | "result" | "contact";
 type ContactStep = "name" | "email" | "phone";
@@ -71,87 +75,88 @@ function NuvemshopSaleCard({ value, className }: { value: string; className?: st
   return (
     <div
       className={cn(
-        "z-20 min-w-[92px] max-w-[108px] overflow-hidden rounded-lg border border-white/40 bg-white shadow-[0_6px_20px_rgba(0,0,0,0.35)]",
+        "z-20 min-w-[100px] max-w-[118px] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.4)]",
         className,
       )}
     >
-      <div className="flex items-center border-b border-gray-100 bg-[#f5f8fb] px-1.5 py-0.5">
-        <span className="text-[7px] font-bold lowercase tracking-tight text-[#0084ff] sm:text-[8px]">
+      <div className="flex items-center border-b border-gray-100 bg-[#f5f8fb] px-2 py-1">
+        <span className="text-[8px] font-bold lowercase tracking-tight text-[#0084ff] sm:text-[9px]">
           nuvemshop
         </span>
       </div>
-      <div className="px-1.5 py-1">
-        <div className="mb-0.5 flex items-center gap-0.5">
-          <span className="inline-flex h-2.5 w-2.5 shrink-0 items-center justify-center rounded-full bg-[#00a650] text-[6px] font-bold text-white">
+      <div className="px-2 py-1.5">
+        <div className="mb-0.5 flex items-center gap-1">
+          <span className="inline-flex h-3 w-3 shrink-0 items-center justify-center rounded-full bg-[#00a650] text-[7px] font-bold text-white">
             ✓
           </span>
-          <p className="text-[7px] font-semibold leading-tight text-[#222] sm:text-[8px]">Venda realizada</p>
+          <p className="text-[8px] font-semibold leading-tight text-[#222] sm:text-[9px]">Venda realizada</p>
         </div>
-        <p className="text-[9px] font-bold text-[#00a650] sm:text-[10px]">{value}</p>
+        <p className="text-[10px] font-bold text-[#00a650] sm:text-[11px]">{value}</p>
       </div>
     </div>
   );
 }
 
-function QuizLandingBanner({ centerImage }: { centerImage: string }) {
+function ProofPrintFrame({ src, className }: { src: string; className?: string }) {
   return (
-    <div className="funnel-landing-banner relative w-full aspect-[5/3] rounded-2xl overflow-hidden bg-[#0a0a0a] shadow-[0_8px_32px_rgba(0,0,0,0.18)]">
+    <div
+      className={cn(
+        "z-10 overflow-hidden rounded-xl border-2 border-white bg-white shadow-[0_10px_28px_rgba(0,0,0,0.5)]",
+        className,
+      )}
+    >
       <img
-        src="/media/quiz-hero-kelvin-paris.png"
-        alt=""
-        className="absolute -right-2 top-0 h-[72%] w-[58%] object-cover object-top opacity-70"
-        loading="eager"
+        src={src}
+        alt="Print de resultado"
+        className="block w-full max-h-[100px] bg-[#ececec] object-contain object-top sm:max-h-[120px]"
+        loading="lazy"
         decoding="async"
       />
-      <img
-        src="/media/quiz-hero-erick-dubai.png"
-        alt=""
-        className="absolute -left-4 bottom-0 h-[68%] w-[52%] object-cover object-center opacity-65"
-        loading="eager"
-        decoding="async"
+    </div>
+  );
+}
+
+function QuizLandingBanner() {
+  return (
+    <div className="funnel-landing-banner relative w-full overflow-hidden rounded-2xl bg-[#111] shadow-[0_8px_32px_rgba(0,0,0,0.18)] aspect-[16/10] sm:aspect-[16/9]">
+      <div className="absolute inset-0 flex">
+        <div className="relative h-full w-1/2 overflow-hidden">
+          <img
+            src={QUIZ_HERO_ERICK_DUBAI}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-[center_20%]"
+            loading="eager"
+            decoding="async"
+          />
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-black/35" aria-hidden />
+        </div>
+        <div className="relative h-full w-1/2 overflow-hidden">
+          <img
+            src={QUIZ_HERO_KELVIN_PARIS}
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover object-[center_20%]"
+            loading="eager"
+            decoding="async"
+          />
+          <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-black/35" aria-hidden />
+        </div>
+      </div>
+
+      <div className="absolute inset-x-0 bottom-0 top-[38%] bg-gradient-to-t from-black/75 via-black/25 to-transparent" aria-hidden />
+
+      {/* Prints legíveis — um em cada metade, grande e sem rotação */}
+      <ProofPrintFrame
+        src={PROOF_IMAGES[0]}
+        className="absolute bottom-2 left-[4%] w-[38%] sm:bottom-3"
+      />
+      <ProofPrintFrame
+        src={PROOF_IMAGES[2]}
+        className="absolute bottom-2 right-[4%] w-[38%] sm:bottom-3"
       />
 
-      <div className="absolute left-[3%] top-[5%] z-[5] w-[24%] -rotate-[7deg] overflow-hidden rounded-md border border-white/25 shadow-lg">
-        <img
-          src={PROOF_IMAGES[0]}
-          alt=""
-          className="aspect-[9/16] w-full object-cover object-top"
-          loading="lazy"
-          decoding="async"
-        />
-      </div>
-      <div className="absolute bottom-[6%] left-[2%] z-[5] w-[21%] -rotate-[4deg] overflow-hidden rounded-md border border-white/25 shadow-lg">
-        <img
-          src={PROOF_IMAGES[2]}
-          alt=""
-          className="aspect-[9/16] w-full object-cover object-top"
-          loading="lazy"
-          decoding="async"
-        />
-      </div>
-      <div className="absolute right-[2%] top-[38%] z-[5] w-[20%] rotate-[6deg] overflow-hidden rounded-md border border-white/25 shadow-lg">
-        <img
-          src={PROOF_IMAGES[5]}
-          alt=""
-          className="aspect-[9/16] w-full object-cover object-top"
-          loading="lazy"
-          decoding="async"
-        />
-      </div>
-
-      <div className="absolute inset-0 bg-gradient-to-t from-black/92 via-black/60 to-black/30" aria-hidden />
-
-      <img
-        src={centerImage}
-        alt=""
-        className="absolute bottom-0 left-1/2 z-10 h-[94%] w-auto max-w-[46%] -translate-x-1/2 object-contain object-bottom drop-shadow-[0_12px_40px_rgba(0,0,0,0.65)]"
-        loading="eager"
-        decoding="async"
-      />
-
-      <NuvemshopSaleCard value="R$ 127,50" className="absolute right-[6%] top-[8%]" />
-      <NuvemshopSaleCard value="R$ 89,90" className="absolute left-[5%] top-[38%]" />
-      <NuvemshopSaleCard value="R$ 186,30" className="absolute bottom-[10%] right-[8%]" />
+      <NuvemshopSaleCard value="R$ 89,90" className="absolute bottom-[42%] left-[6%] sm:bottom-[44%]" />
+      <NuvemshopSaleCard value="R$ 127,50" className="absolute bottom-[42%] right-[6%] sm:bottom-[44%]" />
+      <NuvemshopSaleCard value="R$ 164,00" className="absolute left-1/2 top-[5%] -translate-x-1/2 sm:top-[7%]" />
     </div>
   );
 }
@@ -379,7 +384,6 @@ export default function AdsQuizFunnel() {
   const [multiDraft, setMultiDraft] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const calculatingStarted = useRef(false);
-  const landingCenterRef = useRef<string | null>(null);
 
   useEffect(() => {
     void ensureLandingSession().then(() => {
@@ -714,9 +718,6 @@ export default function AdsQuizFunnel() {
   }
 
   const { landing, contact } = config;
-  const landingCenterImage =
-    landingCenterRef.current ??=
-      [MENTOR_KELVIN_IMAGE, MENTOR_ERICK_IMAGE][Math.floor(Math.random() * 2)];
   const stepLabel =
     phase === "landing"
       ? "Início"
@@ -804,7 +805,7 @@ export default function AdsQuizFunnel() {
                   />
                 </div>
               ) : (
-                <QuizLandingBanner centerImage={landingCenterImage} />
+                <QuizLandingBanner />
               )}
 
               <button
