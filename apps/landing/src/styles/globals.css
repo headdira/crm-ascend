@@ -183,6 +183,11 @@ body {
   transform: scale(0.985);
 }
 
+.form-funnel .funnel-landing-banner img[alt="Print de resultado real"] {
+  image-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
 .form-funnel-inlead .funnel-marker-solid {
   background: rgba(242, 162, 24, 0.1);
   border-left: 3px solid #f2a218;

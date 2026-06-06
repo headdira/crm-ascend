@@ -29,6 +29,7 @@ import { buildPersonalizedCheckoutUrl } from "@/lib/sales/checkout-url";
 import { openCheckoutInNewTab } from "@/lib/sales/open-checkout";
 import { cn } from "@/lib/utils";
 import {
+  HERO_IMAGE,
   PROOF_IMAGES,
   QUIZ_HERO_ERICK_DUBAI,
   QUIZ_HERO_KELVIN_PARIS,
@@ -92,80 +93,58 @@ function NuvemshopSaleCard({ value, className }: { value: string; className?: st
   );
 }
 
-function ProofPrintFrame({
-  src,
-  className,
-  size = "md",
-}: {
-  src: string;
-  className?: string;
-  size?: "sm" | "md";
-}) {
+function TravelTile({ src }: { src: string }) {
   return (
-    <div
-      className={cn(
-        "z-10 overflow-hidden rounded-xl border-2 border-white bg-white shadow-[0_10px_28px_rgba(0,0,0,0.5)]",
-        className,
-      )}
-    >
-      <img
-        src={src}
-        alt="Print de resultado"
-        className={cn(
-          "block w-full bg-[#ececec] object-contain object-top",
-          size === "sm" ? "max-h-[76px] sm:max-h-[88px]" : "max-h-[108px] sm:max-h-[128px]",
-        )}
-        loading="lazy"
-        decoding="async"
-      />
+    <div className="h-12 w-12 overflow-hidden rounded-md border-2 border-white shadow-lg sm:h-14 sm:w-14">
+      <img src={src} alt="" className="h-full w-full object-cover object-top" loading="lazy" decoding="async" />
     </div>
   );
 }
 
-/** Prints reais distribuídos no banner — Dubai (esq) e Paris (dir) */
-const BANNER_PRINTS = [
-  { src: PROOF_IMAGES[0], className: "absolute bottom-2 left-[3%] w-[32%] sm:bottom-3", size: "md" as const },
-  { src: PROOF_IMAGES[1], className: "absolute top-[5%] left-[4%] w-[24%]", size: "sm" as const },
-  { src: PROOF_IMAGES[2], className: "absolute bottom-2 right-[3%] w-[32%] sm:bottom-3", size: "md" as const },
-  { src: PROOF_IMAGES[3], className: "absolute top-[5%] right-[4%] w-[24%]", size: "sm" as const },
-  { src: PROOF_IMAGES[4], className: "absolute bottom-[30%] left-1/2 z-[11] w-[20%] -translate-x-1/2", size: "sm" as const },
-] as const;
+/** Prints principais — exibidos inteiros, sem crop, na faixa inferior do banner */
+const BANNER_SHOWCASE_PRINTS = [PROOF_IMAGES[0], PROOF_IMAGES[2], PROOF_IMAGES[4]] as const;
 
 function QuizLandingBanner() {
   return (
-    <div className="funnel-landing-banner relative w-full overflow-hidden rounded-2xl bg-[#111] shadow-[0_8px_32px_rgba(0,0,0,0.18)] aspect-[16/10] sm:aspect-[16/9]">
-      <div className="absolute inset-0 flex">
-        <div className="relative h-full w-1/2 overflow-hidden">
-          <img
-            src={QUIZ_HERO_ERICK_DUBAI}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover object-[center_20%]"
-            loading="eager"
-            decoding="async"
-          />
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-black/35" aria-hidden />
+    <div className="funnel-landing-banner overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
+      {/* Collage: hero duo + quadrados Dubai/Paris + cards Nuvemshop */}
+      <div className="relative h-[10.5rem] overflow-hidden bg-[#222] sm:h-[12.5rem]">
+        <img
+          src={HERO_IMAGE}
+          alt="Mentores Ascend Club"
+          className="absolute inset-0 h-full w-full object-cover object-[center_15%] opacity-95"
+          loading="eager"
+          decoding="async"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-white" aria-hidden />
+
+        <div className="absolute left-2 top-2 flex flex-col gap-1.5 sm:left-3 sm:top-3">
+          <TravelTile src={QUIZ_HERO_ERICK_DUBAI} />
+          <TravelTile src={QUIZ_HERO_KELVIN_PARIS} />
         </div>
-        <div className="relative h-full w-1/2 overflow-hidden">
-          <img
-            src={QUIZ_HERO_KELVIN_PARIS}
-            alt=""
-            className="absolute inset-0 h-full w-full object-cover object-[center_20%]"
-            loading="eager"
-            decoding="async"
-          />
-          <div className="absolute inset-0 bg-gradient-to-l from-transparent via-transparent to-black/35" aria-hidden />
+        <div className="absolute right-2 top-2 flex flex-col gap-1.5 sm:right-3 sm:top-3">
+          <TravelTile src={QUIZ_HERO_KELVIN_PARIS} />
+          <TravelTile src={QUIZ_HERO_ERICK_DUBAI} />
         </div>
+
+        <NuvemshopSaleCard value="R$ 89,90" className="absolute bottom-3 left-[28%] sm:bottom-4" />
+        <NuvemshopSaleCard value="R$ 127,50" className="absolute bottom-3 right-[28%] sm:bottom-4" />
+        <NuvemshopSaleCard value="R$ 164,00" className="absolute left-1/2 top-2 -translate-x-1/2 sm:top-3" />
       </div>
 
-      <div className="absolute inset-x-0 bottom-0 top-[32%] bg-gradient-to-t from-black/80 via-black/30 to-transparent" aria-hidden />
-
-      {BANNER_PRINTS.map((slot) => (
-        <ProofPrintFrame key={slot.src} src={slot.src} className={slot.className} size={slot.size} />
-      ))}
-
-      <NuvemshopSaleCard value="R$ 89,90" className="absolute left-[34%] top-[3%] sm:top-[4%]" />
-      <NuvemshopSaleCard value="R$ 127,50" className="absolute right-[34%] top-[3%] sm:top-[4%]" />
-      <NuvemshopSaleCard value="R$ 164,00" className="absolute left-1/2 top-[18%] -translate-x-1/2" />
+      {/* Prints reais — largura total, imagem inteira, legível */}
+      <div className="grid grid-cols-3 gap-1.5 bg-white p-2 sm:gap-2 sm:p-3">
+        {BANNER_SHOWCASE_PRINTS.map((src) => (
+          <img
+            key={src}
+            src={src}
+            alt="Print de resultado real"
+            className="h-auto w-full rounded-md shadow-sm ring-1 ring-gray-200"
+            loading="eager"
+            decoding="async"
+          />
+        ))}
+      </div>
     </div>
   );
 }
@@ -782,7 +761,7 @@ export default function AdsQuizFunnel() {
       >
         {phase === "landing" && (
           <StepShell stepKey="landing">
-            <div className="funnel-landing-inlead mx-auto w-full max-w-[520px] text-center">
+            <div className="funnel-landing-inlead mx-auto w-full max-w-[580px] text-center">
               <h1 className="text-[1.3rem] font-extrabold leading-[1.28] tracking-tight text-[#111] sm:text-[1.55rem]">
                 {renderHighlightedHeadline(landing.headline)}
               </h1>
