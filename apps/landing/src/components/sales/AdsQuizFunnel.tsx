@@ -93,58 +93,53 @@ function NuvemshopSaleCard({ value, className }: { value: string; className?: st
   );
 }
 
-function TravelTile({ src }: { src: string }) {
+/** 2 prints com métricas legíveis (WhatsApp + dashboard Nuvemshop) */
+const LEGIBLE_PRINTS = [PROOF_IMAGES[2], PROOF_IMAGES[4]] as const;
+
+function QuizLandingHero() {
   return (
-    <div className="h-12 w-12 overflow-hidden rounded-md border-2 border-white shadow-lg sm:h-14 sm:w-14">
-      <img src={src} alt="" className="h-full w-full object-cover object-top" loading="lazy" decoding="async" />
+    <div className="relative aspect-[4/3] overflow-hidden rounded-2xl bg-[#1c1c1c] shadow-[0_8px_28px_rgba(0,0,0,0.15)] sm:aspect-[16/11]">
+      <img
+        src={HERO_IMAGE}
+        alt="Erick e Kelvin — Ascend Club"
+        className="absolute inset-0 h-full w-full object-contain object-center p-1 sm:p-2"
+        loading="eager"
+        decoding="async"
+      />
+
+      <div className="absolute left-2 top-2 h-9 w-9 overflow-hidden rounded-md border border-white/25 opacity-85 shadow-md sm:h-10 sm:w-10">
+        <img src={QUIZ_HERO_ERICK_DUBAI} alt="" className="h-full w-full object-cover object-top" loading="lazy" />
+      </div>
+      <div className="absolute right-2 top-2 h-9 w-9 overflow-hidden rounded-md border border-white/25 opacity-85 shadow-md sm:h-10 sm:w-10">
+        <img src={QUIZ_HERO_KELVIN_PARIS} alt="" className="h-full w-full object-cover object-top" loading="lazy" />
+      </div>
+      <div className="absolute bottom-2 left-2 h-8 w-8 overflow-hidden rounded-md border border-white/20 opacity-75 shadow sm:h-9 sm:w-9">
+        <img src={QUIZ_HERO_KELVIN_PARIS} alt="" className="h-full w-full object-cover object-top" loading="lazy" />
+      </div>
+      <div className="absolute bottom-2 right-2 h-8 w-8 overflow-hidden rounded-md border border-white/20 opacity-75 shadow sm:h-9 sm:w-9">
+        <img src={QUIZ_HERO_ERICK_DUBAI} alt="" className="h-full w-full object-cover object-top" loading="lazy" />
+      </div>
+
+      <NuvemshopSaleCard value="R$ 89,90" className="absolute left-2 top-[38%] scale-[0.92] sm:left-3" />
+      <NuvemshopSaleCard value="R$ 127,50" className="absolute right-2 top-[38%] scale-[0.92] sm:right-3" />
+      <NuvemshopSaleCard value="R$ 164,00" className="absolute bottom-3 left-1/2 -translate-x-1/2 scale-[0.92]" />
     </div>
   );
 }
 
-/** Prints principais — exibidos inteiros, sem crop, na faixa inferior do banner */
-const BANNER_SHOWCASE_PRINTS = [PROOF_IMAGES[0], PROOF_IMAGES[2], PROOF_IMAGES[4]] as const;
-
-function QuizLandingBanner() {
+function QuizLandingProofs() {
   return (
-    <div className="funnel-landing-banner overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_8px_32px_rgba(0,0,0,0.12)]">
-      {/* Collage: hero duo + quadrados Dubai/Paris + cards Nuvemshop */}
-      <div className="relative h-[10.5rem] overflow-hidden bg-[#222] sm:h-[12.5rem]">
+    <div className="-mx-4 space-y-3 sm:mx-0">
+      {LEGIBLE_PRINTS.map((src) => (
         <img
-          src={HERO_IMAGE}
-          alt="Mentores Ascend Club"
-          className="absolute inset-0 h-full w-full object-cover object-[center_15%] opacity-95"
+          key={src}
+          src={src}
+          alt="Print de resultado real"
+          className="block h-auto w-full rounded-none border-y border-gray-200 bg-white sm:rounded-xl sm:border sm:shadow-sm"
           loading="eager"
           decoding="async"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-white" aria-hidden />
-
-        <div className="absolute left-2 top-2 flex flex-col gap-1.5 sm:left-3 sm:top-3">
-          <TravelTile src={QUIZ_HERO_ERICK_DUBAI} />
-          <TravelTile src={QUIZ_HERO_KELVIN_PARIS} />
-        </div>
-        <div className="absolute right-2 top-2 flex flex-col gap-1.5 sm:right-3 sm:top-3">
-          <TravelTile src={QUIZ_HERO_KELVIN_PARIS} />
-          <TravelTile src={QUIZ_HERO_ERICK_DUBAI} />
-        </div>
-
-        <NuvemshopSaleCard value="R$ 89,90" className="absolute bottom-3 left-[28%] sm:bottom-4" />
-        <NuvemshopSaleCard value="R$ 127,50" className="absolute bottom-3 right-[28%] sm:bottom-4" />
-        <NuvemshopSaleCard value="R$ 164,00" className="absolute left-1/2 top-2 -translate-x-1/2 sm:top-3" />
-      </div>
-
-      {/* Prints reais — largura total, imagem inteira, legível */}
-      <div className="grid grid-cols-3 gap-1.5 bg-white p-2 sm:gap-2 sm:p-3">
-        {BANNER_SHOWCASE_PRINTS.map((src) => (
-          <img
-            key={src}
-            src={src}
-            alt="Print de resultado real"
-            className="h-auto w-full rounded-md shadow-sm ring-1 ring-gray-200"
-            loading="eager"
-            decoding="async"
-          />
-        ))}
-      </div>
+      ))}
     </div>
   );
 }
@@ -761,7 +756,7 @@ export default function AdsQuizFunnel() {
       >
         {phase === "landing" && (
           <StepShell stepKey="landing">
-            <div className="funnel-landing-inlead mx-auto w-full max-w-[580px] text-center">
+            <div className="funnel-landing-inlead mx-auto w-full max-w-[640px] text-center">
               <h1 className="text-[1.3rem] font-extrabold leading-[1.28] tracking-tight text-[#111] sm:text-[1.55rem]">
                 {renderHighlightedHeadline(landing.headline)}
               </h1>
@@ -771,7 +766,7 @@ export default function AdsQuizFunnel() {
               </p>
 
               {landing.heroImageUrl ? (
-                <div className="funnel-landing-banner relative w-full aspect-[5/3] overflow-hidden rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.18)]">
+                <div className="relative aspect-[16/11] w-full overflow-hidden rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.18)]">
                   <img
                     src={landing.heroImageUrl}
                     alt=""
@@ -781,7 +776,10 @@ export default function AdsQuizFunnel() {
                   />
                 </div>
               ) : (
-                <QuizLandingBanner />
+                <div className="funnel-landing-banner w-full space-y-4">
+                  <QuizLandingHero />
+                  <QuizLandingProofs />
+                </div>
               )}
 
               <button
