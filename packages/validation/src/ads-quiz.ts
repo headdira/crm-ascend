@@ -196,6 +196,7 @@ export const adsQuizConfigSchema = z.object({
     z.literal(17),
     z.literal(18),
     z.literal(19),
+    z.literal(20),
   ]),
   landing: z.object({
     eyebrow: z.string().max(120),
@@ -288,7 +289,7 @@ function normalizeInsightProof(
 }
 
 /** Versão do copy — configs com version menor recebem DEFAULT completo ao carregar. */
-const CURRENT_ADS_QUIZ_COPY_VERSION = 19;
+const CURRENT_ADS_QUIZ_COPY_VERSION = 20;
 
 const STALE_LANDING_MARKERS = [
   "monta seu plano",
@@ -453,7 +454,7 @@ export function resolveResultDisplay(
 }
 
 export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
-  version: 19,
+  version: 20,
   landing: {
     eyebrow: "",
     headline:
@@ -929,14 +930,6 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
           tags: ["commit_high"],
         },
       ],
-    },
-    {
-      id: "autoridade",
-      type: "required_video",
-      title: "Quem monta sua loja e te ensina a vender",
-      intro: "Assista este vídeo e veja como ter uma loja Ascend",
-      videoUrl: "/media/quiz-authority-video.mp4",
-      ctaLabel: "GERAR MEU DIAGNÓSTICO",
     },
     {
       id: "oferta",
