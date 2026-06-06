@@ -644,6 +644,13 @@ function StepShell({ children, stepKey }: { children: React.ReactNode; stepKey: 
   );
 }
 
+function scrollFunnelToTop() {
+  if (typeof window === "undefined") return;
+  window.scrollTo(0, 0);
+  document.documentElement.scrollTop = 0;
+  document.body.scrollTop = 0;
+}
+
 export default function AdsQuizFunnel() {
   const [config, setConfig] = useState<AdsQuizConfig | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -713,8 +720,6 @@ export default function AdsQuizFunnel() {
     () => resolveResultDisplay(config ?? DEFAULT_ADS_QUIZ_CONFIG, profileTags, DEFAULT_RESULT),
     [config, profileTags],
   );
-  const testimonials = config?.testimonials ?? [];
-
   const progressTotal = LEAD_STEP_ORDER.length + questionSteps.length + 2;
   const progressDone = useMemo(() => {
     if (phase === "landing") return 0;
@@ -730,6 +735,12 @@ export default function AdsQuizFunnel() {
 
   const progressPct = progressTotal > 0 ? Math.round((progressDone / progressTotal) * 100) : 0;
   const animatedPrice = useCountUp(offerStep?.priceLabel ?? "R$60", phase === "result" && resultViewed);
+
+  useEffect(() => {
+    scrollFunnelToTop();
+    const frame = requestAnimationFrame(() => scrollFunnelToTop());
+    return () => cancelAnimationFrame(frame);
+  }, [phase, stepIndex, leadStep]);
 
   useEffect(() => {
     if (phase !== "lead") return;
@@ -1487,21 +1498,6 @@ export default function AdsQuizFunnel() {
                 ))}
               </ul>
             </div>
-
-            {testimonials.length > 0 && (
-              <div className="space-y-4">
-                <FunnelEyebrow>DEPOIMENTO DE VERDADE</FunnelEyebrow>
-                <blockquote className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
-                  <p className="text-sm italic leading-relaxed text-[#555] font-inter">
-                    &ldquo;{testimonials[0].quote}&rdquo;
-                  </p>
-                  <footer className="mt-2 text-xs text-[#888] font-inter">
-                    <span className="font-semibold text-[#444]">{testimonials[0].name}</span>
-                    {testimonials[0].role ? ` · ${testimonials[0].role}` : ""}
-                  </footer>
-                </blockquote>
-              </div>
-            )}
 
             <button type="button" onClick={() => void finishCheckout()} className={funnel.cta}>
               {offerStep.ctaLabel}
