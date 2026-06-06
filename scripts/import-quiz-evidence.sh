@@ -1,9 +1,15 @@
 #!/usr/bin/env bash
 # Importa prints e vídeos de depoimentos para apps/landing/public/media/quiz-evidence
+# Origem (pastas por tipo):
+#   Faturamento - 10 Vendas  → proof/faturamento/fat-NN.jpeg
+#   Notificações De Vendas   → proof/notificacoes/notif-NN.jpeg
+#   Mensões ao Erick         → proof/mencoes-erick/erick-NN.jpeg
+#   Videos                   → videos/NN-slug.mp4
 set -euo pipefail
 
 SRC="${1:-/home/gerson.moreira/Downloads/Imagens-20260606T003746Z-3-001/Imagens}"
 DEST="$(cd "$(dirname "$0")/.." && pwd)/apps/landing/public/media/quiz-evidence"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 slugify() {
   echo "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-|-$//g' | cut -c1-80
@@ -35,6 +41,8 @@ find "$SRC/Videos" -type f -iname '*.mp4' | sort | while read -r f; do
   cp "$f" "$DEST/videos/${num}-${slug}.mp4"
   i=$((i + 1))
 done
+
+node "$SCRIPT_DIR/generate-quiz-evidence-manifest.mjs"
 
 echo "Importado em $DEST"
 find "$DEST" -type f | wc -l

@@ -12,6 +12,12 @@ import { ensureLandingSession, trackEvent } from "@/lib/sales/track-client";
 import { buildPersonalizedCheckoutUrl } from "@/lib/sales/checkout-url";
 import { openCheckoutInNewTab } from "@/lib/sales/open-checkout";
 import { brandCta, brandTypography } from "./brand-preview/tokens";
+import {
+  formatBrazilMobilePhone,
+  isValidBrazilMobilePhone,
+  stripPhoneDigits,
+  BR_MOBILE_PHONE_PLACEHOLDER,
+} from "@/lib/sales/br-phone";
 import { cn } from "@/lib/utils";
 
 type Step = "name" | "email" | "phone";
@@ -24,10 +30,6 @@ type Props = {
   checkoutUrl: string;
   trackLabel?: string;
 };
-
-function normalizePhone(value: string): string {
-  return value.replace(/\D/g, "");
-}
 
 function readUtm() {
   const rawAttribution = getClientCookie(ATTRIBUTION_COOKIE);
@@ -101,8 +103,8 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl: _checkou
   const firstNameValue = firstName.trim().split(/\s+/)[0] ?? "";
   const nameOk = firstNameValue.length >= 2;
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const phoneDigits = normalizePhone(phone);
-  const phoneOk = phoneDigits.length >= 10;
+  const phoneDigits = stripPhoneDigits(phone);
+  const phoneOk = isValidBrazilMobilePhone(phone);
 
   const goToKiwify = (url: string) => {
     openCheckoutInNewTab(url);
@@ -308,10 +310,12 @@ export default function CheckoutLeadModal({ open, onClose, checkoutUrl: _checkou
           {step === "phone" && (
             <input
               type="tel"
+              inputMode="numeric"
               autoComplete="tel"
-              placeholder="(11) 99999-9999"
+              placeholder={BR_MOBILE_PHONE_PLACEHOLDER}
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => setPhone(formatBrazilMobilePhone(e.target.value))}
+              maxLength={16}
               className="w-full rounded-xl bg-black/40 border border-white/10 px-4 py-3.5 text-white text-sm font-inter placeholder:text-white/30 focus:border-primary/50 focus:outline-none"
             />
           )}

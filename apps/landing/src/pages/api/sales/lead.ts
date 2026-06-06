@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Json } from "@crm-ascend/db";
 import { ctaLabel } from "@/lib/sales/cta-labels";
 import {
+  upsertAdsQuizLeadCapture,
   upsertAdsQuizProgress,
   upsertCheckoutAbandon,
   upsertCheckoutLead,
@@ -47,11 +48,23 @@ const quizProgressSchema = z.object({
   utm: z.record(z.unknown()).optional(),
 });
 
+const quizLeadCaptureSchema = z.object({
+  type: z.literal("quiz_lead_capture"),
+  full_name: z.string().min(2).max(120),
+  email: z.string().email(),
+  phone: z.string().min(10).max(20),
+  age: z.number().int().min(16).max(99),
+  income: z.string().min(1).max(40),
+  utm: z.record(z.unknown()).optional(),
+  meta: metaSchema.optional(),
+});
+
 const leadSchema = z.discriminatedUnion("type", [
   completeSchema,
   abandonSchema,
   quizCompleteSchema,
   quizProgressSchema,
+  quizLeadCaptureSchema,
 ]);
 
 export const POST: APIRoute = async ({ request }) => {
@@ -120,6 +133,22 @@ export const POST: APIRoute = async ({ request }) => {
         step_id: parsed.data.step_id,
         answers: parsed.data.answers ?? {},
         utm: (parsed.data.utm ?? {}) as Json,
+      });
+      return new Response(JSON.stringify({ ok: true, id }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (parsed.data.type === "quiz_lead_capture") {
+      const id = await upsertAdsQuizLeadCapture(request, {
+        full_name: parsed.data.full_name,
+        email: parsed.data.email,
+        phone: parsed.data.phone,
+        age: parsed.data.age,
+        income: parsed.data.income,
+        utm: (parsed.data.utm ?? {}) as Json,
+        meta: parsed.data.meta,
       });
       return new Response(JSON.stringify({ ok: true, id }), {
         status: 200,

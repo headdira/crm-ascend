@@ -7,6 +7,7 @@ import {
   BadgeCheck,
   FileSignature,
   FormInput,
+  ClipboardList,
   GraduationCap,
   LifeBuoy,
   Package,
@@ -34,6 +35,7 @@ const nav = [
     items: [
       { href: "/crm/leads", label: "Leads", icon: UserPlus },
       { href: "/crm/forms", label: "Formulário", icon: FormInput },
+      { href: "/crm/forms/respostas", label: "Respostas do formulário", icon: ClipboardList },
       { href: "/crm/students", label: "Alunos", icon: GraduationCap },
     ],
   },

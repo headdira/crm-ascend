@@ -7,49 +7,55 @@ import {
   CheckCircle2,
   Loader2,
   Lock,
-  Quote,
-  ShieldCheck,
   Sparkles,
   TrendingUp,
   Users,
-  Zap,
   Play,
+  ChevronLeft,
+  ChevronRight,
+  Store,
+  ExternalLink,
 } from "lucide-react";
-import type { AdsQuizConfig, AdsQuizStep, QuizOptionInsight } from "@crm-ascend/validation/ads-quiz";
+import type { AdsQuizConfig, AdsQuizStep } from "@crm-ascend/validation/ads-quiz";
 import {
   DEFAULT_ADS_QUIZ_CONFIG,
   collectProfileTags,
   normalizeAdsQuizConfig,
   resolveCalculatingMessages,
   resolveDynamicBody,
-  resolveQuizProofImageUrl,
   resolveResultDisplay,
-  QUIZ_PROOF_IMAGES,
 } from "@crm-ascend/validation/ads-quiz";
 import { ATTRIBUTION_COOKIE } from "@/lib/sales/consent";
 import { parseAttributionCookie, readAttributionFromDocument, getClientCookie } from "@/lib/sales/utm";
 import { getMetaBrowserIds } from "@/lib/sales/meta-attribution";
-import { trackMetaLead } from "@/lib/sales/meta-pixel-client";
+import { initMetaPixel, trackMetaLead } from "@/lib/sales/meta-pixel-client";
+import { getMetaPixelId } from "@/lib/sales/meta-config";
+import { CONSENT_COOKIE, parseConsent } from "@/lib/sales/consent";
 import { ensureLandingSession, trackEvent } from "@/lib/sales/track-client";
 import { buildPersonalizedCheckoutUrl } from "@/lib/sales/checkout-url";
 import { openCheckoutInNewTab } from "@/lib/sales/open-checkout";
 import { cn } from "@/lib/utils";
 import {
-  HERO_IMAGE,
-  QUIZ_HERO_ERICK_DUBAI,
-  QUIZ_HERO_KELVIN_PARIS,
-} from "@/lib/sales/media";
+  formatBrazilMobilePhone,
+  isValidBrazilMobilePhone,
+  stripPhoneDigits,
+} from "@/lib/sales/br-phone";
+import { QUIZ_LANDING_BANNER } from "@/lib/sales/media";
 import {
-  QUIZ_INSIGHT_PROOFS,
-  QUIZ_PHONE_LANDING_PROOFS,
-  QUIZ_PHONE_PROOFS,
-  QUIZ_RESULT_PROOFS,
-  QUIZ_TESTIMONIAL_VIDEOS,
   type QuizTestimonialVideo,
 } from "@/lib/sales/quiz-evidence";
 
-type Phase = "landing" | "steps" | "insight" | "calculating" | "result" | "contact";
-type ContactStep = "name" | "email" | "phone";
+type Phase = "landing" | "lead" | "steps" | "calculating" | "result";
+type LeadStep = "name" | "age" | "income" | "email" | "phone";
+
+const LEAD_STEP_ORDER: LeadStep[] = ["name", "age", "income", "email", "phone"];
+
+const INCOME_OPTIONS = [
+  { id: "ate_2000", label: "Até R$ 2.000" },
+  { id: "2000_5000", label: "R$ 2.000 a R$ 5.000" },
+  { id: "5000_10000", label: "R$ 5.000 a R$ 10.000" },
+  { id: "acima_10000", label: "Acima de R$ 10.000" },
+] as const;
 
 const DEFAULT_OFFER = DEFAULT_ADS_QUIZ_CONFIG.steps.find((s) => s.type === "offer")!;
 const DEFAULT_CALCULATING = DEFAULT_ADS_QUIZ_CONFIG.calculating!;
@@ -57,13 +63,13 @@ const DEFAULT_RESULT = DEFAULT_ADS_QUIZ_CONFIG.result!;
 
 const funnel = {
   choice:
-    "group w-full text-left rounded-xl border border-gray-200 bg-white px-5 py-4 sm:py-5 transition-all duration-200 hover:border-[#f2a218] hover:bg-orange-50/60 shadow-sm active:scale-[0.99]",
+    "group w-full min-w-0 text-left rounded-xl border border-gray-200 bg-white px-4 py-3.5 sm:px-5 sm:py-5 transition-all duration-200 hover:border-[#f2a218] hover:bg-orange-50/60 shadow-sm active:scale-[0.99]",
   choiceSelected: "border-[#f2a218] bg-orange-50 ring-1 ring-[#f2a218]/25",
   input:
-    "w-full rounded-xl bg-white border border-gray-300 px-5 py-4 text-[#111] text-lg font-inter placeholder:text-gray-400 focus:border-[#f2a218] focus:outline-none focus:ring-2 focus:ring-[#f2a218]/20 transition-all",
-  cta: "funnel-landing-inlead-cta w-full",
-  offerCard: "rounded-2xl border border-gray-200 bg-white p-6 sm:p-8 shadow-sm",
-  card: "rounded-xl border border-gray-200 bg-gray-50 px-5 py-5",
+    "w-full min-w-0 rounded-xl bg-white border border-gray-300 px-4 py-3.5 text-[#111] text-base sm:px-5 sm:py-4 sm:text-lg font-inter placeholder:text-gray-400 focus:border-[#f2a218] focus:outline-none focus:ring-2 focus:ring-[#f2a218]/20 transition-all",
+  cta: "funnel-landing-inlead-cta w-full max-w-full",
+  offerCard: "rounded-2xl border border-gray-200 bg-white p-4 sm:p-8 shadow-sm",
+  card: "rounded-xl border border-gray-200 bg-gray-50 px-4 py-4 sm:px-5 sm:py-5",
   chip: "inline-flex rounded-full border border-gray-200 bg-gray-50 px-3 py-1.5 text-[11px] text-[#555] font-inter",
 } as const;
 
@@ -105,44 +111,11 @@ function LandingUrgencyBadge({ label }: { label: string }) {
   );
 }
 
-function NuvemshopSaleCard({ value, className }: { value: string; className?: string }) {
-  return (
-    <div
-      className={cn(
-        "z-20 min-w-[100px] max-w-[118px] overflow-hidden rounded-lg border border-gray-200 bg-white shadow-[0_8px_24px_rgba(0,0,0,0.4)]",
-        className,
-      )}
-    >
-      <div className="flex items-center border-b border-gray-100 bg-[#f5f8fb] px-2 py-1">
-        <span className="text-[8px] font-bold lowercase tracking-tight text-[#0084ff] sm:text-[9px]">
-          nuvemshop
-        </span>
-      </div>
-      <div className="px-2 py-1.5">
-        <div className="mb-0.5 flex items-center gap-1">
-          <span className="inline-flex h-3 w-3 shrink-0 items-center justify-center rounded-full bg-[#00a650] text-[7px] font-bold text-white">
-            ✓
-          </span>
-          <p className="text-[8px] font-semibold leading-tight text-[#222] sm:text-[9px]">Venda realizada</p>
-        </div>
-        <p className="text-[10px] font-bold text-[#00a650] sm:text-[11px]">{value}</p>
-      </div>
-    </div>
-  );
-}
+const FUNNEL_MAX_W = "w-full max-w-md sm:max-w-xl lg:max-w-2xl";
+const LANDING_MAX_W = "w-full max-w-md sm:max-w-xl lg:max-w-2xl";
 
-const FUNNEL_MAX_W = "max-w-5xl";
-const LANDING_MAX_W = "max-w-5xl";
-
-function ensureMinProofs(urls: readonly string[], min = 2): string[] {
-  const unique = [...new Set(urls.filter(Boolean))];
-  if (unique.length >= min) return unique;
-  const pool = [...QUIZ_PHONE_PROOFS, ...QUIZ_PHONE_LANDING_PROOFS];
-  for (const url of pool) {
-    if (unique.length >= min) break;
-    if (!unique.includes(url)) unique.push(url);
-  }
-  return unique;
+function dedupeProofs(urls: readonly string[]): string[] {
+  return [...new Set(urls.filter(Boolean))];
 }
 
 function PhoneProofCard({
@@ -165,7 +138,7 @@ function PhoneProofCard({
         <img
           src={src}
           alt="Print real no celular"
-          className="absolute inset-0 h-full w-full object-contain object-top bg-neutral-950"
+          className="absolute inset-0 h-full w-full object-contain object-center bg-neutral-950"
           loading={eager ? "eager" : "lazy"}
           decoding="async"
         />
@@ -177,184 +150,342 @@ function PhoneProofCard({
 function PhoneProofGallery({
   urls,
   label = "Resultado verificado",
-  minProofs = 2,
-  eager,
-}: {
-  urls: readonly string[];
-  label?: string;
-  minProofs?: number;
-  eager?: boolean;
-}) {
-  const resolved = ensureMinProofs(urls, minProofs);
-  if (resolved.length === 0) return null;
-  return (
-    <div className="space-y-2.5">
-      <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#888]">
-        <TrendingUp className="h-3.5 w-3.5 text-[#00a650]" aria-hidden />
-        {label}
-      </p>
-      <div className="phone-proof-gallery flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible sm:pb-0 lg:grid-cols-4">
-        {resolved.map((src) => (
-          <PhoneProofCard
-            key={src}
-            src={src}
-            eager={eager}
-            className="w-[46vw] max-w-[210px] shrink-0 snap-center sm:w-full sm:max-w-none"
-          />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function EvidenceProofStrip({
-  urls,
-  label = "Resultado verificado",
   compact,
-  minProofs = 2,
   eager,
 }: {
   urls: readonly string[];
   label?: string;
   compact?: boolean;
-  minProofs?: number;
   eager?: boolean;
 }) {
+  const resolved = dedupeProofs(urls);
+  if (resolved.length === 0) return null;
   return (
-    <PhoneProofGallery
-      urls={urls}
-      label={label}
-      minProofs={minProofs}
-      eager={eager}
-    />
-  );
-}
-
-function TestimonialVideoCard({ item }: { item: QuizTestimonialVideo }) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div className="relative aspect-[9/16] max-h-[320px] w-full bg-[#111] sm:max-h-[360px]">
-        <video
-          src={item.videoUrl}
-          controls
-          playsInline
-          preload="metadata"
-          className="h-full w-full object-contain"
-        />
-        <span className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
-          <Play className="h-3 w-3 fill-white" aria-hidden />
-          Depoimento
-        </span>
-      </div>
-      {(item.quote || item.name) && (
-        <div className="border-t border-gray-100 px-3 py-3">
-          {item.quote && (
-            <p className="text-sm leading-snug text-[#444]">&ldquo;{item.quote}&rdquo;</p>
-          )}
-          <p className="mt-1.5 text-xs font-semibold text-[#888]">
-            {item.name}
-            {item.role ? ` · ${item.role}` : ""}
-          </p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function TestimonialVideoRow({ videos, max = 3 }: { videos: QuizTestimonialVideo[]; max?: number }) {
-  const slice = videos.slice(0, max);
-  if (slice.length === 0) return null;
-  return (
-    <div className="space-y-2">
-      <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#c27800]">
-        <Users className="h-3.5 w-3.5 text-[#f2a218]" aria-hidden />
-        Depoimentos em vídeo · alunos reais
-      </p>
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {slice.map((v) => (
-          <TestimonialVideoCard key={v.videoUrl} item={v} />
+    <div className="min-w-0 space-y-2.5">
+      {label ? (
+        <p className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#888] sm:text-[11px]">
+          <TrendingUp className="h-3.5 w-3.5 shrink-0 text-[#00a650]" aria-hidden />
+          {label}
+        </p>
+      ) : null}
+      <div
+        className={cn(
+          "phone-proof-gallery min-w-0 grid gap-3",
+          compact ? "grid-cols-2" : "grid-cols-2 sm:grid-cols-2",
+        )}
+      >
+        {resolved.map((src) => (
+          <PhoneProofCard key={src} src={src} eager={eager} className="mx-auto w-full max-w-[220px]" />
         ))}
       </div>
     </div>
   );
 }
 
-const HERO_PHONE_DECOR: { src: string; className: string }[] = [
-  {
-    src: QUIZ_PHONE_PROOFS[0],
-    className: "absolute left-[2%] top-[5%] z-[4] w-[19%] -rotate-12 opacity-85",
-  },
-  {
-    src: QUIZ_PHONE_PROOFS[1],
-    className: "absolute right-[2%] top-[6%] z-[4] w-[19%] rotate-12 opacity-85",
-  },
-  {
-    src: QUIZ_PHONE_PROOFS[4],
-    className: "absolute bottom-[10%] left-[6%] z-[4] w-[16%] rotate-6 opacity-70",
-  },
-  {
-    src: QUIZ_PHONE_PROOFS[5],
-    className: "absolute bottom-[8%] right-[6%] z-[4] w-[16%] -rotate-6 opacity-70",
-  },
-];
-
-function QuizLandingHero() {
+function TestimonialVideoPage({
+  item,
+  title,
+  intro,
+}: {
+  item: QuizTestimonialVideo;
+  title: string;
+  intro?: string;
+}) {
   return (
-    <div className="quiz-landing-hero relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-neutral-950 shadow-[0_12px_40px_rgba(0,0,0,0.25)] sm:aspect-[21/10] sm:min-h-[380px]">
-      {/* Dubai + Paris — fundo lifestyle visível */}
-      <img
-        src={QUIZ_HERO_ERICK_DUBAI}
-        alt=""
-        aria-hidden
-        className="absolute inset-y-0 left-0 z-[1] w-[52%] object-cover object-top opacity-[0.62]"
-        loading="eager"
-      />
-      <img
-        src={QUIZ_HERO_KELVIN_PARIS}
-        alt=""
-        aria-hidden
-        className="absolute inset-y-0 right-0 z-[1] w-[52%] object-cover object-top opacity-[0.62]"
-        loading="eager"
-      />
-
-      {/* Vinheta suave — centro livre pros mentores */}
-      <div className="absolute inset-0 z-[2] bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
-      <div className="absolute inset-0 z-[2] bg-[radial-gradient(ellipse_75%_85%_at_50%_60%,transparent_30%,rgba(0,0,0,0.4)_100%)]" />
-
-      {/* Prints de celular nos cantos — colagem Bottrel */}
-      {HERO_PHONE_DECOR.map(({ src, className }) => (
-        <PhoneProofCard
-          key={src}
-          src={src}
-          className={cn(className, "pointer-events-none shadow-lg")}
-          eager
-        />
-      ))}
-
-      {/* Duo principal */}
-      <img
-        src={HERO_IMAGE}
-        alt="Erick e Kelvin — Ascend"
-        className="absolute inset-x-0 bottom-0 z-[5] h-[88%] w-full object-contain object-bottom px-2 sm:h-[95%] sm:object-center sm:px-6"
-        loading="eager"
-        decoding="async"
-      />
-
-      <NuvemshopSaleCard value="R$ 89,90" className="absolute left-2 top-[28%] z-20 scale-[0.92] sm:left-5 sm:top-[30%]" />
-      <NuvemshopSaleCard value="R$ 127,50" className="absolute right-2 top-[28%] z-20 scale-[0.92] sm:right-5 sm:top-[30%]" />
-      <NuvemshopSaleCard value="R$ 164,00" className="absolute bottom-4 left-1/2 z-20 -translate-x-1/2 scale-[0.92] sm:bottom-5" />
+    <div className="space-y-4">
+      <FunnelTitle>{title}</FunnelTitle>
+      {intro ? <FunnelHint>{intro}</FunnelHint> : null}
+      <div className="mx-auto w-full max-w-[min(100%,20rem)]">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-[#111] shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
+          <div className="relative aspect-[9/16] max-h-[min(72vh,640px)] w-full">
+            <video
+              src={item.videoUrl}
+              controls
+              playsInline
+              preload="metadata"
+              className="absolute inset-0 h-full w-full object-contain"
+            />
+            <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-black/65 px-2.5 py-1 text-[10px] font-bold uppercase text-white">
+              <Play className="h-3 w-3 fill-white" aria-hidden />
+              Depoimento
+            </span>
+          </div>
+          {(item.quote || item.name) && (
+            <div className="border-t border-gray-100 bg-white px-4 py-4 text-left">
+              {item.quote && (
+                <p className="text-sm leading-relaxed text-[#444]">&ldquo;{item.quote}&rdquo;</p>
+              )}
+              <p className="mt-2 text-xs font-semibold text-[#888]">
+                {item.name}
+                {item.role ? ` · ${item.role}` : ""}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
 
-function QuizLandingProofs() {
+function RequiredVideoPage({
+  title,
+  intro,
+  videoUrl,
+  posterUrl,
+  ctaLabel,
+  onComplete,
+}: {
+  title: string;
+  intro?: string;
+  videoUrl: string;
+  posterUrl?: string;
+  ctaLabel: string;
+  onComplete: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const maxWatchedRef = useRef(0);
+  const [finished, setFinished] = useState(false);
+
+  useEffect(() => {
+    maxWatchedRef.current = 0;
+    setFinished(false);
+  }, [videoUrl]);
+
+  const clampPlayback = useCallback(() => {
+    const video = videoRef.current;
+    if (!video || finished) return;
+    if (video.currentTime > maxWatchedRef.current + 0.35) {
+      video.currentTime = maxWatchedRef.current;
+      return;
+    }
+    maxWatchedRef.current = Math.max(maxWatchedRef.current, video.currentTime);
+  }, [finished]);
+
+  const handleRateChange = () => {
+    const video = videoRef.current;
+    if (!video || finished) return;
+    if (video.playbackRate !== 1) {
+      video.playbackRate = 1;
+    }
+  };
+
+  const handleEnded = () => {
+    const video = videoRef.current;
+    if (video && Number.isFinite(video.duration)) {
+      maxWatchedRef.current = video.duration;
+    }
+    setFinished(true);
+  };
+
   return (
-    <PhoneProofGallery
-      urls={QUIZ_PHONE_LANDING_PROOFS}
-      label="Faturamento real de alunos"
-      minProofs={3}
-      eager
-    />
+    <div className="space-y-4">
+      <FunnelTitle>{title}</FunnelTitle>
+      {intro ? <FunnelHint>{intro}</FunnelHint> : null}
+      <div className="mx-auto w-full max-w-[min(100%,28rem)]">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-[#111] shadow-[0_12px_40px_rgba(0,0,0,0.18)]">
+          <div className="relative aspect-video max-h-[min(72vh,640px)] w-full">
+            <video
+              ref={videoRef}
+              src={videoUrl}
+              poster={posterUrl}
+              controls
+              playsInline
+              preload="metadata"
+              controlsList="nodownload noremoteplayback"
+              onTimeUpdate={clampPlayback}
+              onSeeking={clampPlayback}
+              onRateChange={handleRateChange}
+              onEnded={handleEnded}
+              className="absolute inset-0 h-full w-full object-contain"
+            />
+          </div>
+        </div>
+      </div>
+      {!finished ? (
+        <p className="flex items-center justify-center gap-2 text-center text-xs font-medium text-[#888]">
+          <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden />
+          Assista até o fim para continuar
+        </p>
+      ) : (
+        <button type="button" onClick={onComplete} className={funnel.cta}>
+          {ctaLabel}
+          <ArrowRight className="w-5 h-5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ProofGalleryPage({
+  title,
+  intro,
+  imageUrls,
+}: {
+  title: string;
+  intro?: string;
+  imageUrls: readonly string[];
+}) {
+  return (
+    <div className="space-y-4">
+      <FunnelTitle>{title}</FunnelTitle>
+      {intro ? <FunnelHint>{intro}</FunnelHint> : null}
+      <PhoneProofGallery urls={dedupeProofs(imageUrls)} label="" compact eager />
+    </div>
+  );
+}
+
+type StoreExample = {
+  name: string;
+  niche?: string;
+  imageUrl: string;
+  storeUrl?: string;
+};
+
+function StoreShowcaseCarousel({ stores }: { stores: StoreExample[] }) {
+  const [index, setIndex] = useState(0);
+  const total = stores.length;
+  if (total === 0) return null;
+
+  const current = stores[index]!;
+
+  return (
+    <div className="space-y-3">
+      <p className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-wide text-[#888]">
+        <Store className="h-3.5 w-3.5 text-[#f2a218]" aria-hidden />
+        Loja de cliente · exemplo real
+      </p>
+
+      <div className="relative mx-auto w-full max-w-md">
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_10px_36px_rgba(0,0,0,0.12)]">
+          <div className="flex items-center justify-between border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-4 py-2.5">
+            <div className="min-w-0 text-left">
+              <p className="truncate text-sm font-bold text-[#111]">{current.name}</p>
+              {current.niche ? (
+                <p className="truncate text-[11px] text-[#888]">{current.niche}</p>
+              ) : null}
+              {current.storeUrl ? (
+                <a
+                  href={current.storeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-[#aaa] transition-colors hover:text-[#f2a218]"
+                >
+                  Ver loja ao vivo
+                  <ExternalLink className="h-2.5 w-2.5 shrink-0" aria-hidden />
+                </a>
+              ) : null}
+            </div>
+            <span className="shrink-0 rounded-full bg-[#f2a218]/15 px-2 py-0.5 text-[10px] font-bold tabular-nums text-[#c27800]">
+              {index + 1}/{total}
+            </span>
+          </div>
+          <div className="relative h-[min(52vh,440px)] w-full overflow-hidden bg-[#ececec]">
+            <img
+              key={current.imageUrl}
+              src={current.imageUrl}
+              alt={`Loja online ${current.name}`}
+              className="h-full w-full object-cover object-top"
+              loading="lazy"
+              decoding="async"
+            />
+          </div>
+        </div>
+
+        {total > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label="Loja anterior"
+              onClick={() => setIndex((i) => (i - 1 + total) % total)}
+              className="absolute left-1 top-[calc(50%+12px)] z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-[#444] shadow-md active:scale-95"
+            >
+              <ChevronLeft className="h-5 w-5" aria-hidden />
+            </button>
+            <button
+              type="button"
+              aria-label="Próxima loja"
+              onClick={() => setIndex((i) => (i + 1) % total)}
+              className="absolute right-1 top-[calc(50%+12px)] z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white/95 text-[#444] shadow-md active:scale-95"
+            >
+              <ChevronRight className="h-5 w-5" aria-hidden />
+            </button>
+          </>
+        )}
+      </div>
+
+      {total > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          {stores.map((store, i) => (
+            <button
+              key={store.imageUrl}
+              type="button"
+              aria-label={`Ver loja ${store.name}`}
+              aria-current={i === index ? "true" : undefined}
+              onClick={() => setIndex(i)}
+              className={cn(
+                "h-2 rounded-full transition-all duration-200",
+                i === index ? "w-6 bg-[#f2a218]" : "w-2 bg-gray-300",
+              )}
+            />
+          ))}
+        </div>
+      )}
+
+      <div className="store-showcase-scroll flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1">
+        {stores.map((store, i) => (
+          <button
+            key={store.imageUrl}
+            type="button"
+            onClick={() => setIndex(i)}
+            className={cn(
+              "w-[28%] min-w-[88px] shrink-0 snap-center overflow-hidden rounded-lg border-2 transition-all",
+              i === index ? "border-[#f2a218] shadow-md" : "border-transparent opacity-70",
+            )}
+          >
+            <img
+              src={store.imageUrl}
+              alt=""
+              className="aspect-[3/4] h-auto w-full object-cover object-top"
+              loading="lazy"
+            />
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function StoreShowcasePage({
+  title,
+  intro,
+  stores,
+}: {
+  title: string;
+  intro?: string;
+  stores: StoreExample[];
+}) {
+  return (
+    <div className="space-y-4">
+      <FunnelTitle>{title}</FunnelTitle>
+      {intro ? <FunnelHint>{intro}</FunnelHint> : null}
+      <StoreShowcaseCarousel stores={stores} />
+    </div>
+  );
+}
+
+function QuizLandingHero() {
+  return (
+    <div className="mx-auto w-full max-w-[min(100%,22rem)] sm:max-w-xl">
+      <div className="quiz-landing-hero relative aspect-[3/2] w-full overflow-hidden rounded-2xl bg-neutral-950 shadow-[0_8px_28px_rgba(0,0,0,0.22)]">
+        <img
+          src={QUIZ_LANDING_BANNER}
+          alt="Erick e Kelvin — loja online, resultados reais e liberdade geográfica"
+          className="absolute inset-0 h-full w-full object-cover object-[center_35%]"
+          loading="eager"
+          decoding="async"
+        />
+      </div>
+    </div>
   );
 }
 
@@ -381,7 +512,7 @@ function FunnelTitle({
     <Tag
       className={cn(
         "font-bold leading-snug tracking-tight text-[#111]",
-        size === "xl" ? "text-2xl sm:text-3xl" : "text-xl sm:text-2xl",
+        size === "xl" ? "text-xl sm:text-3xl" : "text-lg sm:text-2xl",
         gold && "text-[#E8941C]",
       )}
     >
@@ -399,10 +530,6 @@ function readUtm() {
   const fromCookie = parseAttributionCookie(rawAttribution);
   const utm = { ...readAttributionFromDocument(), ...(fromCookie ?? {}) };
   return Object.keys(utm).length ? utm : undefined;
-}
-
-function normalizePhone(value: string): string {
-  return value.replace(/\D/g, "");
 }
 
 function useCountUp(target: string, run: boolean): string {
@@ -460,163 +587,11 @@ function optionLabelForStep(step: AdsQuizStep, optionId: string): string | null 
   return step.options.find((o) => o.id === optionId)?.label ?? null;
 }
 
-function splitInsightBody(body: string): string[] {
-  return body
-    .split(/\s*[\n·|]\s*|\s+—\s+|(?<=[.!])\s+/)
-    .map((s) => s.trim())
-    .filter((s) => s.length > 4);
-}
-
-function InsightPanel({
-  insight,
-  optionId,
-}: {
-  insight: QuizOptionInsight;
-  optionId?: string;
-}) {
-  const proof = insight.proof;
-  const isPrint =
-    insight.variant === "print" || (Boolean(proof?.imageUrl) && !proof?.quote);
-  const proofUrl =
-    (optionId ? QUIZ_INSIGHT_PROOFS[optionId] : undefined) ??
-    resolveQuizProofImageUrl(proof?.imageUrl) ??
-    (isPrint ? QUIZ_PROOF_IMAGES[2] : undefined);
-  const bullets = splitInsightBody(insight.body);
-
-  return (
-    <div className="overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-[0_8px_32px_rgba(242,162,24,0.12)]">
-      <div className="flex items-center gap-2 bg-gradient-to-r from-[#f2a218] to-[#e07a00] px-4 py-2.5 text-white">
-        <Zap className="h-4 w-4 shrink-0 fill-white" aria-hidden />
-        <span className="text-[11px] font-bold uppercase tracking-[0.14em] sm:text-xs">
-          {insight.eyebrow ?? "Prova real"} · resultado de aluno
-        </span>
-      </div>
-
-      <div className="space-y-4 bg-gradient-to-b from-orange-50/80 to-white p-4 sm:p-5">
-        <ul className="space-y-3">
-          {bullets.map((line) => (
-            <li key={line} className="flex items-start gap-3 text-[15px] leading-snug text-[#222]">
-              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f2a218]/15">
-                <CheckCircle2 className="h-4 w-4 text-[#e07a00]" aria-hidden />
-              </span>
-              <span>{line}</span>
-            </li>
-          ))}
-        </ul>
-
-        {isPrint && proofUrl && (
-          <EvidenceProofStrip
-            urls={ensureMinProofs([proofUrl, ...QUIZ_RESULT_PROOFS], 2)}
-            label="Faturamento comprovado · alunos reais"
-            compact
-          />
-        )}
-
-        {optionId === "desconfianca" && (
-          <TestimonialVideoRow videos={[QUIZ_TESTIMONIAL_VIDEOS[0]]} max={1} />
-        )}
-
-        {optionId === "sozinho" && (
-          <TestimonialVideoRow videos={[QUIZ_TESTIMONIAL_VIDEOS[3]]} max={1} />
-        )}
-
-        {!isPrint && proof && <InsightProof insight={insight} />}
-      </div>
-    </div>
-  );
-}
-
-function InsightProof({ insight }: { insight: QuizOptionInsight }) {
-  const proof = insight.proof;
-  if (!proof) return null;
-
-  const isPrint =
-    insight.variant === "print" || (Boolean(proof.imageUrl) && !proof.quote);
-
-  if (isPrint && proof.imageUrl) {
-    const src = resolveQuizProofImageUrl(proof.imageUrl) ?? proof.imageUrl;
-    return (
-      <EvidenceProofStrip
-        urls={ensureMinProofs([src, ...QUIZ_RESULT_PROOFS], 2)}
-        label="Resultado verificado"
-        compact
-      />
-    );
-  }
-
-  if (insight.variant === "stat" && proof.statLabel) {
-    return (
-      <div className="flex min-h-[4.5rem] items-center gap-3 rounded-xl border border-orange-200 bg-orange-50 px-4 py-4">
-        <Users className="h-5 w-5 shrink-0 text-[#f2a218]" />
-        <p className="text-sm font-bold text-[#c27800] font-inter">{proof.statLabel}</p>
-      </div>
-    );
-  }
-
-  if (proof.quote) {
-    return (
-      <blockquote className="min-h-[5.5rem] rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
-        <div className="flex gap-3">
-          {proof.imageUrl ? (
-            <img
-              src={proof.imageUrl}
-              alt={proof.name ?? ""}
-              className="h-11 w-11 shrink-0 rounded-full border border-gray-200 object-cover"
-            />
-          ) : (
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-orange-200 bg-orange-50">
-              <Quote className="h-4 w-4 text-[#f2a218]" />
-            </span>
-          )}
-          <div>
-            <p className="text-sm italic leading-relaxed text-[#555] font-inter">
-              &ldquo;{proof.quote}&rdquo;
-            </p>
-            {(proof.name || proof.role) && (
-              <footer className="mt-2 text-xs text-[#888] font-inter">
-                {proof.name && <span className="font-semibold text-[#444]">{proof.name}</span>}
-                {proof.role ? ` · ${proof.role}` : ""}
-              </footer>
-            )}
-          </div>
-        </div>
-      </blockquote>
-    );
-  }
-
-  return null;
-}
-
 function StepShell({ children, stepKey }: { children: React.ReactNode; stepKey: string }) {
   return (
-    <div key={stepKey} className="quiz-step-enter space-y-6">
+    <div key={stepKey} className="quiz-step-enter min-w-0 space-y-4 sm:space-y-6">
       {children}
     </div>
-  );
-}
-
-function TrustFooter() {
-  return (
-    <footer className="mt-10 space-y-3 border-t border-gray-200 pt-6">
-      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[10px] uppercase tracking-wider text-[#999] font-inter">
-        <span className="inline-flex items-center gap-1.5">
-          <Lock className="h-3 w-3 text-[#f2a218]" />
-          Sem cartão agora
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <ShieldCheck className="h-3 w-3 text-[#f2a218]" />
-          Dados protegidos
-        </span>
-        <span className="inline-flex items-center gap-1.5">
-          <Sparkles className="h-3 w-3 text-[#f2a218]" />
-          Pagamento Kiwify
-        </span>
-      </div>
-      <p className="mx-auto max-w-sm text-center text-[10px] leading-relaxed text-[#aaa] font-inter">
-        Ao continuar, você concorda em receber comunicações sobre o programa. Seus dados não são
-        compartilhados com terceiros.
-      </p>
-    </footer>
   );
 }
 
@@ -626,17 +601,16 @@ export default function AdsQuizFunnel() {
   const [phase, setPhase] = useState<Phase>("landing");
   const [stepIndex, setStepIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [contactStep, setContactStep] = useState<ContactStep>("name");
-  const [firstName, setFirstName] = useState("");
+  const [leadStep, setLeadStep] = useState<LeadStep>("name");
+  const [fullName, setFullName] = useState("");
+  const [age, setAge] = useState("");
+  const [income, setIncome] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [submitting, setSubmitting] = useState(false);
+  const [leadSaving, setLeadSaving] = useState(false);
   const [calcMsgIndex, setCalcMsgIndex] = useState(0);
   const [calcProgress, setCalcProgress] = useState(0);
   const [resultViewed, setResultViewed] = useState(false);
-  const [activeInsight, setActiveInsight] = useState<QuizOptionInsight | null>(null);
-  const [insightMeta, setInsightMeta] = useState<{ stepId: string; optionId: string } | null>(null);
-  const [insightsSeen, setInsightsSeen] = useState<string[]>([]);
   const [multiDraft, setMultiDraft] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const calculatingStarted = useRef(false);
@@ -645,6 +619,18 @@ export default function AdsQuizFunnel() {
     void ensureLandingSession().then(() => {
       trackEvent("PageView", { title: "Quiz anúncios", page: "/form" });
     });
+  }, []);
+
+  useEffect(() => {
+    const tryInitMeta = () => {
+      const consent = parseConsent(getClientCookie(CONSENT_COOKIE));
+      if (consent?.marketing && getMetaPixelId()) {
+        initMetaPixel();
+      }
+    };
+    tryInitMeta();
+    window.addEventListener("ascend:consent_change", tryInitMeta);
+    return () => window.removeEventListener("ascend:consent_change", tryInitMeta);
   }, []);
 
   useEffect(() => {
@@ -680,25 +666,28 @@ export default function AdsQuizFunnel() {
   );
   const testimonials = config?.testimonials ?? [];
 
-  const progressTotal = questionSteps.length * 2 + 3;
+  const progressTotal = LEAD_STEP_ORDER.length + questionSteps.length + 2;
   const progressDone = useMemo(() => {
     if (phase === "landing") return 0;
-    if (phase === "steps") return stepIndex * 2 + 1;
-    if (phase === "insight") return stepIndex * 2 + 2;
-    if (phase === "calculating") return questionSteps.length * 2 + 1;
-    if (phase === "result") return questionSteps.length * 2 + 2;
-    const contactOffset = { name: 1, email: 2, phone: 3 }[contactStep];
-    return questionSteps.length * 2 + 2 + contactOffset;
-  }, [phase, stepIndex, contactStep, questionSteps.length]);
+    if (phase === "lead") {
+      return LEAD_STEP_ORDER.indexOf(leadStep) + 1;
+    }
+    const base = LEAD_STEP_ORDER.length;
+    if (phase === "steps") return base + stepIndex + 1;
+    if (phase === "calculating") return base + questionSteps.length + 1;
+    if (phase === "result") return base + questionSteps.length + 2;
+    return progressTotal;
+  }, [phase, stepIndex, leadStep, questionSteps.length, progressTotal]);
 
   const progressPct = progressTotal > 0 ? Math.round((progressDone / progressTotal) * 100) : 0;
   const animatedPrice = useCountUp(offerStep?.priceLabel ?? "R$60", phase === "result" && resultViewed);
 
   useEffect(() => {
-    if (phase !== "contact") return;
+    if (phase !== "lead") return;
+    if (leadStep === "income") return;
     const t = window.setTimeout(() => inputRef.current?.focus(), 120);
     return () => window.clearTimeout(t);
-  }, [phase, contactStep]);
+  }, [phase, leadStep]);
 
   useEffect(() => {
     if (phase !== "steps" || !currentStep || currentStep.type !== "multichoice") return;
@@ -786,41 +775,13 @@ export default function AdsQuizFunnel() {
     else goToCalculating();
   };
 
-  const pickOption = (stepId: string, optionId: string, insight?: QuizOptionInsight) => {
+  const pickOption = (stepId: string, optionId: string) => {
     const next = { ...answers, [stepId]: optionId };
     setAnswers(next);
     const tags = collectProfileTags(questionSteps, next);
-    persistProgress(stepId, next, { profile_tags: tags, insights_seen: insightsSeen });
+    persistProgress(stepId, next, { profile_tags: tags });
     trackEvent("quiz_step", { step_id: stepId, option_id: optionId });
-
-    if (insight) {
-      setActiveInsight(insight);
-      setInsightMeta({ stepId, optionId });
-      setPhase("insight");
-      return;
-    }
-
     window.setTimeout(() => advanceAfterQuestion(), 180);
-  };
-
-  const finishInsight = () => {
-    if (!activeInsight || !insightMeta) return;
-    const key = `${insightMeta.stepId}:${insightMeta.optionId}`;
-    const nextSeen = insightsSeen.includes(key) ? insightsSeen : [...insightsSeen, key];
-    setInsightsSeen(nextSeen);
-    trackEvent("quiz_insight", {
-      step_id: insightMeta.stepId,
-      option_id: insightMeta.optionId,
-      variant: activeInsight.variant ?? "default",
-    });
-    persistProgress(insightMeta.stepId, answers, {
-      profile_tags: collectProfileTags(questionSteps, answers),
-      insights_seen: nextSeen,
-    });
-    setActiveInsight(null);
-    setInsightMeta(null);
-    setPhase("steps");
-    advanceAfterQuestion();
   };
 
   const advanceLinearStep = () => {
@@ -848,7 +809,7 @@ export default function AdsQuizFunnel() {
     const next = { ...answers, [currentStep.id]: value };
     setAnswers(next);
     const tags = collectProfileTags(questionSteps, next);
-    persistProgress(currentStep.id, next, { profile_tags: tags, insights_seen: insightsSeen });
+    persistProgress(currentStep.id, next, { profile_tags: tags });
     trackEvent("quiz_step", { step_id: currentStep.id, option_id: value });
     setPhase("steps");
     advanceAfterQuestion();
@@ -856,8 +817,8 @@ export default function AdsQuizFunnel() {
 
   const startQuiz = () => {
     trackEvent("quiz_start", { cta: "quiz_form" });
-    setPhase("steps");
-    setStepIndex(0);
+    setLeadStep("name");
+    setPhase("lead");
   };
 
   const answerChips = useMemo(() => {
@@ -884,15 +845,54 @@ export default function AdsQuizFunnel() {
       .filter(Boolean) as { key: string; text: string }[];
   }, [questionSteps, answers]);
 
-  const firstNameValue = firstName.trim().split(/\s+/)[0] ?? "";
-  const nameOk = firstNameValue.length >= 2;
+  const firstNameValue = fullName.trim().split(/\s+/)[0] ?? "";
+  const nameOk = fullName.trim().length >= 2;
+  const ageNum = Number.parseInt(age.trim(), 10);
+  const ageOk = Number.isFinite(ageNum) && ageNum >= 16 && ageNum <= 99;
+  const incomeOk = income.length > 0;
   const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
-  const phoneDigits = normalizePhone(phone);
-  const phoneOk = phoneDigits.length >= 10;
+  const phoneDigits = stripPhoneDigits(phone);
+  const phoneOk = isValidBrazilMobilePhone(phone);
+
+  const finishLeadCapture = async () => {
+    if (!nameOk || !ageOk || !incomeOk || !emailOk || !phoneOk || leadSaving) return;
+    setLeadSaving(true);
+    const leadEventId = crypto.randomUUID();
+    const metaIds = getMetaBrowserIds();
+    try {
+      await ensureLandingSession();
+      await fetch("/api/sales/lead", {
+        method: "POST",
+        headers: sessionHeaders(),
+        credentials: "same-origin",
+        keepalive: true,
+        body: JSON.stringify({
+          type: "quiz_lead_capture",
+          full_name: fullName.trim(),
+          email: email.trim().toLowerCase(),
+          phone: phoneDigits,
+          age: ageNum,
+          income,
+          utm: readUtm(),
+          meta: { event_id: leadEventId, ...metaIds },
+        }),
+      });
+      trackMetaLead(leadEventId, "quiz_form");
+      trackEvent("quiz_lead_capture", {
+        cta: "quiz_form",
+        income,
+        meta_event_id: leadEventId,
+      });
+      setPhase("steps");
+      setStepIndex(0);
+    } finally {
+      setLeadSaving(false);
+    }
+  };
 
   const finishCheckout = async () => {
-    if (!phoneOk || !config) return;
-    setSubmitting(true);
+    if (!phoneOk || !emailOk || !nameOk || !config) return;
+    setLeadSaving(true);
     const personalizedUrl = buildPersonalizedCheckoutUrl(
       {
         email: email.trim().toLowerCase(),
@@ -914,13 +914,17 @@ export default function AdsQuizFunnel() {
         keepalive: true,
         body: JSON.stringify({
           type: "quiz_complete",
-          full_name: firstNameValue,
+          full_name: fullName.trim(),
           email: email.trim().toLowerCase(),
           phone: phoneDigits,
           marketing_consent: true,
           cta: "quiz_form",
           utm: readUtm(),
-          answers,
+          answers: {
+            ...answers,
+            lead_age: String(ageNum),
+            lead_income: income,
+          },
           meta: { event_id: leadEventId, ...metaIds },
         }),
       });
@@ -931,39 +935,42 @@ export default function AdsQuizFunnel() {
         meta_event_id: leadEventId,
       });
     } finally {
-      setSubmitting(false);
+      setLeadSaving(false);
     }
   };
 
-  const canAdvanceContact =
-    (contactStep === "name" && nameOk) ||
-    (contactStep === "email" && emailOk) ||
-    (contactStep === "phone" && phoneOk && !submitting);
+  const canAdvanceLead =
+    (leadStep === "name" && nameOk) ||
+    (leadStep === "age" && ageOk) ||
+    (leadStep === "income" && incomeOk) ||
+    (leadStep === "email" && emailOk) ||
+    (leadStep === "phone" && phoneOk && !leadSaving);
 
-  const advanceContact = () => {
-    if (contactStep === "name" && nameOk) setContactStep("email");
-    else if (contactStep === "email" && emailOk) setContactStep("phone");
-    else if (contactStep === "phone" && phoneOk) void finishCheckout();
+  const advanceLead = () => {
+    if (leadStep === "name" && nameOk) setLeadStep("age");
+    else if (leadStep === "age" && ageOk) setLeadStep("income");
+    else if (leadStep === "income" && incomeOk) setLeadStep("email");
+    else if (leadStep === "email" && emailOk) setLeadStep("phone");
+    else if (leadStep === "phone" && phoneOk) void finishLeadCapture();
+  };
+
+  const goBackLead = () => {
+    const idx = LEAD_STEP_ORDER.indexOf(leadStep);
+    if (idx > 0) setLeadStep(LEAD_STEP_ORDER[idx - 1]!);
   };
 
   useEffect(() => {
-    if (phase !== "contact") return;
+    if (phase !== "lead") return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Enter") return;
-      if (contactStep === "name" && nameOk) {
-        e.preventDefault();
-        setContactStep("email");
-      } else if (contactStep === "email" && emailOk) {
-        e.preventDefault();
-        setContactStep("phone");
-      } else if (contactStep === "phone" && phoneOk && !submitting) {
-        e.preventDefault();
-        void finishCheckout();
-      }
+      if (leadStep === "income") return;
+      if (!canAdvanceLead) return;
+      e.preventDefault();
+      advanceLead();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, contactStep, nameOk, emailOk, phoneOk, submitting]);
+  }, [phase, leadStep, canAdvanceLead, nameOk, ageOk, incomeOk, emailOk, phoneOk, leadSaving]);
 
   if (!config) {
     return (
@@ -977,21 +984,29 @@ export default function AdsQuizFunnel() {
   const stepLabel =
     phase === "landing"
       ? "Início"
-      : phase === "insight"
-        ? "Para você"
-        : phase === "calculating"
+      : phase === "lead"
+        ? `Cadastro · ${
+            leadStep === "name"
+              ? "nome"
+              : leadStep === "age"
+                ? "idade"
+                : leadStep === "income"
+                  ? "renda"
+                  : leadStep === "email"
+                    ? "e-mail"
+                    : "WhatsApp"
+          }`
+      : phase === "calculating"
           ? "Analisando"
           : phase === "result"
-          ? "Seu diagnóstico"
-          : phase === "contact"
-            ? `Contato · ${contactStep === "name" ? "nome" : contactStep === "email" ? "e-mail" : "WhatsApp"}`
+            ? "Seu diagnóstico"
             : `Pergunta ${stepIndex + 1}`;
 
   return (
-    <div className="form-funnel form-funnel-inlead relative flex min-h-screen flex-col bg-white">
+    <div className="form-funnel form-funnel-inlead relative flex min-h-screen flex-col overflow-x-hidden bg-white">
       {phase !== "landing" && (
-        <header className="relative z-10 px-4 sm:px-6 pt-5 pb-3">
-          <div className={cn("mx-auto flex items-center justify-between gap-4 px-4 sm:px-6", FUNNEL_MAX_W)}>
+        <header className="relative z-10 px-4 pt-4 pb-3 sm:px-6 sm:pt-5">
+          <div className={cn("mx-auto flex items-center justify-between gap-3", FUNNEL_MAX_W)}>
             <div>
               <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f2a218]">Ascend</p>
               {progressDone > 0 && (
@@ -1021,22 +1036,24 @@ export default function AdsQuizFunnel() {
 
       <main
         className={cn(
-          "relative z-10 flex-1 w-full px-4 sm:px-6",
+          "relative z-10 flex-1 w-full min-w-0 px-4 sm:px-6",
           phase === "landing"
-            ? "flex flex-col items-center justify-center py-8 sm:py-12"
-            : cn("mx-auto py-8 sm:py-10", FUNNEL_MAX_W, "px-4 sm:px-6"),
+            ? "flex flex-col items-center justify-start py-5 sm:justify-center sm:py-10"
+            : cn("mx-auto py-5 sm:py-8", FUNNEL_MAX_W),
         )}
       >
         {phase === "landing" && (
           <StepShell stepKey="landing">
-            <div className={cn("funnel-landing-inlead mx-auto w-full text-center", LANDING_MAX_W)}>
-              <LandingUrgencyBadge label={landing.eyebrow} />
+            <div className={cn("funnel-landing-inlead mx-auto w-full min-w-0 text-center", LANDING_MAX_W)}>
+              {landing.eyebrow?.trim() ? (
+                <LandingUrgencyBadge label={landing.eyebrow} />
+              ) : null}
 
-              <h1 className="text-[1.35rem] font-extrabold leading-[1.26] tracking-tight text-[#111] sm:text-[1.65rem]">
+              <h1 className="text-[1.15rem] font-extrabold leading-[1.28] tracking-tight text-[#111] sm:text-[1.55rem]">
                 {renderHighlightedHeadline(landing.headline)}
               </h1>
 
-              <p className="mb-5 mt-4 text-sm font-semibold leading-relaxed text-[#333] sm:text-[1.05rem]">
+              <p className="mb-4 mt-3 text-[0.9rem] font-semibold leading-relaxed text-[#333] sm:mb-5 sm:mt-4 sm:text-base">
                 {renderHighlightedHeadline(landing.subheadline)}
               </p>
 
@@ -1051,7 +1068,7 @@ export default function AdsQuizFunnel() {
                   />
                 </div>
               ) : (
-                <div className="funnel-landing-banner w-full space-y-4">
+                <div className="funnel-landing-banner flex w-full justify-center">
                   <QuizLandingHero />
                 </div>
               )}
@@ -1059,17 +1076,11 @@ export default function AdsQuizFunnel() {
               <button
                 type="button"
                 onClick={startQuiz}
-                className="funnel-landing-inlead-cta funnel-landing-inlead-cta-pulse mt-5 w-full"
+                className="funnel-landing-inlead-cta funnel-landing-inlead-cta-pulse mt-4 w-full sm:mt-5"
               >
                 {landing.ctaLabel}
                 <ArrowRight className="h-5 w-5 shrink-0" aria-hidden />
               </button>
-
-              {!landing.heroImageUrl && (
-                <div className="mt-5">
-                  <QuizLandingProofs />
-                </div>
-              )}
 
               {landing.socialProof && (
                 <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-[#666] sm:text-sm">
@@ -1102,7 +1113,7 @@ export default function AdsQuizFunnel() {
                       <button
                         key={opt.id}
                         type="button"
-                        onClick={() => pickOption(currentStep.id, opt.id, opt.insight)}
+                        onClick={() => pickOption(currentStep.id, opt.id)}
                         className={cn(funnel.choice, selected && funnel.choiceSelected)}
                       >
                         <p className="text-base font-semibold text-[#111] sm:text-lg">{opt.label}</p>
@@ -1124,7 +1135,7 @@ export default function AdsQuizFunnel() {
                 {currentStep.imageUrl && currentStep.variant === "authority" && (
                   <img
                     src={currentStep.imageUrl}
-                    alt="Mentores Ascend Club"
+                    alt="Kelvin e Erick — mentores Ascend"
                     className="w-full max-h-56 rounded-xl border border-gray-200 object-cover object-top"
                   />
                 )}
@@ -1148,22 +1159,6 @@ export default function AdsQuizFunnel() {
             {currentStep.type === "dynamic" && (
               <>
                 <FunnelTitle>{currentStep.title}</FunnelTitle>
-                <EvidenceProofStrip
-                  urls={
-                    currentStep.imageUrl
-                      ? ensureMinProofs(
-                          [
-                            resolveQuizProofImageUrl(currentStep.imageUrl) ?? currentStep.imageUrl,
-                            ...QUIZ_RESULT_PROOFS,
-                          ],
-                          3,
-                        )
-                      : QUIZ_RESULT_PROOFS.slice(0, 3)
-                  }
-                  label="Prints reais — adaptados ao seu perfil"
-                  minProofs={3}
-                  compact
-                />
                 <div className={cn(funnel.card, "funnel-marker-solid")}>
                   <p className="whitespace-pre-line text-base leading-relaxed text-[#444] font-inter">
                     {resolveDynamicBody(currentStep.body, answers, questionSteps)}
@@ -1176,21 +1171,66 @@ export default function AdsQuizFunnel() {
               </>
             )}
 
+            {currentStep.type === "required_video" && (
+              <RequiredVideoPage
+                title={currentStep.title}
+                intro={currentStep.intro}
+                videoUrl={currentStep.videoUrl}
+                posterUrl={currentStep.posterUrl}
+                ctaLabel={currentStep.ctaLabel}
+                onComplete={advanceLinearStep}
+              />
+            )}
+
+            {currentStep.type === "testimonial" && (
+              <>
+                <TestimonialVideoPage
+                  title={currentStep.title}
+                  intro={currentStep.intro}
+                  item={{
+                    name: currentStep.name,
+                    role: currentStep.role,
+                    quote: currentStep.quote,
+                    videoUrl: currentStep.videoUrl,
+                  }}
+                />
+                <button type="button" onClick={advanceLinearStep} className={funnel.cta}>
+                  {currentStep.ctaLabel}
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+
+            {currentStep.type === "store_showcase" && (
+              <>
+                <StoreShowcasePage
+                  title={currentStep.title}
+                  intro={currentStep.intro}
+                  stores={currentStep.stores}
+                />
+                <button type="button" onClick={advanceLinearStep} className={funnel.cta}>
+                  {currentStep.ctaLabel}
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+
+            {currentStep.type === "proof_gallery" && (
+              <>
+                <ProofGalleryPage
+                  title={currentStep.title}
+                  intro={currentStep.intro}
+                  imageUrls={currentStep.imageUrls}
+                />
+                <button type="button" onClick={advanceLinearStep} className={funnel.cta}>
+                  {currentStep.ctaLabel}
+                  <ArrowRight className="w-5 h-5" />
+                </button>
+              </>
+            )}
+
             {currentStep.type === "mechanism" && (
               <>
-                <FunnelEyebrow>PROVA REAL ANTES DO SEU PLANO</FunnelEyebrow>
-                <TestimonialVideoRow videos={QUIZ_TESTIMONIAL_VIDEOS} max={2} />
-                <EvidenceProofStrip
-                  urls={[
-                    QUIZ_PHONE_PROOFS[0],
-                    QUIZ_PHONE_PROOFS[1],
-                    QUIZ_PHONE_PROOFS[2],
-                    QUIZ_PHONE_PROOFS[3],
-                  ]}
-                  label="Vendas e faturamento de alunos"
-                  minProofs={4}
-                  compact
-                />
                 <FunnelTitle>{currentStep.title}</FunnelTitle>
                 {currentStep.intro && <FunnelHint>{currentStep.intro}</FunnelHint>}
                 <div className="space-y-3">
@@ -1279,17 +1319,6 @@ export default function AdsQuizFunnel() {
           </StepShell>
         )}
 
-        {phase === "insight" && activeInsight && (
-          <StepShell stepKey={`insight-${insightMeta?.stepId ?? "x"}`}>
-            <FunnelTitle>{activeInsight.title}</FunnelTitle>
-            <InsightPanel insight={activeInsight} optionId={insightMeta?.optionId} />
-            <button type="button" onClick={finishInsight} className={funnel.cta}>
-              {activeInsight.ctaLabel ?? "Continuar"}
-              <ArrowRight className="h-5 w-5" />
-            </button>
-          </StepShell>
-        )}
-
         {phase === "calculating" && (
           <StepShell stepKey="calculating">
             <div className="space-y-8 py-6 text-center">
@@ -1329,16 +1358,6 @@ export default function AdsQuizFunnel() {
                   </div>
                 ))}
               </div>
-              <EvidenceProofStrip
-                urls={[
-                  QUIZ_RESULT_PROOFS[calcMsgIndex % QUIZ_RESULT_PROOFS.length],
-                  QUIZ_RESULT_PROOFS[(calcMsgIndex + 1) % QUIZ_RESULT_PROOFS.length],
-                  QUIZ_RESULT_PROOFS[(calcMsgIndex + 2) % QUIZ_RESULT_PROOFS.length],
-                ]}
-                label="Enquanto montamos seu plano…"
-                minProofs={3}
-                compact
-              />
             </div>
           </StepShell>
         )}
@@ -1399,7 +1418,7 @@ export default function AdsQuizFunnel() {
                     {offerStep.originalPriceLabel}
                   </p>
                 )}
-                <p className="funnel-price-pop text-6xl font-bold leading-none text-[#f2a218] sm:text-7xl tabular-nums">
+                <p className="funnel-price-pop text-4xl font-bold leading-none text-[#f2a218] sm:text-6xl tabular-nums">
                   {animatedPrice}
                 </p>
               </div>
@@ -1422,97 +1441,108 @@ export default function AdsQuizFunnel() {
 
             {testimonials.length > 0 && (
               <div className="space-y-4">
-                <FunnelEyebrow>DEPOIMENTOS REAIS</FunnelEyebrow>
-                <div className="space-y-4">
-                  {testimonials.map((t) => (
-                    <div key={`${t.name}-${t.quote.slice(0, 24)}`}>
-                      {"videoUrl" in t && t.videoUrl ? (
-                        <TestimonialVideoCard
-                          item={{
-                            name: t.name,
-                            role: t.role,
-                            quote: t.quote,
-                            videoUrl: t.videoUrl,
-                          }}
-                        />
-                      ) : (
-                        <blockquote className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
-                          <p className="text-sm italic leading-relaxed text-[#555] font-inter">
-                            &ldquo;{t.quote}&rdquo;
-                          </p>
-                          <footer className="mt-2 text-xs text-[#888] font-inter">
-                            <span className="font-semibold text-[#444]">{t.name}</span>
-                            {t.role ? ` · ${t.role}` : ""}
-                          </footer>
-                        </blockquote>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <EvidenceProofStrip
-                  urls={QUIZ_RESULT_PROOFS}
-                  label="Mais resultados verificados"
-                  minProofs={4}
-                  compact
-                />
+                <FunnelEyebrow>DEPOIMENTO DE VERDADE</FunnelEyebrow>
+                <blockquote className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
+                  <p className="text-sm italic leading-relaxed text-[#555] font-inter">
+                    &ldquo;{testimonials[0].quote}&rdquo;
+                  </p>
+                  <footer className="mt-2 text-xs text-[#888] font-inter">
+                    <span className="font-semibold text-[#444]">{testimonials[0].name}</span>
+                    {testimonials[0].role ? ` · ${testimonials[0].role}` : ""}
+                  </footer>
+                </blockquote>
               </div>
             )}
 
-            <button type="button" onClick={() => setPhase("contact")} className={funnel.cta}>
+            <button type="button" onClick={() => void finishCheckout()} className={funnel.cta}>
               {offerStep.ctaLabel}
               <ArrowRight className="w-5 h-5" />
             </button>
           </StepShell>
         )}
 
-        {phase === "contact" && (
-          <StepShell stepKey={`contact-${contactStep}`}>
+        {phase === "lead" && (
+          <StepShell stepKey={`lead-${leadStep}`}>
             <div>
-              <FunnelEyebrow>Quase lá</FunnelEyebrow>
+              <FunnelEyebrow>Antes do diagnóstico</FunnelEyebrow>
               <FunnelTitle>
-                {contactStep === "name"
+                {leadStep === "name"
                   ? contact.nameTitle
-                  : contactStep === "email"
-                    ? contact.emailTitle
-                    : contact.phoneTitle}
+                  : leadStep === "age"
+                    ? contact.ageTitle
+                    : leadStep === "income"
+                      ? contact.incomeTitle
+                      : leadStep === "email"
+                        ? contact.emailTitle
+                        : contact.phoneTitle}
               </FunnelTitle>
               <p className="mt-2 text-[#666] font-inter">
-                {contactStep === "name"
+                {leadStep === "name"
                   ? contact.nameHint
-                  : contactStep === "email"
-                    ? contact.emailHint
-                    : contact.phoneHint}
+                  : leadStep === "age"
+                    ? contact.ageHint
+                    : leadStep === "income"
+                      ? contact.incomeHint
+                      : leadStep === "email"
+                        ? contact.emailHint
+                        : contact.phoneHint}
               </p>
             </div>
 
             <div className="flex gap-1.5">
-              {(["name", "email", "phone"] as const).map((s, i) => (
+              {LEAD_STEP_ORDER.map((s, i) => (
                 <span
                   key={s}
                   className={cn(
                     "h-1 flex-1 rounded-full transition-colors",
-                    (contactStep === "name" && i === 0) ||
-                      (contactStep === "email" && i <= 1) ||
-                      (contactStep === "phone" && i <= 2)
-                      ? "bg-[#f2a218]"
-                      : "bg-gray-200",
+                    LEAD_STEP_ORDER.indexOf(leadStep) >= i ? "bg-[#f2a218]" : "bg-gray-200",
                   )}
                 />
               ))}
             </div>
 
-            {contactStep === "name" && (
+            {leadStep === "name" && (
               <input
                 ref={inputRef}
                 type="text"
-                autoComplete="given-name"
-                placeholder="Seu primeiro nome"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
+                autoComplete="name"
+                placeholder="Seu nome completo"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
                 className={funnel.input}
               />
             )}
-            {contactStep === "email" && (
+            {leadStep === "age" && (
+              <input
+                ref={inputRef}
+                type="number"
+                inputMode="numeric"
+                min={16}
+                max={99}
+                placeholder="Ex: 32"
+                value={age}
+                onChange={(e) => setAge(e.target.value)}
+                className={funnel.input}
+              />
+            )}
+            {leadStep === "income" && (
+              <div className="space-y-2">
+                {INCOME_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setIncome(opt.id)}
+                    className={cn(
+                      funnel.choice,
+                      income === opt.id && funnel.choiceSelected,
+                    )}
+                  >
+                    <span className="block text-sm font-semibold text-[#222] sm:text-base">{opt.label}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {leadStep === "email" && (
               <input
                 ref={inputRef}
                 type="email"
@@ -1523,50 +1553,49 @@ export default function AdsQuizFunnel() {
                 className={funnel.input}
               />
             )}
-            {contactStep === "phone" && (
+            {leadStep === "phone" && (
               <input
                 ref={inputRef}
                 type="tel"
+                inputMode="numeric"
                 autoComplete="tel"
-                placeholder="(11) 99999-9999"
+                placeholder="(00) 00000-0000"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                onChange={(e) => setPhone(formatBrazilMobilePhone(e.target.value))}
+                maxLength={16}
                 className={funnel.input}
               />
             )}
 
             <button
               type="button"
-              disabled={!canAdvanceContact}
-              onClick={advanceContact}
+              disabled={!canAdvanceLead}
+              onClick={advanceLead}
               className={funnel.cta}
             >
-              {contactStep === "phone" && submitting ? (
+              {leadStep === "phone" && leadSaving ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Liberando acesso…
+                  Salvando…
                 </>
               ) : (
                 <>
-                  {contactStep === "phone" ? contact.submitLabel : "Continuar"}
+                  {leadStep === "phone" ? contact.submitLabel : "Continuar"}
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </button>
 
-            {contactStep !== "name" && (
+            {leadStep !== "name" && (
               <button
                 type="button"
-                onClick={() =>
-                  setContactStep(contactStep === "phone" ? "email" : "name")
-                }
+                onClick={goBackLead}
                 className="w-full py-2 text-xs uppercase tracking-wider text-[#999] transition-colors hover:text-[#666] font-inter"
               >
                 Voltar
               </button>
             )}
 
-            <TrustFooter />
           </StepShell>
         )}
       </main>

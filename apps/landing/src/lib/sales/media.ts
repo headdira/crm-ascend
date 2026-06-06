@@ -10,6 +10,11 @@ export const MENTOR_KELVIN_WEBP = "/media/mentor-kelvin.webp";
 export const MENTOR_ERICK_IMAGE = "/media/mentor-erick.jpeg";
 export const MENTOR_ERICK_WEBP = "/media/mentor-erick.webp";
 
+export const QUIZ_LANDING_BANNER = "/media/quiz-landing-banner.png";
+
+/** Vídeo obrigatório do step autoridade — substituir o arquivo em public/media/ */
+export const QUIZ_AUTHORITY_VIDEO = "/media/quiz-authority-video.mp4";
+
 /** Banners estilo funil InLead (selfie + destino) para capa do quiz /form */
 export const QUIZ_HERO_KELVIN_PARIS = "/media/quiz-hero-kelvin-paris.png";
 export const QUIZ_HERO_ERICK_DUBAI = "/media/quiz-hero-erick-dubai.png";

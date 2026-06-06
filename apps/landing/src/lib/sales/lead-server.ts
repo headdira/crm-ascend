@@ -15,6 +15,7 @@ import {
   upsertIdentifiedLead,
   upsertLandingSession,
 } from "@/lib/sales/tracking-server";
+import { notifyDiscordLead } from "@/lib/sales/discord-lead-notify";
 
 export type CheckoutMeta = {
   event_id: string;
@@ -178,6 +179,8 @@ export async function upsertCheckoutLead(
       sessionId,
     });
 
+    maybeNotifyDiscordQuizComplete(input, id);
+
     return { id, checkout_url };
   }
 
@@ -227,6 +230,7 @@ export async function upsertCheckoutLead(
       leadId: data.id,
       sessionId: null,
     });
+    maybeNotifyDiscordQuizComplete(input, data.id);
     return { id: data.id, checkout_url };
   }
 
@@ -247,7 +251,69 @@ export async function upsertCheckoutLead(
     sessionId: null,
   });
 
+  maybeNotifyDiscordQuizComplete(input, data.id);
+
   return { id: data.id, checkout_url };
+}
+
+function quizDiscordAnswers(extra: Record<string, unknown> | undefined) {
+  if (!extra) return undefined;
+  return {
+    ...(extra.ads_quiz_answers as Record<string, unknown> | undefined),
+    lead_age: extra.lead_age,
+    lead_income: extra.lead_income,
+  };
+}
+
+async function notifyDiscordQuizLead(
+  kind: "capture" | "complete",
+  leadId: string,
+  input: {
+    full_name: string;
+    email: string;
+    phone: string;
+    age?: number;
+    income?: string;
+    utm?: Json;
+    quizAnswers?: Record<string, unknown>;
+  },
+) {
+  const utm =
+    input.utm && typeof input.utm === "object" && !Array.isArray(input.utm)
+      ? (input.utm as Record<string, unknown>)
+      : undefined;
+
+  await notifyDiscordLead({
+    kind,
+    leadId,
+    full_name: input.full_name,
+    email: input.email,
+    phone: input.phone,
+    age: input.age,
+    income: input.income,
+    utm,
+    quizAnswers: input.quizAnswers,
+  });
+}
+
+function maybeNotifyDiscordQuizComplete(
+  input: {
+    full_name: string;
+    email: string;
+    phone: string;
+    utm?: Json;
+    quiz_extra?: Record<string, unknown>;
+  },
+  leadId: string,
+) {
+  if (!input.quiz_extra?.ads_quiz) return;
+  void notifyDiscordQuizLead("complete", leadId, {
+    full_name: input.full_name,
+    email: input.email,
+    phone: input.phone,
+    utm: input.utm,
+    quizAnswers: quizDiscordAnswers(input.quiz_extra),
+  });
 }
 
 export async function upsertCheckoutAbandon(
@@ -400,4 +466,87 @@ export async function upsertAdsQuizProgress(
   }
 
   return null;
+}
+
+export async function upsertAdsQuizLeadCapture(
+  request: Request,
+  input: {
+    full_name: string;
+    email: string;
+    phone: string;
+    age: number;
+    income: string;
+    utm?: Json;
+    meta?: CheckoutMeta;
+  },
+) {
+  const sessionId = getSessionIdFromRequest(request);
+  if (!sessionId) return null;
+
+  await upsertLandingSession(request, sessionId);
+
+  const phone = input.phone.replace(/\D/g, "");
+  const email = input.email.trim().toLowerCase();
+  const full_name = input.full_name.trim();
+
+  const id = await upsertIdentifiedLead(request, sessionId, {
+    full_name,
+    email,
+    phone,
+  });
+
+  const now = new Date().toISOString();
+  const tracking: CheckoutTracking = {
+    cta: "quiz_form",
+    cta_label: "Quiz anúncios",
+  };
+  const metaFields = metaQuizFields(input.meta);
+
+  const supabase = createServiceSupabase();
+  const { data: lead } = await supabase
+    .from("leads")
+    .select("quiz_answers")
+    .eq("id", id)
+    .single();
+
+  const prev = (lead?.quiz_answers ?? {}) as Record<string, unknown>;
+
+  await supabase
+    .from("leads")
+    .update({
+      utm: (input.utm ?? {}) as Json,
+      quiz_answers: buildQuizAnswers(tracking, {
+        ...prev,
+        ...metaFields,
+        ads_quiz: true,
+        lead_age: input.age,
+        lead_income: input.income,
+        lead_captured_at: now,
+      }) as Json,
+      last_event_at: now,
+      status: LEAD_STATUS_QUENTE,
+    })
+    .eq("id", id);
+
+  await sendLeadToMetaCapi(request, {
+    full_name,
+    email,
+    phone,
+    utm: input.utm,
+    tracking,
+    meta: input.meta,
+    leadId: id,
+    sessionId,
+  });
+
+  void notifyDiscordQuizLead("capture", id, {
+    full_name,
+    email,
+    phone,
+    age: input.age,
+    income: input.income,
+    utm: input.utm,
+  });
+
+  return id;
 }

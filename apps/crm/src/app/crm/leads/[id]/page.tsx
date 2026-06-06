@@ -14,6 +14,8 @@ import {
   kiwifyLeadBadge,
 } from "@/lib/kiwify-lead-status";
 import { ConvertLeadDialog } from "./convert-lead-dialog";
+import { LeadQuizAnswersCard } from "@/components/crm/lead-quiz-answers";
+import { isAdsQuizLead } from "@/lib/ads-quiz-lead-display";
 
 function utmLabel(utm: Record<string, unknown>): string | null {
   const source = utm.utm_source;
@@ -76,6 +78,7 @@ export default async function LeadDetailPage({
                 <Badge variant="outline">Sem jornada vinculada</Badge>
               )}
               {initialCta && <Badge variant="outline">CTA: {initialCta}</Badge>}
+              {isAdsQuizLead(quiz) && <Badge variant="outline">Quiz /form</Badge>}
               {campaign && <Badge variant="outline">Campanha: {campaign}</Badge>}
             </div>
           </div>
@@ -186,6 +189,7 @@ export default async function LeadDetailPage({
                 )}
               </CardContent>
             </Card>
+            <LeadQuizAnswersCard quiz={quiz} />
             {session && (
               <Card className="mt-4">
                 <CardHeader>

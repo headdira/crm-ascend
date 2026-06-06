@@ -17,6 +17,7 @@ import { getCurrentStaff } from "@/lib/auth";
 import { listLeads } from "@/lib/actions/leads";
 import { formatDate } from "@/lib/utils";
 import { kiwifyLeadBadge } from "@/lib/kiwify-lead-status";
+import { isAdsQuizLead } from "@/lib/ads-quiz-lead-display";
 import { LeadDiscardButton } from "./lead-discard-button";
 
 export default async function LeadsPage({
@@ -77,7 +78,14 @@ export default async function LeadsPage({
                     {lead.email_enc ?? "—"}
                   </TableCell>
                   <TableCell>
-                    <StatusBadge value={lead.status} />
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <StatusBadge value={lead.status} />
+                      {isAdsQuizLead(quiz) && (
+                        <Badge variant="outline" className="text-[10px]">
+                          Quiz
+                        </Badge>
+                      )}
+                    </div>
                   </TableCell>
                   <TableCell>
                     {lead.status === "quente" || lead.reached_kiwify_at ? (

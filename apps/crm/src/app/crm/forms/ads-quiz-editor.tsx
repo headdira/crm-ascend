@@ -705,14 +705,16 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
       </section>
 
       <section className="space-y-4">
-        <h2 className="text-sm font-bold uppercase tracking-wider">Contato (antes do pagamento)</h2>
+        <h2 className="text-sm font-bold uppercase tracking-wider">Cadastro (após a landing)</h2>
         <FieldGroup>
           {(
             [
               ["nameTitle", "Título — nome"],
+              ["ageTitle", "Título — idade"],
+              ["incomeTitle", "Título — renda"],
               ["emailTitle", "Título — e-mail"],
               ["phoneTitle", "Título — WhatsApp"],
-              ["submitLabel", "Botão final"],
+              ["submitLabel", "Botão final do cadastro"],
             ] as const
           ).map(([key, label]) => (
             <Field key={key}>

@@ -12,6 +12,7 @@ interface ImportMetaEnv {
   readonly META_PIXEL_ID?: string;
   readonly META_CAPI_ACCESS_TOKEN?: string;
   readonly META_TEST_EVENT_CODE?: string;
+  readonly DISCORD_LEAD_WEBHOOK_URL?: string;
   readonly PUBLIC_GA_MEASUREMENT_ID?: string;
   readonly NEXT_PUBLIC_GA_MEASUREMENT_ID?: string;
 }

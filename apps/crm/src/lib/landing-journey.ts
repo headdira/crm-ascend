@@ -64,6 +64,16 @@ export function describeJourneyEvent(
       return "Continuou navegando no site";
     case "InitiateCheckout":
       return ctaLabel ? `Iniciou checkout («${ctaLabel}»)` : "Iniciou checkout";
+    case "quiz_start":
+      return "Iniciou o quiz (/form)";
+    case "quiz_lead_capture":
+      return "Preencheu cadastro no quiz (nome, e-mail e WhatsApp)";
+    case "quiz_step": {
+      const stepId = str(payload.step_id);
+      return stepId ? `Respondeu etapa do quiz: ${stepId}` : "Avançou no quiz";
+    }
+    case "quiz_calculating":
+      return "Quiz gerando diagnóstico personalizado";
     default:
       return eventName.replace(/_/g, " ");
   }

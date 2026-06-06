@@ -12,18 +12,25 @@ export const quizInsightVariantSchema = z.enum([
   "mentor",
 ]);
 
-/** Prints reais — servidos em /media/quiz-evidence (importados dos depoimentos). */
 export const QUIZ_PROOF_IMAGES = [
-  "/media/quiz-evidence/proof/faturamento/fat-01.jpeg",
-  "/media/quiz-evidence/proof/faturamento/fat-04.jpeg",
-  "/media/quiz-evidence/proof/faturamento/fat-06.jpeg",
-  "/media/quiz-evidence/proof/faturamento/fat-11.jpeg",
-  "/media/quiz-evidence/proof/faturamento/fat-15.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-116.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-104.jpeg",
   "/media/quiz-evidence/proof/notificacoes/notif-03.jpeg",
-  "/media/quiz-evidence/proof/faturamento/fat-20.jpeg",
-  "/media/quiz-evidence/proof/mencoes-erick/erick-01.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-111.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-108.jpeg",
   "/media/quiz-evidence/proof/notificacoes/notif-08.jpeg",
-  "/media/quiz-evidence/proof/faturamento/fat-25.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-112.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-119.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-121.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-125.jpeg",
+] as const;
+
+/** Única galeria de prints no fluxo linear do funil (2 fat + 2 notif). */
+export const QUIZ_FLOW_PROOF_GALLERY = [
+  "/media/quiz-evidence/proof/faturamento/fat-01.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-10.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-116.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-104.jpeg",
 ] as const;
 
 export const quizInsightProofSchema = z.object({
@@ -47,6 +54,8 @@ export const quizOptionInsightSchema = z.object({
 const quizOptionSchema = z.object({
   id: z.string().min(1).max(40),
   label: z.string().min(1).max(200),
+  /** Versão mais fluida para o resumo dinâmico (pergunta 12). */
+  dynamicLabel: z.string().max(200).optional(),
   subtitle: z.string().max(300).optional(),
   tags: z.array(z.string().min(1).max(40)).max(8).optional(),
   insight: quizOptionInsightSchema.optional(),
@@ -98,6 +107,52 @@ const quizStepSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     id: z.string().min(1).max(40),
+    type: z.literal("required_video"),
+    title: z.string().min(1).max(300),
+    intro: z.string().max(400).optional(),
+    videoUrl: z.string().max(500),
+    posterUrl: z.string().max(500).optional(),
+    ctaLabel: z.string().min(1).max(80).default("Continuar"),
+  }),
+  z.object({
+    id: z.string().min(1).max(40),
+    type: z.literal("testimonial"),
+    title: z.string().min(1).max(300),
+    intro: z.string().max(400).optional(),
+    name: z.string().min(1).max(80),
+    role: z.string().max(120).optional(),
+    quote: z.string().max(400).optional(),
+    videoUrl: z.string().max(500),
+    ctaLabel: z.string().min(1).max(80).default("Continuar"),
+  }),
+  z.object({
+    id: z.string().min(1).max(40),
+    type: z.literal("proof_gallery"),
+    title: z.string().min(1).max(300),
+    intro: z.string().max(400).optional(),
+    imageUrls: z.array(z.string().max(500)).min(1).max(6),
+    ctaLabel: z.string().min(1).max(80).default("Continuar"),
+  }),
+  z.object({
+    id: z.string().min(1).max(40),
+    type: z.literal("store_showcase"),
+    title: z.string().min(1).max(300),
+    intro: z.string().max(400).optional(),
+    stores: z
+      .array(
+        z.object({
+          name: z.string().min(1).max(80),
+          niche: z.string().max(120).optional(),
+          imageUrl: z.string().max(500),
+          storeUrl: z.string().max(500).optional(),
+        }),
+      )
+      .min(1)
+      .max(8),
+    ctaLabel: z.string().min(1).max(80).default("Continuar"),
+  }),
+  z.object({
+    id: z.string().min(1).max(40),
     type: z.literal("multichoice"),
     title: z.string().min(1).max(300),
     hint: z.string().max(400).optional(),
@@ -121,7 +176,26 @@ const quizStepSchema = z.discriminatedUnion("type", [
 ]);
 
 export const adsQuizConfigSchema = z.object({
-  version: z.literal(1),
+  version: z.union([
+    z.literal(1),
+    z.literal(2),
+    z.literal(3),
+    z.literal(4),
+    z.literal(5),
+    z.literal(6),
+    z.literal(7),
+    z.literal(8),
+    z.literal(9),
+    z.literal(10),
+    z.literal(11),
+    z.literal(12),
+    z.literal(13),
+    z.literal(14),
+    z.literal(15),
+    z.literal(16),
+    z.literal(17),
+    z.literal(18),
+  ]),
   landing: z.object({
     eyebrow: z.string().max(120),
     headline: z.string().min(1).max(400),
@@ -178,6 +252,10 @@ export const adsQuizConfigSchema = z.object({
   contact: z.object({
     nameTitle: z.string().min(1).max(120),
     nameHint: z.string().max(300).optional(),
+    ageTitle: z.string().min(1).max(120),
+    ageHint: z.string().max(300).optional(),
+    incomeTitle: z.string().min(1).max(120),
+    incomeHint: z.string().max(300).optional(),
     emailTitle: z.string().min(1).max(120),
     emailHint: z.string().max(300).optional(),
     phoneTitle: z.string().min(1).max(120),
@@ -208,6 +286,9 @@ function normalizeInsightProof(
   return imageUrl === proof.imageUrl ? proof : { ...proof, imageUrl };
 }
 
+/** Versão do copy — configs com version menor recebem DEFAULT completo ao carregar. */
+const CURRENT_ADS_QUIZ_COPY_VERSION = 18;
+
 const STALE_LANDING_MARKERS = [
   "monta seu plano",
   "Veja se o Ascend Club",
@@ -218,6 +299,9 @@ const STALE_LANDING_MARKERS = [
   "Ascend Club",
   "PIX semanais",
   "Responda o quiz e veja se o modelo encaixa",
+  "R$ 2.554",
+  "liberdade financeira",
+  "Conquistar liberdade",
 ];
 
 function shouldRefreshLandingCopy(landing: AdsQuizConfig["landing"]): boolean {
@@ -225,8 +309,15 @@ function shouldRefreshLandingCopy(landing: AdsQuizConfig["landing"]): boolean {
   return STALE_LANDING_MARKERS.some((marker) => text.includes(marker));
 }
 
-/** Corrige URLs de print quebradas em configs salvas no Supabase. */
+/** Corrige URLs de print quebradas e copy desatualizado em configs salvas no Supabase. */
 export function normalizeAdsQuizConfig(config: AdsQuizConfig): AdsQuizConfig {
+  if ((config.version ?? 1) < CURRENT_ADS_QUIZ_COPY_VERSION) {
+    return normalizeAdsQuizConfig({
+      ...DEFAULT_ADS_QUIZ_CONFIG,
+      version: CURRENT_ADS_QUIZ_COPY_VERSION,
+    });
+  }
+
   const landing = shouldRefreshLandingCopy(config.landing)
     ? { ...config.landing, ...DEFAULT_ADS_QUIZ_CONFIG.landing }
     : config.landing;
@@ -234,6 +325,7 @@ export function normalizeAdsQuizConfig(config: AdsQuizConfig): AdsQuizConfig {
   return {
     ...config,
     landing,
+    contact: { ...DEFAULT_ADS_QUIZ_CONFIG.contact, ...config.contact },
     testimonials:
       config.testimonials && config.testimonials.length > 0
         ? config.testimonials
@@ -284,10 +376,20 @@ export function collectProfileTags(
   return [...tags];
 }
 
+function optionDisplayLabel(
+  option: { label: string; dynamicLabel?: string } | undefined,
+  forDynamic: boolean,
+): string {
+  if (!option) return "";
+  if (forDynamic && option.dynamicLabel?.trim()) return option.dynamicLabel.trim();
+  return option.label;
+}
+
 export function resolveChoiceLabel(
   steps: AdsQuizStep[],
   answers: Record<string, string>,
   stepId: string,
+  forDynamic = false,
 ): string {
   const step = steps.find((s) => s.id === stepId);
   if (!step || (step.type !== "choice" && step.type !== "multichoice")) return "";
@@ -297,11 +399,11 @@ export function resolveChoiceLabel(
     return raw
       .split(",")
       .filter(Boolean)
-      .map((id) => step.options.find((o) => o.id === id)?.label)
+      .map((id) => optionDisplayLabel(step.options.find((o) => o.id === id), forDynamic))
       .filter(Boolean)
       .join(", ");
   }
-  return step.options.find((o) => o.id === raw)?.label ?? "";
+  return optionDisplayLabel(step.options.find((o) => o.id === raw), forDynamic);
 }
 
 export function resolveDynamicBody(
@@ -310,7 +412,7 @@ export function resolveDynamicBody(
   steps: AdsQuizStep[],
 ): string {
   return body.replace(/\{\{(\w+)\}\}/g, (_, stepId: string) =>
-    resolveChoiceLabel(steps, answers, stepId),
+    resolveChoiceLabel(steps, answers, stepId, true),
   );
 }
 
@@ -350,64 +452,63 @@ export function resolveResultDisplay(
 }
 
 export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
-  version: 1,
+  version: 18,
   landing: {
-    eyebrow: "Diagnóstico gratuito · 2 minutos",
+    eyebrow: "",
     headline:
-      "Você **não monta loja** nem caça produto — só vende. E pode receber até [[R$ 2.554/semana]] no **PIX**, com tudo pronto no nicho que escolher.",
+      "Você **não monta loja** nem fica caçando produto. Você pode receber até [[R$ 3.319/semana]] no **PIX**, com tudo pronto no nicho que você escolher.",
     subheadline:
-      "Em 2 minutos você descobre se encaixa: **loja montada no seu nicho**, produtos que já vendem e mentoria ao vivo pra destravar na hora — mesmo do zero, sem aparecer e sem gastar com anúncio.",
-    ctaLabel: "QUERO MEU DIAGNÓSTICO",
-    socialProof: "847 pessoas já fizeram · loja pronta + suporte ao vivo",
+      "Responde umas perguntas e vê se encaixa no seu bolso: entregamos **loja já montada**, produto que já vende e a galera te ajudando ao vivo a vender — mesmo começando do absoluto zero.",
+    ctaLabel: "QUERO VER SE É PRA MIM",
+    socialProof: "Mais de 3 mil alunos já estão lucrando com a metodologia",
   },
   steps: [
     {
       id: "objetivo",
       type: "choice",
-      title: "O que você mais quer resolver agora?",
-      hint: "Seu problema define como vamos adaptar o programa pra você.",
+      title: "O que mais tira seu sono hoje?",
+      hint: "Sem enrolação — isso muda o plano que a gente monta pra você.",
       options: [
         {
           id: "renda_extra",
-          label: "Ter uma renda extra consistente",
-          subtitle: "Mais dinheiro entrando todo mês",
+          label: "Fazer uma grana extra no fim do mês",
+          dynamicLabel: "ganhar uma renda extra no fim do mês",
+          subtitle: "Pra sobrar depois das contas",
           tags: ["goal_income"],
           insight: {
-            eyebrow: "SEU PLANO",
-            title: "Renda extra sem montar negócio do zero",
-            body: "Você recebe loja pronta com produtos já selecionados no nicho, aprende a divulgar e vender com acompanhamento — e tem 2 calls ao vivo por semana quando travar.",
+            eyebrow: "PRA VOCÊ",
+            title: "Renda extra sem inventar moda sozinho",
+            body: "A loja já vem montada, com produto escolhido no nicho que você curte. Você aprende a divulgar e vender — e quando travar, tem call ao vivo 2x por semana pra te puxar.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[0],
-              imageCaption: "Print real — renda online no Ascend Club",
+              imageCaption: "Print real — grana entrando no PIX",
             },
           },
         },
         {
           id: "liberdade_fin",
-          label: "Conquistar liberdade financeira",
-          subtitle: "Não depender só de salário ou de um emprego",
+          label: "Parar de depender só do salário",
+          dynamicLabel: "parar de depender só do salário",
+          subtitle: "Ter uma segunda entrada de dinheiro",
           tags: ["goal_freedom", "goal_income"],
           insight: {
-            eyebrow: "SEU PLANO",
-            title: "Uma loja que gera renda com método e suporte",
-            body: "Loja online pronta, produtos validados e ensino de como vender — com mentoria ao vivo pegando na sua mão. Não é curso que você assiste e fica perdido.",
+            eyebrow: "PRA VOCÊ",
+            title: "Uma loja que coloca dinheiro no bolso de verdade",
+            body: "Produto que vende, loja montada no seu nicho e grana entrando no PIX enquanto você aprende a divulgar. Travou? Tem call ao vivo 2x por semana — você não fica sozinho.",
             variant: "print",
-            proof: {
-              imageUrl: QUIZ_PROOF_IMAGES[1],
-              imageCaption: "Print real — resultado no digital",
-            },
           },
         },
         {
           id: "liberdade_geo",
-          label: "Liberdade geográfica — trabalhar de onde eu quiser",
-          subtitle: "Renda online sem ficar preso a um lugar",
+          label: "Trabalhar de casa ou de onde der",
+          dynamicLabel: "trabalhar de casa ou de onde der",
+          subtitle: "Sem ficar preso no escritório ou na fábrica",
           tags: ["want_flexibility", "want_geo"],
           insight: {
-            eyebrow: "SEU PLANO",
-            title: "Loja online que roda de qualquer lugar",
-            body: "Loja pronta — venda de qualquer lugar, sem escritório fixo. Produtos selecionados no nicho, sem montar catálogo do zero. Mentoria ao vivo 2x por semana quando travar na divulgação.",
+            eyebrow: "PRA VOCÊ",
+            title: "Loja online que roda de qualquer canto",
+            body: "Vende de casa, da praia ou do intervalo do trampo. Loja pronta, produto no nicho que você escolheu — e quando emperrar na divulgação, tem call ao vivo 2x por semana.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[2],
@@ -416,17 +517,18 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
         },
         {
           id: "transicao",
-          label: "Sair do CLT e construir renda online",
+          label: "Sair do CLT com algo montado na mão",
+          dynamicLabel: "sair do CLT com algo montado na mão",
           subtitle: "Virada com estrutura, não no escuro",
           tags: ["goal_transition"],
           insight: {
-            eyebrow: "SEU PLANO",
-            title: "Transição guiada — loja + vendas + mentoria",
-            body: "Enquanto você ainda tem renda fixa, montamos sua loja com produtos validados e te ensinamos a vender com suporte ao vivo. Networking com quem está na mesma virada.",
+            eyebrow: "PRA VOCÊ",
+            title: "Transição com loja pronta + gente te orientando",
+            body: "Enquanto ainda tem salário caindo, você monta a loja com produto validado e aprende a vender com suporte ao vivo. Tem gente na mesma situação que você no grupo.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[3],
-              imageCaption: "Print real — transição para o digital",
+              imageCaption: "Print real — quem saiu do CLT",
             },
           },
         },
@@ -435,18 +537,19 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
     {
       id: "momento",
       type: "choice",
-      title: "Qual frase melhor descreve seu momento hoje?",
-      hint: "Isso nos ajuda a adaptar o plano — loja, produtos e mentoria — ao que você vive agora.",
+      title: "Qual frase mais parece com a sua vida hoje?",
+      hint: "Pra gente encaixar loja, produto e mentoria no que você vive agora.",
       options: [
         {
           id: "esforco_pouco",
-          label: "Trabalho muito e ganho pouco pro tanto que me esforço",
-          subtitle: "Quero mais retorno pelo meu tempo",
+          label: "Me mato de trabalhar e o salário não acompanha",
+          dynamicLabel: "trabalhar muito e o salário não acompanhar",
+          subtitle: "Quero mais retorno pelo tempo que eu dou",
           tags: ["pain_underpaid"],
           insight: {
-            eyebrow: "ADAPTADO AO SEU MOMENTO",
-            title: "Você precisa de retorno — não de mais esforço às cegas",
-            body: "Pra quem trabalha muito e ganha pouco, o plano é direto: loja pronta, produtos selecionados e ensino de vendas com mentoria ao vivo. Você foca em vender, não em montar tudo sozinho.",
+            eyebrow: "SEU MOMENTO",
+            title: "Você precisa de retorno — não de mais correria à toa",
+            body: "Pra quem rala muito e ganha pouco, o caminho é direto: loja pronta, produto escolhido e ensino de venda com mentoria ao vivo. Você foca em vender, não em montar tudo sozinho.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[4],
@@ -456,69 +559,88 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
         },
         {
           id: "pode_mais",
-          label: "Tenho um trabalho ok, mas sei que posso mais",
-          subtitle: "Quero uma segunda fonte de renda",
+          label: "Meu trabalho paga as contas, mas sei que dá pra mais",
+          dynamicLabel: "ter o trabalho que paga as contas, mas saber que dá pra mais",
+          subtitle: "Quero uma segunda fonte de grana",
           tags: ["pain_ok_job"],
           insight: {
-            eyebrow: "ADAPTADO AO SEU MOMENTO",
-            title: "Renda extra sem largar o que já te paga as contas",
-            body: "Loja online rodando em paralelo, produtos validados no nicho e mentoria te guiando na divulgação — no seu ritmo, com calls quando precisar destravar.",
+            eyebrow: "SEU MOMENTO",
+            title: "Grana extra sem largar o que paga o boleto hoje",
+            body: "Loja rodando em paralelo, produto validado no nicho que você escolheu e mentoria te guiando na divulgação — no seu ritmo, com call quando precisar destravar.",
             variant: "print",
             proof: {
-              imageUrl: QUIZ_PROOF_IMAGES[5],
-              imageCaption: "Print real — renda extra no programa",
+              imageUrl: "/media/quiz-evidence/proof/notificacoes/notif-104.jpeg",
+              imageCaption: "Print real — vendas caindo no celular",
             },
           },
         },
         {
           id: "estudante",
-          label: "Estou estudando e quero começar a ganhar meu dinheiro",
-          subtitle: "Construir enquanto aprende",
+          label: "Tô estudando e quero ganhar meu dinheiro",
+          dynamicLabel: "estar estudando e querer ganhar seu dinheiro",
+          subtitle: "Começar antes de formar",
           tags: ["pain_student", "stage_zero"],
-        },
-        {
-          id: "sem_renda",
-          label: "Estou sem renda fixa e preciso resolver isso",
-          subtitle: "Urgência real",
-          tags: ["pain_no_income", "needs_support"],
+          insight: {
+            eyebrow: "SEU MOMENTO",
+            title: "Começa a ganhar enquanto ainda estuda",
+            body: "Loja pronta, produto escolhido e passo a passo de divulgação — no tempo que sobra entre a faculdade ou o curso. Mentoria ao vivo quando travar.",
+            variant: "print",
+            proof: {
+              imageUrl: QUIZ_PROOF_IMAGES[0],
+              imageCaption: "Print real — começando cedo",
+            },
+          },
         },
         {
           id: "empreendo",
-          label: "Já empreendo, mas quero uma nova fonte de receita",
-          subtitle: "Diversificar com digital",
+          label: "Já empreendo, mas quero vender online também",
+          dynamicLabel: "já empreender e querer vender online também",
+          subtitle: "Mais uma fonte de grana",
           tags: ["pain_entrepreneur", "goal_scale"],
+          insight: {
+            eyebrow: "SEU MOMENTO",
+            title: "Nova loja estruturada + método de venda",
+            body: "Produto validado em outro nicho, loja com cara profissional e mentoria pra organizar a divulgação — junto com gente que já tá vendendo.",
+            variant: "print",
+            proof: {
+              imageUrl: QUIZ_PROOF_IMAGES[2],
+              imageCaption: "Print real — quem já empreende",
+            },
+          },
         },
       ],
     },
     {
       id: "barreira",
       type: "choice",
-      title: "O que mais te impede de ter renda online hoje?",
-      hint: "Seu bloqueio define como adaptamos o plano pra você.",
+      title: "O que mais te trava de ganhar dinheiro online?",
+      hint: "Fala a real — a gente adapta o plano pro seu bloqueio.",
       options: [
         {
           id: "sem_caminho",
           label: "Não sei por onde começar — produto, loja, venda",
+          dynamicLabel: "não saber por onde começar",
           tags: ["blocker_direction"],
           insight: {
-            eyebrow: "REMÉDIO PRA ISSO",
-            title: "A gente entrega a loja e os produtos — você aprende a vender",
-            body: "Você não precisa descobrir sozinho o que vender. Loja pronta, produtos selecionados no nicho e passo a passo de divulgação com mentoria ao vivo.",
+            eyebrow: "A GENTE RESOLVE ISSO",
+            title: "Loja e produto prontos — você aprende a vender",
+            body: "Você não precisa ficar no Google caçando o que vender. Loja montada, produto escolhido no nicho e passo a passo de divulgação com mentoria ao vivo.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[6],
-              imageCaption: "Print real — passo a passo aplicado",
+              imageCaption: "Print real — passo a passo na prática",
             },
           },
         },
         {
           id: "sem_aparecer",
-          label: "Não quero aparecer, gravar vídeo ou ser influencer",
+          label: "Não quero aparecer, gravar vídeo ou virar influencer",
+          dynamicLabel: "não querer aparecer, gravar vídeo ou virar influencer",
           tags: ["blocker_no_face", "want_anonymous"],
           insight: {
-            eyebrow: "REMÉDIO PRA ISSO",
-            title: "Você vende sem precisar mostrar o rosto",
-            body: "Loja online + divulgação que não exige vídeo na câmera. A mentoria ensina na prática como vender esses produtos — com calls ao vivo quando travar.",
+            eyebrow: "A GENTE RESOLVE ISSO",
+            title: "Dá pra vender sem mostrar a cara",
+            body: "Loja online + divulgação que não exige vídeo na câmera. A mentoria ensina na prática como vender — com call ao vivo quando travar.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[7],
@@ -528,27 +650,29 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
         },
         {
           id: "sozinho",
-          label: "Já tentei e travei sozinho — curso, loja ou afiliado",
+          label: "Já tentei sozinho e travei — curso, loja ou afiliado",
+          dynamicLabel: "já ter tentado sozinho e travado",
           tags: ["blocker_isolation", "needs_support", "stage_stuck"],
           insight: {
-            eyebrow: "REMÉDIO PRA ISSO",
-            title: "Não é curso gravado — é pegar na mão e ensinar a vender",
-            body: "Loja pronta com produtos validados + 2 calls ao vivo por semana + WhatsApp. Dúvida na hora, não módulo abandonado.",
+            eyebrow: "A GENTE RESOLVE ISSO",
+            title: "Não é curso gravado — é pegar na mão de verdade",
+            body: "Loja pronta com produto validado + 2 calls ao vivo por semana + WhatsApp. Dúvida na hora, não vídeo que você abandona no meio.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[8],
-              imageCaption: "Print real — acompanhamento no programa",
+              imageCaption: "Print real — acompanhamento de perto",
             },
           },
         },
         {
           id: "desconfianca",
-          label: "Não sei se vai funcionar pra mim",
+          label: "Não sei se vai funcionar comigo",
+          dynamicLabel: "não ter certeza se vai funcionar com você",
           tags: ["blocker_trust"],
           insight: {
-            eyebrow: "REMÉDIO PRA ISSO",
-            title: "Produtos validados + prints reais de quem já vendeu",
-            body: "Centenas de alunos no mesmo programa — loja entregue, produtos selecionados e mentoria ao vivo. O caminho existe se você seguir o direcionamento.",
+            eyebrow: "A GENTE RESOLVE ISSO",
+            title: "Produto validado + print de quem já vendeu",
+            body: "Centenas de alunos no mesmo programa — loja entregue, produto escolhido e mentoria ao vivo. O caminho existe se você seguir o que a gente te passa.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[9],
@@ -558,12 +682,13 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
         },
         {
           id: "tempo",
-          label: "Tenho pouco tempo — não posso montar loja do zero",
+          label: "Tenho pouco tempo — não dá pra montar loja do zero",
+          dynamicLabel: "ter pouco tempo para montar loja do zero",
           tags: ["blocker_time", "needs_support"],
           insight: {
-            eyebrow: "REMÉDIO PRA ISSO",
-            title: "Loja pronta — você só aprende a vender no seu ritmo",
-            body: "Sem semanas montando vitrine e caçando produto. Loja entregue, produtos no nicho e calls ao vivo pra destravar quando precisar.",
+            eyebrow: "A GENTE RESOLVE ISSO",
+            title: "Loja pronta — você só aprende a vender no seu tempo",
+            body: "Sem semana montando vitrine e caçando produto. Loja entregue, produto no nicho e call ao vivo pra destravar quando precisar.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[0],
@@ -576,17 +701,17 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
     {
       id: "situacao",
       type: "choice",
-      title: "Onde você está hoje nessa jornada?",
-      hint: "Isso ajusta o ritmo do plano — do zero ou com experiência.",
+      title: "Onde você tá nessa história de vender online?",
+      hint: "Do zero ou com experiência — ajustamos o ritmo do plano.",
       options: [
         {
           id: "zero",
           label: "Nunca vendi online de verdade",
           tags: ["stage_zero"],
           insight: {
-            eyebrow: "PLANO DO ZERO",
+            eyebrow: "COMEÇANDO DO ZERO",
             title: "Começo com loja pronta — não com tela em branco",
-            body: "Produtos já selecionados, loja configurada e ensino de como divulgar e vender. A mentoria ao vivo pega na sua mão desde a primeira venda.",
+            body: "Produto já escolhido, loja configurada e ensino de como divulgar e vender. A mentoria ao vivo pega na sua mão desde a primeira venda.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[1],
@@ -599,24 +724,24 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
           label: "Já fiz curso ou tentei loja, mas travei sozinho",
           tags: ["stage_stuck", "needs_support"],
           insight: {
-            eyebrow: "PLANO PRA QUEM TRAVOU",
+            eyebrow: "QUEM JÁ TRAVOU",
             title: "Dessa vez com loja entregue e gente ao vivo",
-            body: "Não é mais um curso gravado. Loja pronta, produtos validados e calls semanais pra destravar na hora — com WhatsApp quando precisar.",
+            body: "Não é mais um curso gravado. Loja pronta, produto validado e calls semanais pra destravar na hora — com WhatsApp quando precisar.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[2],
-              imageCaption: "Print real — acompanhamento no programa",
+              imageCaption: "Print real — acompanhamento de perto",
             },
           },
         },
         {
           id: "vendendo",
-          label: "Já vendo e quero estrutura + novo nicho",
+          label: "Já vendo e quero organizar + entrar em outro nicho",
           tags: ["stage_selling"],
           insight: {
-            eyebrow: "PLANO PRA ESCALAR",
-            title: "Nova loja estruturada + mentoria para organizar vendas",
-            body: "Produtos validados em outro nicho, identidade visual profissional e networking com quem já está vendendo no programa.",
+            eyebrow: "QUEM JÁ VENDE",
+            title: "Nova loja estruturada + mentoria pra escalar",
+            body: "Produto validado em outro nicho, loja com identidade visual profissional e contato com quem já tá vendendo no programa.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[3],
@@ -627,66 +752,143 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
       ],
     },
     {
+      id: "prova_resultados",
+      type: "proof_gallery",
+      title: "Resultado de quem já vendeu de verdade",
+      intro: "Notificação de venda e faturamento no celular — prints reais de alunos.",
+      imageUrls: [...QUIZ_FLOW_PROOF_GALLERY],
+      ctaLabel: "Continuar",
+    },
+    {
       id: "nicho",
       type: "multichoice",
       title: "Em quais nichos você se vê vendendo?",
-      hint: "Escolha até 3 — definimos os produtos da sua loja:",
+      hint: "Escolhe até 3 — montamos sua loja com produto nesses nichos:",
       minSelect: 1,
       maxSelect: 3,
       ctaLabel: "Continuar",
       options: [
-        { id: "moda_masc", label: "Moda masculina 👕", tags: ["niche_moda_masc"] },
-        { id: "moda_fem", label: "Moda feminina 👗", tags: ["niche_moda_fem"] },
-        { id: "beleza", label: "Beleza e cosméticos 💄", tags: ["niche_beleza"] },
-        { id: "saude", label: "Saúde e bem-estar 🌿", tags: ["niche_saude"] },
-        { id: "pet", label: "Pet 🐾", tags: ["niche_pet"] },
-        { id: "casa", label: "Casa e praticidade 🏠", tags: ["niche_casa"] },
-        { id: "tech", label: "Tecnologia 💻", tags: ["niche_tech"] },
-        { id: "infantil", label: "Infantil 🧸", tags: ["niche_infantil"] },
+        { id: "moda_masc", label: "Moda masculina 👕", dynamicLabel: "moda masculina", tags: ["niche_moda_masc"] },
+        { id: "moda_fem", label: "Moda feminina 👗", dynamicLabel: "moda feminina", tags: ["niche_moda_fem"] },
+        { id: "beleza", label: "Beleza e cosméticos 💄", dynamicLabel: "beleza e cosméticos", tags: ["niche_beleza"] },
+        { id: "saude", label: "Saúde e bem-estar 🌿", dynamicLabel: "saúde e bem-estar", tags: ["niche_saude"] },
+        { id: "pet", label: "Pet 🐾", dynamicLabel: "pet", tags: ["niche_pet"] },
+        { id: "casa", label: "Casa e utilidades 🏠", dynamicLabel: "casa e utilidades", tags: ["niche_casa"] },
+        { id: "tech", label: "Tecnologia 💻", dynamicLabel: "tecnologia", tags: ["niche_tech"] },
+        { id: "infantil", label: "Infantil 🧸", dynamicLabel: "infantil", tags: ["niche_infantil"] },
       ],
+    },
+    {
+      id: "lojas_exemplo",
+      type: "store_showcase",
+      title: "É assim que entregamos sua loja",
+      intro: "Lojas de alunos de verdade — logo, banner, produtos e visual profissional. Você não mexe em nada disso.",
+      stores: [
+        {
+          name: "Arven",
+          niche: "Moda masculina",
+          imageUrl: "/media/quiz-store-examples/arven.png",
+          storeUrl: "https://www.lojaarven.com.br/",
+        },
+        {
+          name: "Nivra",
+          niche: "Moda feminina",
+          imageUrl: "/media/quiz-store-examples/nivra.png",
+          storeUrl: "https://usenivra.com/",
+        },
+        {
+          name: "SerMente",
+          niche: "Saúde & performance",
+          imageUrl: "/media/quiz-store-examples/sermente.png",
+          storeUrl: "https://www.sermentesaude.com/",
+        },
+        {
+          name: "VEZZ",
+          niche: "Moda masculina",
+          imageUrl: "/media/quiz-store-examples/vezz.png",
+        },
+        {
+          name: "ZHELA",
+          niche: "Semijoias",
+          imageUrl: "/media/quiz-store-examples/zhela.png",
+        },
+      ],
+      ctaLabel: "Continuar",
+    },
+    {
+      id: "depoimento_claudini",
+      type: "testimonial",
+      title: "Claudini — já tinha travado sozinha",
+      intro: "Dessa vez veio loja pronta + suporte ao vivo de verdade.",
+      name: "Claudini",
+      role: "Aluna Ascend",
+      quote: "Já tinha tentado sozinha e travado. Dessa vez veio loja + suporte ao vivo.",
+      videoUrl: "/media/quiz-evidence/videos/02-video-claudini.mp4",
+      ctaLabel: "Continuar",
+    },
+    {
+      id: "depoimento_izabela",
+      type: "testimonial",
+      title: "Izabela — nunca tinha vendido online",
+      intro: "Ela recebe PIX toda semana com a loja que entregaram pronta.",
+      name: "Izabela",
+      role: "Aluna Ascend",
+      quote: "Nunca tinha vendido online. Hoje cai PIX toda semana com a loja que me entregaram pronta.",
+      videoUrl: "/media/quiz-evidence/videos/06-video-izabela.mp4",
+      ctaLabel: "Continuar",
+    },
+    {
+      id: "depoimento_renata",
+      type: "testimonial",
+      title: "Renata — a call com o Erick muda o jogo",
+      intro: "Mentoria ao vivo — não fica perdida em vídeo gravado.",
+      name: "Renata",
+      role: "Aluna Ascend",
+      quote: "A call ao vivo com o Erick ajuda muito a ajustar as vendas.",
+      videoUrl: "/media/quiz-evidence/videos/10-video-renata-mensão-erick.mp4",
+      ctaLabel: "Continuar",
     },
     {
       id: "mecanismo",
       type: "mechanism",
-      title: "O que o Ascend Club entrega — o remédio completo",
-      intro: "Não é curso comum. É loja + produtos + ensino de vendas + mentoria ao vivo, adaptado ao que você respondeu.",
+      title: "Como você vai do zero até a primeira venda",
+      intro: "Sem enrolação: isso é o que a gente entrega pra você, com base no que você acabou de contar.",
       mechanismSteps: [
         {
-          title: "Loja pronta com produtos selecionados",
-          subtitle: "No nicho que você escolheu — com logo, banner e identidade visual personalizados",
+          title: "Você recebe a loja pronta",
+          subtitle: "Produtos escolhidos no nicho que você marcou — logo, banner e visual no seu nome",
           highlight: "1 · Loja entregue",
         },
         {
-          title: "A gente pega na sua mão e ensina a vender",
-          subtitle: "Como divulgar esses produtos e fazer as primeiras vendas — passo a passo, sem aparecer se não quiser",
-          highlight: "2 · Ensino de vendas",
+          title: "A gente te ensina a divulgar e vender",
+          subtitle: "Passo a passo na prática — sem precisar aparecer, se você não quiser",
+          highlight: "2 · Ensino na prática",
         },
         {
-          title: "Mentoria ao vivo + suporte quando travar",
-          subtitle: "2 calls por semana, WhatsApp e networking — diferente de curso gravado que você assiste sozinho",
+          title: "Mentoria ao vivo quando você travar",
+          subtitle: "2 calls por semana + WhatsApp — diferente de vídeo gravado que você abandona no meio",
           highlight: "3 · Ao vivo",
         },
       ],
       bullets: [
-        "Você não monta loja nem caça produto sozinho",
-        "Pode vender sem gravar vídeo ou aparecer",
-        "Plano adaptado ao seu momento e ao seu bloqueio",
+        "Você não monta loja nem procura produto sozinho",
+        "Dá pra vender sem gravar vídeo ou virar influencer",
+        "Tudo encaixado no seu momento e na sua maior trava hoje",
       ],
       ctaLabel: "ISSO FAZ SENTIDO PRA MIM",
     },
     {
       id: "prova_dinamica",
       type: "dynamic",
-      title: "Seu plano, adaptado ao que você contou",
-      body: "Você busca {{objetivo}}, está num momento de {{momento}}, e o que mais te impede é: {{barreira}}.\n\nNichos escolhidos: {{nicho}}.\n\nO plano Ascend pra você: loja pronta com produtos selecionados nesses nichos + ensino de como vender + mentoria ao vivo pegando na sua mão. Não é curso gravado.\n\nFalta pouco pro seu diagnóstico final 👇",
+      title: "Seu plano, do jeito que você contou",
+      body: "Olha o que montamos com base nas suas respostas:\n\n• Seu foco: {{objetivo}}\n• Seu momento hoje: {{momento}}\n• O que mais te trava: {{barreira}}\n• Nichos escolhidos: {{nicho}}\n\nSeu plano Ascend: loja pronta nesses nichos, passo a passo de divulgação e mentoria ao vivo para te acompanhar de perto — sem curso gravado que você abandona no meio.\n\nFalta pouco para o seu diagnóstico personalizado 👇",
       ctaLabel: "Continuar",
-      imageUrl: QUIZ_PROOF_IMAGES[5],
     },
     {
       id: "prioridades",
       type: "multichoice",
       title: "O que não pode faltar no SEU plano?",
-      hint: "Escolha até 3 — confirmamos o que adaptamos pra você:",
+      hint: "Marca até 3 — confirmamos o que a gente adapta pra você:",
       minSelect: 2,
       maxSelect: 3,
       ctaLabel: "Continuar",
@@ -718,7 +920,7 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
         },
         {
           id: "renda",
-          label: "Renda que não depende só de salário",
+          label: "Grana que não depende só do salário",
           tags: ["goal_income", "goal_freedom"],
         },
       ],
@@ -726,11 +928,11 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
     {
       id: "compromisso",
       type: "choice",
-      title: "Você começaria com loja pronta + ensino de vendas + mentoria ao vivo?",
+      title: "Você toparia começar com loja pronta + ensino de venda + mentoria ao vivo?",
       options: [
         {
           id: "sim_agora",
-          label: "Sim — é exatamente o que preciso 🔥",
+          label: "Sim — é exatamente o que eu preciso 🔥",
           tags: ["commit_high"],
         },
         {
@@ -742,28 +944,27 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
     },
     {
       id: "autoridade",
-      type: "message",
+      type: "required_video",
       title: "Quem monta sua loja e te ensina a vender",
-      variant: "authority",
-      imageUrl: "/media/mentor-kelvin.jpeg",
-      body: "Kelvin Martins e Erick Vinicius, co-fundadores do Ascend Club.\n\nEntregamos loja online pronta com produtos selecionados, pegamos na mão de cada aluno pra ensinar a vender — e acompanhamos com calls ao vivo e suporte no WhatsApp.\n\nNão somos curso gravado. Somos loja + vendas + mentoria real.",
+      intro: "Assista este vídeo e veja como ter uma loja Ascend",
+      videoUrl: "/media/quiz-authority-video.mp4",
       ctaLabel: "GERAR MEU DIAGNÓSTICO",
     },
     {
       id: "oferta",
       type: "offer",
-      title: "Seu plano Ascend Club — loja + vendas + mentoria",
-      body: "Loja online pronta com produtos selecionados no seu nicho, ensino de como divulgar e vender, e 12 meses de mentoria ao vivo com suporte próximo. Pagamento único.",
+      title: "Seu plano — loja + vendas + mentoria",
+      body: "Loja online pronta com produto no nicho que você escolheu, ensino de como divulgar e vender, e 12 meses de mentoria ao vivo com suporte de perto. Pagamento único.",
       priceLabel: "R$60",
       originalPriceLabel: "R$197",
-      urgencyNote: "Plano personalizado liberado só nesta sessão",
+      urgencyNote: "Condição liberada só nesta sessão",
       priceNote: "Menos de R$0,17 por dia · loja + mentoria 1 ano",
       bullets: [
-        "Loja pronta com produtos validados no nicho escolhido",
-        "Logo, banner e identidade visual personalizados",
-        "Ensino de como divulgar e vender esses produtos",
-        "2 calls ao vivo por semana + suporte no WhatsApp",
-        "Networking com +500 alunos no mesmo programa",
+        "Loja pronta com produto validado no nicho escolhido",
+        "Logo, banner e visual personalizado",
+        "Ensino de como divulgar e vender",
+        "2 calls ao vivo por semana + WhatsApp",
+        "+500 alunos no mesmo programa",
         "Venda sem precisar aparecer ou gravar vídeo",
       ],
       ctaLabel: "QUERO MEU PLANO COMPLETO",
@@ -771,70 +972,70 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
   ],
   calculating: {
     messages: [
-      "Entendendo seu problema e seu momento…",
-      "Selecionando produtos do nicho escolhido…",
-      "Montando seu plano: loja + vendas + mentoria…",
-      "Adaptando ao que mais te impede hoje…",
-      "Gerando seu diagnóstico personalizado…",
+      "Entendendo sua situação…",
+      "Escolhendo produto no nicho que você marcou…",
+      "Montando seu plano: loja + venda + mentoria…",
+      "Ajustando pro que mais te trava hoje…",
+      "Gerando seu diagnóstico…",
     ],
     messagesByTags: [
       {
         whenTags: ["stage_zero", "blocker_direction"],
         messages: [
           "Mapeando seu caminho do zero…",
-          "Selecionando o passo a passo ideal…",
-          "Preparando sua condição de entrada…",
+          "Separando o passo a passo ideal…",
+          "Preparando sua condição…",
         ],
       },
       {
         whenTags: ["needs_support"],
         messages: [
           "Priorizando acompanhamento ao vivo…",
-          "Ajustando recomendação com suporte próximo…",
+          "Ajustando com suporte de perto…",
           "Finalizando sua condição…",
         ],
       },
       {
         whenTags: ["blocker_trust"],
         messages: [
-          "Validando fit com o método Ascend…",
-          "Conferindo provas do seu perfil…",
+          "Conferindo se encaixa no seu perfil…",
+          "Validando com provas reais…",
           "Liberando sua condição…",
         ],
       },
     ],
   },
   result: {
-    eyebrow: "SEU PLANO ESTÁ PRONTO",
-    headline: "Adaptamos o Ascend Club ao seu problema e ao seu momento",
+    eyebrow: "SEU PLANO TÁ PRONTO",
+    headline: "Montamos o plano no seu problema e no seu momento",
     badge: "PERFIL IDEAL",
     highlights: [
-      "Loja pronta com produtos selecionados no nicho que você escolheu",
-      "Ensino de vendas + mentoria ao vivo — não é curso gravado",
-      "Plano montado com base no que você contou neste diagnóstico",
+      "Loja pronta com produto no nicho que você escolheu",
+      "Ensino de venda + mentoria ao vivo — não é curso gravado",
+      "Plano feito com base no que você contou aqui",
     ],
-    reassurance:
-      "Com base nas suas respostas, liberamos seu plano personalizado nesta sessão — válido enquanto esta página estiver aberta.",
+      reassurance:
+      "Pelas suas respostas, seu plano tá liberado nesta sessão — enquanto esta página estiver aberta.",
   },
   resultRules: [
     {
       whenTags: ["blocker_no_face"],
-      headline: "Seu plano: vender online sem precisar aparecer",
+      headline: "Seu plano: vender online sem aparecer",
       badge: "PERFIL IDEAL",
       highlights: [
         "Loja pronta + divulgação sem vídeo na câmera",
-        "Ensino de vendas adaptado pra quem não quer ser influencer",
+        "Ensino adaptado pra quem não quer ser influencer",
         "Mentoria ao vivo quando travar",
       ],
-      reassurance: "Adaptamos o ensino de vendas pro seu perfil — loja, produtos e suporte, sem aparecer.",
+      reassurance: "Adaptamos o ensino pro seu perfil — loja, produto e suporte, sem aparecer.",
     },
     {
       whenTags: ["want_geo", "want_flexibility"],
-      headline: "Seu plano: renda de qualquer lugar, com loja rodando",
+      headline: "Seu plano: grana de qualquer lugar, com loja rodando",
       badge: "PERFIL IDEAL",
       highlights: [
         "Loja online que você opera de onde estiver",
-        "Produtos selecionados no nicho — sem escritório fixo",
+        "Produto escolhido no nicho — sem escritório fixo",
         "Mentoria ao vivo no seu ritmo",
       ],
     },
@@ -843,8 +1044,8 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
       headline: "Seu plano: começar com loja pronta, não do zero absoluto",
       badge: "ALTO POTENCIAL",
       highlights: [
-        "Produtos já selecionados no nicho escolhido",
-        "Ensino de vendas pegando na sua mão",
+        "Produto já escolhido no nicho que você marcou",
+        "Ensino de venda pegando na sua mão",
         "2 calls semanais + WhatsApp",
       ],
       reassurance: "Você não monta loja sozinho — recebe pronta e aprende a vender com acompanhamento.",
@@ -855,26 +1056,26 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
       badge: "PERFIL IDEAL",
       highlights: [
         "Pra quem já travou sozinho em curso ou loja",
-        "Calls semanais + suporte no WhatsApp",
-        "Produtos validados — foco em vender",
+        "Calls semanais + WhatsApp",
+        "Produto validado — foco em vender",
       ],
     },
     {
       whenTags: ["goal_transition"],
-      headline: "Seu plano: transição guiada com loja + renda em paralelo",
+      headline: "Seu plano: sair do CLT com loja + grana em paralelo",
       badge: "PERFIL IDEAL",
       highlights: [
-        "Loja montada enquanto você mantém o CLT",
-        "Ensino de vendas no seu ritmo",
-        "Networking com quem está na mesma virada",
+        "Loja montada enquanto você ainda tem salário",
+        "Ensino de venda no seu ritmo",
+        "Gente na mesma virada que você",
       ],
     },
     {
       whenTags: ["commit_high"],
-      headline: "Você está pronto — plano personalizado liberado",
+      headline: "Você tá pronto — plano personalizado liberado",
       badge: "ALTO POTENCIAL",
       highlights: [
-        "Loja + produtos + ensino de vendas + mentoria ao vivo",
+        "Loja + produto + ensino de venda + mentoria ao vivo",
         "Adaptado ao que você contou no diagnóstico",
         "Condição especial nesta sessão",
       ],
@@ -883,43 +1084,47 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
   testimonials: [
     {
       name: "Izabela",
-      role: "Aluno Ascend Club",
-      quote: "Nunca vendi online antes. Hoje recebo PIX toda semana com a loja que me entregaram pronta.",
+      role: "Aluna Ascend",
+      quote: "Nunca tinha vendido online. Hoje cai PIX toda semana com a loja que me entregaram pronta.",
       videoUrl: "/media/quiz-evidence/videos/06-video-izabela.mp4",
     },
     {
       name: "Renata",
-      role: "Aluno Ascend Club",
-      quote: "A mentoria ao vivo com o Erick destrava na hora — não é curso gravado que você abandona.",
+      role: "Aluna Ascend",
+      quote: "A call ao vivo com o Erick ajuda muito a ajustar as vendas.",
       videoUrl: "/media/quiz-evidence/videos/10-video-renata-mensão-erick.mp4",
     },
     {
       name: "Eros",
       role: "10 vendas no programa",
-      quote: "Bati 10 vendas seguindo o passo a passo. Loja pronta, produtos bons, só aprendi a divulgar.",
+      quote: "Fiz 10 vendas seguindo o passo a passo. Loja pronta, produto bom, só aprendi a divulgar.",
       videoUrl: "/media/quiz-evidence/videos/01-eros-10-vendas.mp4",
     },
     {
       name: "Karen",
-      role: "Aluno Ascend Club",
-      quote: "Trabalho de casa, no meu ritmo, e as vendas vão chegando no PIX.",
+      role: "Aluna Ascend",
+      quote: "Trabalho de casa, no meu tempo, e a venda vai caindo no PIX.",
       videoUrl: "/media/quiz-evidence/videos/07-video-karen.mp4",
     },
     {
       name: "Claudini",
-      role: "Aluno Ascend Club",
-      quote: "Já tinha tentado sozinho e travado. Dessa vez veio loja + suporte ao vivo.",
+      role: "Aluna Ascend",
+      quote: "Já tinha tentado sozinha e travado. Dessa vez veio loja + suporte ao vivo.",
       videoUrl: "/media/quiz-evidence/videos/02-video-claudini.mp4",
     },
   ],
   contact: {
-    nameTitle: "Como posso te chamar?",
-    nameHint: "Só seu primeiro nome — para personalizar seu acesso.",
+    nameTitle: "Qual seu nome?",
+    nameHint: "Pra personalizar seu diagnóstico.",
+    ageTitle: "Qual sua idade?",
+    ageHint: "Só pra encaixar o plano no seu momento de vida.",
+    incomeTitle: "Quanto você ganha hoje?",
+    incomeHint: "Valor mensal aproximado — sem julgamento.",
     emailTitle: "Qual seu melhor e-mail?",
-    emailHint: "Para liberar seu checkout seguro na Kiwify.",
+    emailHint: "Pra te enviar seu diagnóstico e liberar o checkout.",
     phoneTitle: "Seu WhatsApp",
-    phoneHint: "Usamos só para suporte do programa. Em seguida você vai para o pagamento.",
-    submitLabel: "LIBERAR MEU ACESSO",
+    phoneHint: "Usamos só pro suporte do programa.",
+    submitLabel: "CONTINUAR DIAGNÓSTICO",
   },
 };
 

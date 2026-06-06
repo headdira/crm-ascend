@@ -162,10 +162,10 @@ body {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  min-height: 3.5rem;
-  padding: 0.95rem 1.5rem;
+  min-height: 3.125rem;
+  padding: 0.85rem 1.25rem;
   border-radius: 0.75rem;
-  font-size: 1.05rem;
+  font-size: 0.95rem;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -173,6 +173,14 @@ body {
   background: #f2a218;
   box-shadow: 0 4px 16px rgba(242, 162, 24, 0.35);
   transition: background-color 0.15s ease, transform 0.15s ease;
+}
+
+@media (min-width: 640px) {
+  .form-funnel .funnel-landing-inlead-cta {
+    min-height: 3.5rem;
+    padding: 0.95rem 1.5rem;
+    font-size: 1.05rem;
+  }
 }
 
 .form-funnel .funnel-landing-inlead-cta:hover {
@@ -204,6 +212,19 @@ body {
 
 .form-funnel .quiz-landing-hero {
   isolation: isolate;
+}
+
+.form-funnel .store-showcase-scroll {
+  scrollbar-width: none;
+}
+
+.form-funnel .store-showcase-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.form-funnel .funnel-landing-inlead {
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
 }
 
 .form-funnel .phone-proof-gallery {

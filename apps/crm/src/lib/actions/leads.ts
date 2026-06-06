@@ -17,6 +17,7 @@ import { getSupabaseServer } from "@/lib/supabase/server";
 export async function listLeads(filters?: {
   status?: string;
   q?: string;
+  adsQuiz?: boolean;
 }) {
   const supabase = await getSupabaseServer();
   let query = supabase
@@ -31,9 +32,26 @@ export async function listLeads(filters?: {
       filters.status as "new" | "contacted" | "qualified" | "disqualified" | "converted",
     );
   }
+  if (filters?.adsQuiz) {
+    query = query.contains("quiz_answers", { ads_quiz: true });
+  }
   if (filters?.q) query = query.ilike("full_name", `%${filters.q}%`);
 
   const { data, error } = await query;
+  if (error) throw new ActionError(error.message, "DB_ERROR");
+  return data ?? [];
+}
+
+/** Leads capturados pelo quiz /form (ads_quiz). */
+export async function listQuizFormLeads() {
+  const supabase = await getSupabaseServer();
+  const { data, error } = await supabase
+    .from("leads")
+    .select("*")
+    .contains("quiz_answers", { ads_quiz: true })
+    .order("last_event_at", { ascending: false, nullsFirst: false })
+    .order("created_at", { ascending: false });
+
   if (error) throw new ActionError(error.message, "DB_ERROR");
   return data ?? [];
 }
