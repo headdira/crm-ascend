@@ -5,20 +5,27 @@ import {
   ArrowRight,
   Check,
   CheckCircle2,
+  Globe2,
   Loader2,
   Lock,
   Quote,
   ShieldCheck,
   Sparkles,
+  TrendingUp,
   Users,
+  Zap,
+  Play,
 } from "lucide-react";
 import type { AdsQuizConfig, AdsQuizStep, QuizOptionInsight } from "@crm-ascend/validation/ads-quiz";
 import {
   DEFAULT_ADS_QUIZ_CONFIG,
   collectProfileTags,
+  normalizeAdsQuizConfig,
   resolveCalculatingMessages,
   resolveDynamicBody,
+  resolveQuizProofImageUrl,
   resolveResultDisplay,
+  QUIZ_PROOF_IMAGES,
 } from "@crm-ascend/validation/ads-quiz";
 import { ATTRIBUTION_COOKIE } from "@/lib/sales/consent";
 import { parseAttributionCookie, readAttributionFromDocument, getClientCookie } from "@/lib/sales/utm";
@@ -30,10 +37,18 @@ import { openCheckoutInNewTab } from "@/lib/sales/open-checkout";
 import { cn } from "@/lib/utils";
 import {
   HERO_IMAGE,
-  PROOF_IMAGES,
   QUIZ_HERO_ERICK_DUBAI,
   QUIZ_HERO_KELVIN_PARIS,
 } from "@/lib/sales/media";
+import {
+  QUIZ_INSIGHT_PROOFS,
+  QUIZ_LANDING_PROOFS,
+  QUIZ_PROOF_FATURAMENTO,
+  QUIZ_PROOF_NOTIFICACOES,
+  QUIZ_RESULT_PROOFS,
+  QUIZ_TESTIMONIAL_VIDEOS,
+  type QuizTestimonialVideo,
+} from "@/lib/sales/quiz-evidence";
 
 type Phase = "landing" | "steps" | "insight" | "calculating" | "result" | "contact";
 type ContactStep = "name" | "email" | "phone";
@@ -55,16 +70,60 @@ const funnel = {
 } as const;
 
 function renderHighlightedHeadline(text: string) {
-  return text.split(/(\*\*[^*]+\*\*)/g).filter(Boolean).map((segment, index) => {
-    if (segment.startsWith("**") && segment.endsWith("**")) {
-      return (
-        <span key={index} className="text-[#E8941C]">
-          {segment.slice(2, -2)}
-        </span>
-      );
-    }
-    return <span key={index}>{segment}</span>;
-  });
+  return text
+    .split(/(\*\*[^*]+\*\*|\[\[[^\]]+\]\])/g)
+    .filter(Boolean)
+    .map((segment, index) => {
+      if (segment.startsWith("**") && segment.endsWith("**")) {
+        return (
+          <span key={index} className="text-[#E8941C]">
+            {segment.slice(2, -2)}
+          </span>
+        );
+      }
+      if (segment.startsWith("[[") && segment.endsWith("]]")) {
+        return (
+          <span
+            key={index}
+            className="mx-0.5 inline-block rounded-md bg-[#00a650]/15 px-1.5 py-0.5 font-black tabular-nums text-[#007a3d] ring-1 ring-[#00a650]/25"
+          >
+            {segment.slice(2, -2)}
+          </span>
+        );
+      }
+      return <span key={index}>{segment}</span>;
+    });
+}
+
+function LandingUrgencyBadge({ label }: { label: string }) {
+  return (
+    <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-red-200/80 bg-gradient-to-r from-red-50 via-orange-50 to-amber-50 px-3.5 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] text-red-700 shadow-sm sm:text-[11px]">
+      <span className="relative flex h-2 w-2 shrink-0">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-70" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-red-600" />
+      </span>
+      {label}
+    </div>
+  );
+}
+
+function LandingPixPreview() {
+  return (
+    <div className="mx-auto mb-5 flex max-w-[340px] items-center gap-3 rounded-xl border border-[#00a650]/35 bg-gradient-to-r from-[#00a650]/10 to-emerald-50/80 px-4 py-3 text-left shadow-[0_4px_20px_rgba(0,166,80,0.12)]">
+      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#32BCAD] text-[11px] font-black tracking-tight text-white shadow-md">
+        PIX
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-[#666]">
+          Entrou na conta · aluno verificado
+        </p>
+        <p className="text-xl font-black tabular-nums leading-none text-[#00a650] sm:text-[1.35rem]">
+          até R$ 2.554/semana
+        </p>
+      </div>
+      <Zap className="h-5 w-5 shrink-0 fill-[#f2a218] text-[#f2a218]" aria-hidden />
+    </div>
+  );
 }
 
 function NuvemshopSaleCard({ value, className }: { value: string; className?: string }) {
@@ -93,8 +152,112 @@ function NuvemshopSaleCard({ value, className }: { value: string; className?: st
   );
 }
 
-/** 2 prints com métricas legíveis (WhatsApp + dashboard Nuvemshop) */
-const LEGIBLE_PRINTS = [PROOF_IMAGES[2], PROOF_IMAGES[4]] as const;
+function EvidenceProofStrip({
+  urls,
+  label = "Resultado verificado",
+  compact,
+}: {
+  urls: readonly string[];
+  label?: string;
+  compact?: boolean;
+}) {
+  if (urls.length === 0) return null;
+  return (
+    <div className="space-y-2">
+      <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#888]">
+        <TrendingUp className="h-3.5 w-3.5 text-[#00a650]" aria-hidden />
+        {label}
+      </p>
+      <div className={cn("space-y-3", compact && "space-y-2")}>
+        {urls.map((src) => (
+          <figure
+            key={src}
+            className="overflow-hidden rounded-xl border-2 border-[#00a650]/20 bg-white shadow-sm"
+          >
+            <img
+              src={src}
+              alt="Print real de resultado Ascend Club"
+              className="block h-auto w-full"
+              loading="lazy"
+              decoding="async"
+            />
+          </figure>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EvidenceProofScroller({ urls }: { urls: readonly string[] }) {
+  if (urls.length === 0) return null;
+  return (
+    <div className="-mx-4 sm:mx-0">
+      <p className="mb-2 px-4 text-left text-[11px] font-bold uppercase tracking-wide text-[#888] sm:px-0">
+        +{urls.length} prints reais de alunos
+      </p>
+      <div className="flex gap-3 overflow-x-auto px-4 pb-2 snap-x snap-mandatory sm:px-0">
+        {urls.map((src) => (
+          <img
+            key={src}
+            src={src}
+            alt="Print de faturamento real"
+            className="h-44 w-auto shrink-0 snap-start rounded-lg border border-gray-200 bg-white object-contain shadow-sm sm:h-52"
+            loading="lazy"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TestimonialVideoCard({ item }: { item: QuizTestimonialVideo }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+      <div className="relative aspect-[9/16] max-h-[320px] w-full bg-[#111] sm:max-h-[360px]">
+        <video
+          src={item.videoUrl}
+          controls
+          playsInline
+          preload="metadata"
+          className="h-full w-full object-contain"
+        />
+        <span className="pointer-events-none absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+          <Play className="h-3 w-3 fill-white" aria-hidden />
+          Depoimento
+        </span>
+      </div>
+      {(item.quote || item.name) && (
+        <div className="border-t border-gray-100 px-3 py-3">
+          {item.quote && (
+            <p className="text-sm leading-snug text-[#444]">&ldquo;{item.quote}&rdquo;</p>
+          )}
+          <p className="mt-1.5 text-xs font-semibold text-[#888]">
+            {item.name}
+            {item.role ? ` · ${item.role}` : ""}
+          </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TestimonialVideoRow({ videos, max = 3 }: { videos: QuizTestimonialVideo[]; max?: number }) {
+  const slice = videos.slice(0, max);
+  if (slice.length === 0) return null;
+  return (
+    <div className="space-y-2">
+      <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-[#c27800]">
+        <Users className="h-3.5 w-3.5 text-[#f2a218]" aria-hidden />
+        Depoimentos em vídeo · alunos reais
+      </p>
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {slice.map((v) => (
+          <TestimonialVideoCard key={v.videoUrl} item={v} />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 function QuizLandingHero() {
   return (
@@ -129,17 +292,9 @@ function QuizLandingHero() {
 
 function QuizLandingProofs() {
   return (
-    <div className="-mx-4 space-y-3 sm:mx-0">
-      {LEGIBLE_PRINTS.map((src) => (
-        <img
-          key={src}
-          src={src}
-          alt="Print de resultado real"
-          className="block h-auto w-full rounded-none border-y border-gray-200 bg-white sm:rounded-xl sm:border sm:shadow-sm"
-          loading="eager"
-          decoding="async"
-        />
-      ))}
+    <div className="space-y-4">
+      <EvidenceProofStrip urls={QUIZ_LANDING_PROOFS.slice(0, 4)} label="Faturamento real de alunos" />
+      <EvidenceProofScroller urls={QUIZ_LANDING_PROOFS.slice(4)} />
     </div>
   );
 }
@@ -246,6 +401,86 @@ function optionLabelForStep(step: AdsQuizStep, optionId: string): string | null 
   return step.options.find((o) => o.id === optionId)?.label ?? null;
 }
 
+function splitInsightBody(body: string): string[] {
+  return body
+    .split(/\s*[\n·|]\s*|\s+—\s+|(?<=[.!])\s+/)
+    .map((s) => s.trim())
+    .filter((s) => s.length > 4);
+}
+
+function InsightPanel({
+  insight,
+  optionId,
+}: {
+  insight: QuizOptionInsight;
+  optionId?: string;
+}) {
+  const proof = insight.proof;
+  const isPrint =
+    insight.variant === "print" || (Boolean(proof?.imageUrl) && !proof?.quote);
+  const proofUrl =
+    (optionId ? QUIZ_INSIGHT_PROOFS[optionId] : undefined) ??
+    resolveQuizProofImageUrl(proof?.imageUrl) ??
+    (isPrint ? QUIZ_PROOF_IMAGES[2] : undefined);
+  const bullets = splitInsightBody(insight.body);
+
+  return (
+    <div className="overflow-hidden rounded-2xl border border-orange-200 bg-white shadow-[0_8px_32px_rgba(242,162,24,0.12)]">
+      <div className="flex items-center gap-2 bg-gradient-to-r from-[#f2a218] to-[#e07a00] px-4 py-2.5 text-white">
+        <Zap className="h-4 w-4 shrink-0 fill-white" aria-hidden />
+        <span className="text-[11px] font-bold uppercase tracking-[0.14em] sm:text-xs">
+          {insight.eyebrow ?? "Prova real"} · resultado de aluno
+        </span>
+      </div>
+
+      <div className="space-y-4 bg-gradient-to-b from-orange-50/80 to-white p-4 sm:p-5">
+        <ul className="space-y-3">
+          {bullets.map((line) => (
+            <li key={line} className="flex items-start gap-3 text-[15px] leading-snug text-[#222]">
+              <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#f2a218]/15">
+                <CheckCircle2 className="h-4 w-4 text-[#e07a00]" aria-hidden />
+              </span>
+              <span>{line}</span>
+            </li>
+          ))}
+        </ul>
+
+        {isPrint && proofUrl && (
+          <div className="relative pt-2">
+            <div className="absolute left-3 top-0 z-10 inline-flex items-center gap-1.5 rounded-full bg-[#00a650] px-3 py-1 text-[10px] font-bold uppercase tracking-wide text-white shadow-md sm:text-[11px]">
+              <TrendingUp className="h-3.5 w-3.5" aria-hidden />
+              Faturamento comprovado
+            </div>
+            <figure className="overflow-hidden rounded-xl border-2 border-[#f2a218]/30 bg-white shadow-md">
+              <img
+                src={proofUrl}
+                alt="Resultado real de aluno Ascend Club"
+                className="block h-auto w-full"
+                loading="eager"
+                decoding="async"
+              />
+            </figure>
+            <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-[11px] font-medium text-[#888]">
+              <Globe2 className="h-3.5 w-3.5 text-[#f2a218]" aria-hidden />
+              Print verificado · resultado real
+            </p>
+          </div>
+        )}
+
+        {optionId === "desconfianca" && (
+          <TestimonialVideoRow videos={[QUIZ_TESTIMONIAL_VIDEOS[0]]} max={1} />
+        )}
+
+        {optionId === "sozinho" && (
+          <TestimonialVideoRow videos={[QUIZ_TESTIMONIAL_VIDEOS[3]]} max={1} />
+        )}
+
+        {!isPrint && proof && <InsightProof insight={insight} />}
+      </div>
+    </div>
+  );
+}
+
 function InsightProof({ insight }: { insight: QuizOptionInsight }) {
   const proof = insight.proof;
   if (!proof) return null;
@@ -254,10 +489,11 @@ function InsightProof({ insight }: { insight: QuizOptionInsight }) {
     insight.variant === "print" || (Boolean(proof.imageUrl) && !proof.quote);
 
   if (isPrint && proof.imageUrl) {
+    const src = resolveQuizProofImageUrl(proof.imageUrl) ?? proof.imageUrl;
     return (
       <figure className="overflow-hidden rounded-xl border border-gray-200 bg-white min-h-[12rem] shadow-sm">
         <img
-          src={proof.imageUrl}
+          src={src}
           alt={proof.imageCaption ?? "Print real de resultado"}
           className="w-full max-h-[22rem] object-contain object-top bg-[#f5f5f5]"
           loading="lazy"
@@ -377,10 +613,10 @@ export default function AdsQuizFunnel() {
   useEffect(() => {
     void fetch("/api/quiz/config")
       .then((r) => (r.ok ? r.json() : Promise.reject()))
-      .then((j: { config: AdsQuizConfig }) => setConfig(j.config))
+      .then((j: { config: AdsQuizConfig }) => setConfig(normalizeAdsQuizConfig(j.config)))
       .catch(() => {
         setLoadError(true);
-        setConfig(DEFAULT_ADS_QUIZ_CONFIG);
+        setConfig(normalizeAdsQuizConfig(DEFAULT_ADS_QUIZ_CONFIG));
       });
   }, []);
 
@@ -720,7 +956,7 @@ export default function AdsQuizFunnel() {
         <header className="relative z-10 px-4 sm:px-6 pt-5 pb-3">
           <div className="mx-auto flex max-w-lg items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f2a218]">Ascend Club</p>
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-[#f2a218]">Ascend</p>
               {progressDone > 0 && (
                 <p className="mt-0.5 text-[10px] text-[#999] font-inter">{stepLabel}</p>
               )}
@@ -757,11 +993,15 @@ export default function AdsQuizFunnel() {
         {phase === "landing" && (
           <StepShell stepKey="landing">
             <div className="funnel-landing-inlead mx-auto w-full max-w-[640px] text-center">
-              <h1 className="text-[1.3rem] font-extrabold leading-[1.28] tracking-tight text-[#111] sm:text-[1.55rem]">
+              <LandingUrgencyBadge label={landing.eyebrow} />
+
+              <h1 className="text-[1.35rem] font-extrabold leading-[1.26] tracking-tight text-[#111] sm:text-[1.65rem]">
                 {renderHighlightedHeadline(landing.headline)}
               </h1>
 
-              <p className="mt-3 mb-5 text-sm italic leading-relaxed text-[#555] sm:text-[0.95rem]">
+              <LandingPixPreview />
+
+              <p className="mb-5 text-sm font-medium leading-relaxed text-[#444] sm:text-base">
                 {landing.subheadline}
               </p>
 
@@ -785,14 +1025,17 @@ export default function AdsQuizFunnel() {
               <button
                 type="button"
                 onClick={startQuiz}
-                className="funnel-landing-inlead-cta mt-5 w-full"
+                className="funnel-landing-inlead-cta funnel-landing-inlead-cta-pulse mt-5 w-full"
               >
                 {landing.ctaLabel}
                 <ArrowRight className="h-5 w-5 shrink-0" aria-hidden />
               </button>
 
               {landing.socialProof && (
-                <p className="mt-3 text-xs italic text-[#777] sm:text-sm">{landing.socialProof}</p>
+                <p className="mt-3 flex items-center justify-center gap-1.5 text-xs font-semibold text-[#666] sm:text-sm">
+                  <Users className="h-3.5 w-3.5 text-[#f2a218]" aria-hidden />
+                  {landing.socialProof}
+                </p>
               )}
 
               {loadError && (
@@ -865,16 +1108,18 @@ export default function AdsQuizFunnel() {
             {currentStep.type === "dynamic" && (
               <>
                 <FunnelTitle>{currentStep.title}</FunnelTitle>
-                {currentStep.imageUrl && (
-                  <figure className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
-                    <img
-                      src={currentStep.imageUrl}
-                      alt="Print real de resultado"
-                      className="max-h-48 w-full object-contain object-top bg-[#f5f5f5]"
-                      loading="lazy"
-                    />
-                  </figure>
-                )}
+                <EvidenceProofStrip
+                  urls={
+                    currentStep.imageUrl
+                      ? [
+                          resolveQuizProofImageUrl(currentStep.imageUrl) ?? currentStep.imageUrl,
+                          ...QUIZ_RESULT_PROOFS.slice(0, 2),
+                        ]
+                      : QUIZ_RESULT_PROOFS.slice(0, 3)
+                  }
+                  label="Prints reais — adaptados ao seu perfil"
+                  compact
+                />
                 <div className={cn(funnel.card, "funnel-marker-solid")}>
                   <p className="whitespace-pre-line text-base leading-relaxed text-[#444] font-inter">
                     {resolveDynamicBody(currentStep.body, answers, questionSteps)}
@@ -889,6 +1134,13 @@ export default function AdsQuizFunnel() {
 
             {currentStep.type === "mechanism" && (
               <>
+                <FunnelEyebrow>PROVA REAL ANTES DO SEU PLANO</FunnelEyebrow>
+                <TestimonialVideoRow videos={QUIZ_TESTIMONIAL_VIDEOS} max={2} />
+                <EvidenceProofStrip
+                  urls={[QUIZ_PROOF_FATURAMENTO[5], QUIZ_PROOF_NOTIFICACOES[2], QUIZ_PROOF_FATURAMENTO[12]]}
+                  label="Vendas e faturamento de alunos"
+                  compact
+                />
                 <FunnelTitle>{currentStep.title}</FunnelTitle>
                 {currentStep.intro && <FunnelHint>{currentStep.intro}</FunnelHint>}
                 <div className="space-y-3">
@@ -979,22 +1231,11 @@ export default function AdsQuizFunnel() {
 
         {phase === "insight" && activeInsight && (
           <StepShell stepKey={`insight-${insightMeta?.stepId ?? "x"}`}>
-            {activeInsight.eyebrow && <FunnelEyebrow>{activeInsight.eyebrow}</FunnelEyebrow>}
             <FunnelTitle>{activeInsight.title}</FunnelTitle>
-            <div
-              className={cn(
-                funnel.card,
-                activeInsight.variant === "objection" && "funnel-marker-solid border-orange-200 bg-orange-50/60",
-              )}
-            >
-              <p className="whitespace-pre-line text-base leading-relaxed text-[#444] font-inter">
-                {activeInsight.body}
-              </p>
-            </div>
-            <InsightProof insight={activeInsight} />
+            <InsightPanel insight={activeInsight} optionId={insightMeta?.optionId} />
             <button type="button" onClick={finishInsight} className={funnel.cta}>
               {activeInsight.ctaLabel ?? "Continuar"}
-              <ArrowRight className="w-5 h-5" />
+              <ArrowRight className="h-5 w-5" />
             </button>
           </StepShell>
         )}
@@ -1038,6 +1279,11 @@ export default function AdsQuizFunnel() {
                   </div>
                 ))}
               </div>
+              <EvidenceProofStrip
+                urls={[QUIZ_RESULT_PROOFS[calcMsgIndex % QUIZ_RESULT_PROOFS.length]]}
+                label="Enquanto montamos seu plano…"
+                compact
+              />
             </div>
           </StepShell>
         )}
@@ -1120,21 +1366,35 @@ export default function AdsQuizFunnel() {
             </div>
 
             {testimonials.length > 0 && (
-              <div className="space-y-3">
-                {testimonials.map((t) => (
-                  <blockquote
-                    key={`${t.name}-${t.quote.slice(0, 24)}`}
-                    className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4"
-                  >
-                    <p className="text-sm italic leading-relaxed text-[#555] font-inter">
-                      &ldquo;{t.quote}&rdquo;
-                    </p>
-                    <footer className="mt-2 text-xs text-[#888] font-inter">
-                      <span className="font-semibold text-[#444]">{t.name}</span>
-                      {t.role ? ` · ${t.role}` : ""}
-                    </footer>
-                  </blockquote>
-                ))}
+              <div className="space-y-4">
+                <FunnelEyebrow>DEPOIMENTOS REAIS</FunnelEyebrow>
+                <div className="space-y-4">
+                  {testimonials.map((t) => (
+                    <div key={`${t.name}-${t.quote.slice(0, 24)}`}>
+                      {"videoUrl" in t && t.videoUrl ? (
+                        <TestimonialVideoCard
+                          item={{
+                            name: t.name,
+                            role: t.role,
+                            quote: t.quote,
+                            videoUrl: t.videoUrl,
+                          }}
+                        />
+                      ) : (
+                        <blockquote className="rounded-xl border border-gray-200 bg-gray-50 px-4 py-4">
+                          <p className="text-sm italic leading-relaxed text-[#555] font-inter">
+                            &ldquo;{t.quote}&rdquo;
+                          </p>
+                          <footer className="mt-2 text-xs text-[#888] font-inter">
+                            <span className="font-semibold text-[#444]">{t.name}</span>
+                            {t.role ? ` · ${t.role}` : ""}
+                          </footer>
+                        </blockquote>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                <EvidenceProofStrip urls={QUIZ_RESULT_PROOFS} label="Mais resultados verificados" compact />
               </div>
             )}
 

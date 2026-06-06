@@ -12,18 +12,18 @@ export const quizInsightVariantSchema = z.enum([
   "mentor",
 ]);
 
-/** Prints reais (mesmos da landing / carrossel de prova social). */
+/** Prints reais — servidos em /media/quiz-evidence (importados dos depoimentos). */
 export const QUIZ_PROOF_IMAGES = [
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/3b767c484_WhatsAppImage2026-04-07at1736091.jpeg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/1b4072a11_WhatsAppImage2026-04-07at1736072.jpg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/6505d4f64_WhatsAppImage2026-04-07at173605.jpeg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/e01fb5171_WhatsAppImage2026-04-07at173322.jpeg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/e7406693d_WhatsAppImage2026-04-07at173248.jpeg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/217fb4eca_WhatsAppImage2026-04-07at1732481.jpeg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/f51025a66_WhatsAppImage2026-04-05at221549.jpeg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/c4cb3a1b5_WhatsAppImage2026-04-07at1734081.jpg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/152cafdb7_WhatsAppImage2026-04-07at173409.jpg",
-  "https://media.base44.com/images/public/69f23854d0500399d6881fb0/dbced6810_WhatsAppImage2026-04-07at1734082.jpg",
+  "/media/quiz-evidence/proof/faturamento/fat-01.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-04.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-06.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-11.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-15.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-03.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-20.jpeg",
+  "/media/quiz-evidence/proof/mencoes-erick/erick-01.jpeg",
+  "/media/quiz-evidence/proof/notificacoes/notif-08.jpeg",
+  "/media/quiz-evidence/proof/faturamento/fat-25.jpeg",
 ] as const;
 
 export const quizInsightProofSchema = z.object({
@@ -170,9 +170,10 @@ export const adsQuizConfigSchema = z.object({
         name: z.string().min(1).max(80),
         role: z.string().max(120).optional(),
         quote: z.string().min(1).max(400),
+        videoUrl: z.string().max(500).optional(),
       }),
     )
-    .max(6)
+    .max(10)
     .optional(),
   contact: z.object({
     nameTitle: z.string().min(1).max(120),
@@ -186,6 +187,73 @@ export const adsQuizConfigSchema = z.object({
 });
 
 export type AdsQuizConfig = z.infer<typeof adsQuizConfigSchema>;
+
+/** Converte paths legados `/media/proof/proof-03.jpeg` → CDN. */
+export function resolveQuizProofImageUrl(url: string | undefined): string | undefined {
+  if (!url) return undefined;
+  if (url.startsWith("http://") || url.startsWith("https://")) return url;
+  const match = url.match(/proof-(\d{1,2})/i);
+  if (match) {
+    const idx = Number.parseInt(match[1], 10) - 1;
+    if (idx >= 0 && idx < QUIZ_PROOF_IMAGES.length) return QUIZ_PROOF_IMAGES[idx];
+  }
+  return url;
+}
+
+function normalizeInsightProof(
+  proof: z.infer<typeof quizInsightProofSchema> | undefined,
+): z.infer<typeof quizInsightProofSchema> | undefined {
+  if (!proof) return proof;
+  const imageUrl = resolveQuizProofImageUrl(proof.imageUrl);
+  return imageUrl === proof.imageUrl ? proof : { ...proof, imageUrl };
+}
+
+const STALE_LANDING_MARKERS = [
+  "monta seu plano",
+  "Veja se o Ascend Club",
+  "resolve o que você busca",
+  "próximo passo para construir",
+  "sócio de uma loja",
+  "Descubra como ser",
+  "Ascend Club",
+  "PIX semanais",
+];
+
+function shouldRefreshLandingCopy(headline: string): boolean {
+  return STALE_LANDING_MARKERS.some((marker) => headline.includes(marker));
+}
+
+/** Corrige URLs de print quebradas em configs salvas no Supabase. */
+export function normalizeAdsQuizConfig(config: AdsQuizConfig): AdsQuizConfig {
+  const landing = shouldRefreshLandingCopy(config.landing.headline)
+    ? { ...config.landing, ...DEFAULT_ADS_QUIZ_CONFIG.landing }
+    : config.landing;
+
+  return {
+    ...config,
+    landing,
+    testimonials:
+      config.testimonials && config.testimonials.length > 0
+        ? config.testimonials
+        : DEFAULT_ADS_QUIZ_CONFIG.testimonials,
+    steps: config.steps.map((step) => {
+      if (step.type === "choice" || step.type === "multichoice") {
+        return {
+          ...step,
+          options: step.options.map((opt) =>
+            opt.insight
+              ? { ...opt, insight: { ...opt.insight, proof: normalizeInsightProof(opt.insight.proof) } }
+              : opt,
+          ),
+        };
+      }
+      if ("imageUrl" in step && step.imageUrl) {
+        return { ...step, imageUrl: resolveQuizProofImageUrl(step.imageUrl) };
+      }
+      return step;
+    }),
+  };
+}
 export type AdsQuizStep = AdsQuizConfig["steps"][number];
 export type QuizOptionInsight = z.infer<typeof quizOptionInsightSchema>;
 
@@ -282,13 +350,13 @@ export function resolveResultDisplay(
 export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
   version: 1,
   landing: {
-    eyebrow: "Diagnóstico gratuito · Ascend Club",
+    eyebrow: "Diagnóstico gratuito · 2 minutos",
     headline:
-      "Descubra como o **Ascend Club** monta seu plano de **renda online** com **loja pronta** e mentoria ao vivo",
+      "Você **não monta loja** nem caça produto — só vende. E pode receber até [[R$ 2.554/semana]] no **PIX**, com tudo pronto no nicho que escolher.",
     subheadline:
-      "Mesmo começando do zero, sem precisar aparecer, sem investir em anúncios e mesmo que você nunca tenha vendido nada online",
-    ctaLabel: "COMEÇAR AGORA",
-    socialProof: "⚡ Mais de 500 alunos já no programa — loja, vendas e mentoria ao vivo",
+      "Responda o quiz e veja se o modelo encaixa no seu perfil: loja entregue, produtos selecionados e mentoria ao vivo quando travar — mesmo zerado, sem aparecer e sem gastar com anúncio.",
+    ctaLabel: "QUERO MEU DIAGNÓSTICO",
+    socialProof: "847 pessoas já fizeram · loja pronta + suporte ao vivo",
   },
   steps: [
     {
@@ -337,11 +405,10 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
           insight: {
             eyebrow: "SEU PLANO",
             title: "Loja online que roda de qualquer lugar",
-            body: "Você vende pela internet com loja pronta e produtos selecionados — sem escritório, sem chefe, sem horário fixo. A mentoria te ensina a divulgar e destrava nas calls ao vivo.",
+            body: "Loja pronta — venda de qualquer lugar, sem escritório fixo. Produtos selecionados no nicho, sem montar catálogo do zero. Mentoria ao vivo 2x por semana quando travar na divulgação.",
             variant: "print",
             proof: {
               imageUrl: QUIZ_PROOF_IMAGES[2],
-              imageCaption: "Print real — liberdade com loja online",
             },
           },
         },
@@ -811,7 +878,38 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
       ],
     },
   ],
-  testimonials: [],
+  testimonials: [
+    {
+      name: "Izabela",
+      role: "Aluno Ascend Club",
+      quote: "Nunca vendi online antes. Hoje recebo PIX toda semana com a loja que me entregaram pronta.",
+      videoUrl: "/media/quiz-evidence/videos/06-video-izabela.mp4",
+    },
+    {
+      name: "Renata",
+      role: "Aluno Ascend Club",
+      quote: "A mentoria ao vivo com o Erick destrava na hora — não é curso gravado que você abandona.",
+      videoUrl: "/media/quiz-evidence/videos/10-video-renata-mensão-erick.mp4",
+    },
+    {
+      name: "Eros",
+      role: "10 vendas no programa",
+      quote: "Bati 10 vendas seguindo o passo a passo. Loja pronta, produtos bons, só aprendi a divulgar.",
+      videoUrl: "/media/quiz-evidence/videos/01-eros-10-vendas.mp4",
+    },
+    {
+      name: "Karen",
+      role: "Aluno Ascend Club",
+      quote: "Trabalho de casa, no meu ritmo, e as vendas vão chegando no PIX.",
+      videoUrl: "/media/quiz-evidence/videos/07-video-karen.mp4",
+    },
+    {
+      name: "Claudini",
+      role: "Aluno Ascend Club",
+      quote: "Já tinha tentado sozinho e travado. Dessa vez veio loja + suporte ao vivo.",
+      videoUrl: "/media/quiz-evidence/videos/02-video-claudini.mp4",
+    },
+  ],
   contact: {
     nameTitle: "Como posso te chamar?",
     nameHint: "Só seu primeiro nome — para personalizar seu acesso.",

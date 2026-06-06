@@ -3,6 +3,7 @@ import {
   ADS_QUIZ_SLUG,
   adsQuizConfigSchema,
   DEFAULT_ADS_QUIZ_CONFIG,
+  normalizeAdsQuizConfig,
   type AdsQuizConfig,
 } from "@crm-ascend/validation";
 
@@ -17,7 +18,7 @@ export async function loadAdsQuizConfig(): Promise<AdsQuizConfig | null> {
 
     if (error) {
       console.error("[ads-quiz] load error", error.message);
-      return DEFAULT_ADS_QUIZ_CONFIG;
+      return normalizeAdsQuizConfig(DEFAULT_ADS_QUIZ_CONFIG);
     }
 
     if (!data?.is_active) return null;
@@ -25,12 +26,12 @@ export async function loadAdsQuizConfig(): Promise<AdsQuizConfig | null> {
     const parsed = adsQuizConfigSchema.safeParse(data.schema);
     if (!parsed.success) {
       console.error("[ads-quiz] invalid schema", parsed.error.flatten());
-      return DEFAULT_ADS_QUIZ_CONFIG;
+      return normalizeAdsQuizConfig(DEFAULT_ADS_QUIZ_CONFIG);
     }
 
-    return parsed.data;
+    return normalizeAdsQuizConfig(parsed.data);
   } catch (e) {
     console.error("[ads-quiz] load failed", e);
-    return DEFAULT_ADS_QUIZ_CONFIG;
+    return normalizeAdsQuizConfig(DEFAULT_ADS_QUIZ_CONFIG);
   }
 }
