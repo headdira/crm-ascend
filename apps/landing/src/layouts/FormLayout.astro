@@ -51,15 +51,15 @@ const pageTitle = title === "Ascend Club" ? title : `${title} | Ascend Club`;
       }
       html,
       body {
-        background: #000;
+        background: #fff;
       }
     </style>
   </head>
   <body
-    class="form-funnel font-inter antialiased bg-black text-white"
+    class="form-funnel font-inter antialiased bg-white text-[#111]"
     style="font-family: var(--font-inter-family)"
   >
-    <div class="form-funnel-shell relative min-h-screen bg-black overflow-x-hidden">
+    <div class="form-funnel-shell relative min-h-screen bg-white overflow-x-hidden">
       <SalesJsonLd />
       <slot />
       <CookieConsent client:idle />
