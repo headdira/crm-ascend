@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { ArrowRight, Check, Clock, Shield, Zap } from "lucide-react";
 import Ticker from "./Ticker";
+import { formatOfferPrice, offer } from "@/lib/sales/knowledge";
 import CheckoutLink from "./CheckoutLink";
 
 const included = [
@@ -52,9 +53,11 @@ export default function PricingCTA() {
             </div>
 
             <div className="text-center mb-10">
-              <p className="font-inter text-white/30 line-through text-lg mb-1">De R$497</p>
+              <p className="font-inter text-white/30 line-through text-lg mb-1">
+                De {formatOfferPrice(offer.priceWasBrl)}
+              </p>
               <p className="font-inter font-black text-7xl sm:text-8xl text-primary leading-none">
-                R$197
+                {formatOfferPrice(offer.priceBrl)}
               </p>
               <p className="font-inter text-white/40 text-sm mt-2 uppercase tracking-widest">
                 1 ano completo · Pagamento único

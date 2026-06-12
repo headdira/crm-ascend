@@ -11,6 +11,7 @@ import {
   hashMetaFirstName,
   hashMetaPhone,
 } from "./meta-hash";
+import { offer } from "./knowledge";
 
 export type MetaUserData = {
   email?: string;
@@ -151,7 +152,7 @@ export async function sendMetaLeadEvent(
     eventName: "Lead",
     customData: {
       currency: "BRL",
-      value: 197,
+      value: offer.priceBrl,
       content_name: "Ascend Club",
       ...input.customData,
     },

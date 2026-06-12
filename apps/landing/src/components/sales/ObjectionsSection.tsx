@@ -3,14 +3,16 @@
 import { motion } from "framer-motion";
 import { CheckCircle2 } from "lucide-react";
 
+import { offer } from "@/lib/sales/knowledge";
+
 const objections = [
   {
     q: '"Não tenho experiência…"',
     a: "Perfeito. A mentoria foi criada exatamente para iniciantes. Você será guiado do absoluto zero com passo a passo claro.",
   },
   {
-    q: '"R$197 é muito pra mim agora…"',
-    a: "São menos de R$0,54 por dia para 1 ano completo de mentoria, comunidade e suporte. O menor investimento com o maior retorno.",
+    q: '"R$49,99 é muito pra mim agora…"',
+    a: `${offer.dailyCostNote} para 1 ano completo de mentoria, comunidade e suporte. O menor investimento com o maior retorno.`,
   },
   {
     q: '"Já comprei cursos e não funcionou…"',

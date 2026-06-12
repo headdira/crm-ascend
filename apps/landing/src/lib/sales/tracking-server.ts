@@ -10,6 +10,7 @@ import {
 } from "@/lib/sales/meta-capi";
 import { SESSION_COOKIE } from "@/lib/sales/session-constants";
 import { parseAttributionCookie } from "@/lib/sales/utm";
+import { offer } from "@/lib/sales/knowledge";
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -141,7 +142,7 @@ export async function processMetaCapiForLandingEvent(
     },
     customData: {
       currency: "BRL",
-      value: 197,
+      value: offer.priceBrl,
       content_name: "Ascend Club",
       cta: typeof input.payload?.cta === "string" ? input.payload.cta : undefined,
       utm_source: utm.utm_source,

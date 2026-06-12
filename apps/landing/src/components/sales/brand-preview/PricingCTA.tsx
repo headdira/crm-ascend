@@ -4,7 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Check, Clock, Shield, Zap } from "lucide-react";
 import Ticker from "../Ticker";
 import BrandCheckoutLink from "./BrandCheckoutLink";
-import { brandSurfaces, brandTypography } from "./tokens";
+import { formatOfferPrice, offer } from "@/lib/sales/knowledge";
 
 const included = [
   "1 ano completo de acesso",
@@ -53,8 +53,10 @@ export default function PricingCTA() {
             </div>
 
             <div className="text-center mb-10">
-              <p className="font-inter text-white/30 line-through text-lg mb-1">De R$497</p>
-              <p className={`${brandTypography.price} sm:text-8xl`}>R$197</p>
+              <p className="font-inter text-white/30 line-through text-lg mb-1">
+                De {formatOfferPrice(offer.priceWasBrl)}
+              </p>
+              <p className={`${brandTypography.price} sm:text-8xl`}>{formatOfferPrice(offer.priceBrl)}</p>
               <p className="font-inter text-white/40 text-sm mt-2 uppercase tracking-widest">
                 1 ano completo · Pagamento único
               </p>

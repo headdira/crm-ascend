@@ -408,7 +408,7 @@ export function AdsQuizEditor({ form, publicUrl }: { form: AdsQuizFormRecord; pu
             {step.type === "offer" && (
               <>
                 <Field>
-                  <FieldLabel>Preço atual (ex: R$60)</FieldLabel>
+                  <FieldLabel>Preço atual (ex: R$49,99)</FieldLabel>
                   <Input
                     value={step.priceLabel}
                     onChange={(e) => {

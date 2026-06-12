@@ -436,7 +436,7 @@ Exemplos extraídos da landing — use como **contrato visual** em novas telas.
 | Logo PNG | `LOGO_URL` em `apps/crm/src/lib/sales/knowledge.ts` |
 | Hero mentor | `HERO_IMAGE` (mesmo arquivo) |
 | Ícones marca | `docs/brand/icons/*.png` |
-| Checkout | `https://pay.kiwify.com.br/26ERa3r` |
+| Checkout | `https://pay.kiwify.com.br/3yXXBij` |
 
 ---
 

@@ -146,4 +146,4 @@ Idempotência: kiwify order id
 Env sugerido: KIWIFY_CLIENT_ID SECRET ACCOUNT_ID WEBHOOK_TOKEN
 Rota sugerida: apps/crm/src/app/api/webhooks/kiwify/route.ts
 Backfill: GET /sales updated_at janela 90 dias
-Checkout atual: https://pay.kiwify.com.br/26ERa3r
+Checkout atual: https://pay.kiwify.com.br/3yXXBij

@@ -1,6 +1,7 @@
 "use client";
 
 import { getMetaPixelId } from "./meta-config";
+import { offer } from "./knowledge";
 
 declare global {
   interface Window {
@@ -71,7 +72,7 @@ export function trackMetaInitiateCheckout(eventId: string, cta?: string): void {
     {
       content_name: "Ascend Club",
       currency: "BRL",
-      value: 197,
+      value: offer.priceBrl,
       ...(cta ? { content_category: cta } : {}),
     },
     eventId,
@@ -84,7 +85,7 @@ export function trackMetaLead(eventId: string, cta?: string): void {
     {
       content_name: "Ascend Club",
       currency: "BRL",
-      value: 197,
+      value: offer.priceBrl,
       ...(cta ? { content_category: cta } : {}),
     },
     eventId,

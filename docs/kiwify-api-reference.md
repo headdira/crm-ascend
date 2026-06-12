@@ -481,7 +481,7 @@ Documentação em `/members-area/` — personalização de temas da área de mem
 | Lead pré-checkout | `apps/landing` → `POST /api/sales/lead` | Captura e-mail/telefone antes do checkout Kiwify |
 | `reached_kiwify_at` | tabela `leads` | Marca que o lead foi ao checkout |
 | Jornada landing | `apps/crm/src/lib/landing-journey.ts` | Timeline de abandono vs checkout |
-| Checkout URL | `https://pay.kiwify.com.br/26ERa3r` | Link de pagamento |
+| Checkout URL | `https://pay.kiwify.com.br/3yXXBij` | Link de pagamento |
 | Aluno | `students` | PII + hashes; status `prospect` → ativo via contrato |
 | Contrato | `createContract` + `activateContract` | Linhas de produto + enrollments |
 | Casos | `cases` + `services.code` | Ex.: `COMERCIAL`, `PED-SUPORTE`, `FIN-BOLETO` |

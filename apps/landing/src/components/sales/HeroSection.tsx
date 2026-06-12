@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Clock3, Flame, ShieldCheck, Star } from "lucide-react";
 import CheckoutLink from "./CheckoutLink";
+import { formatOfferPrice, offer } from "@/lib/sales/knowledge";
 import SalesImage from "./SalesImage";
 import Ticker from "./Ticker";
 import { HERO_IMAGE, LOGO_URL } from "./constants";
@@ -124,16 +125,18 @@ export default function HeroSection() {
             </div>
 
             <div className="mt-12">
-              <p className="text-white/25 line-through text-lg font-medium">De R$497</p>
+              <p className="text-white/25 line-through text-lg font-medium">
+                De {formatOfferPrice(offer.priceWasBrl)}
+              </p>
               <div className="flex items-end gap-3">
                 <p className="text-primary font-black text-7xl leading-none drop-shadow-[0_0_25px_rgba(255,184,0,0.35)]">
-                  R$197
+                  {formatOfferPrice(offer.priceBrl)}
                 </p>
                 <span className="text-white/40 text-sm mb-2 uppercase tracking-wider">
                   pagamento único
                 </span>
               </div>
-              <p className="text-primary text-sm font-semibold mt-2">Menos de R$0,54 por dia</p>
+              <p className="text-primary text-sm font-semibold mt-2">{offer.dailyCostNote}</p>
             </div>
 
             <div className="mt-10">
@@ -166,7 +169,7 @@ export default function HeroSection() {
                 { value: "500+", label: "Alunos" },
                 { value: "2x", label: "Calls Semanais" },
                 { value: "24/7", label: "Suporte" },
-                { value: "R$197", label: "1 Ano Completo" },
+                { value: formatOfferPrice(offer.priceBrl), label: "1 Ano Completo" },
               ].map((item) => (
                 <div
                   key={item.label}
