@@ -8,6 +8,7 @@ import SalesImage from "../SalesImage";
 import Ticker from "../Ticker";
 import { HERO_IMAGE, HERO_IMAGE_WEBP, LOGO_URL } from "../constants";
 import { formatOfferPrice, offer } from "@/lib/sales/knowledge";
+import { useLightExperience } from "@/hooks/use-light-experience";
 
 const navLinks = [
   { href: "#beneficios", label: "Benefícios" },

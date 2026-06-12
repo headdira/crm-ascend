@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Check, Clock, Shield, Zap } from "lucide-react";
 import Ticker from "../Ticker";
 import BrandCheckoutLink from "./BrandCheckoutLink";
+import { brandSurfaces, brandTypography } from "./tokens";
 import { formatOfferPrice, offer } from "@/lib/sales/knowledge";
 
 const included = [
