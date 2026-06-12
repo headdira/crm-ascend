@@ -25,7 +25,6 @@ export async function loadAdsQuizConfig(): Promise<AdsQuizConfig | null> {
 
     const parsed = parseAdsQuizConfig(data.schema);
     if (!parsed.success) {
-      console.error("[ads-quiz] invalid schema", parsed.error.flatten());
       return normalizeAdsQuizConfig(DEFAULT_ADS_QUIZ_CONFIG);
     }
 

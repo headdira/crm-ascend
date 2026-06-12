@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   Loader2,
   Lock,
-  Sparkles,
   TrendingUp,
   Users,
   ChevronLeft,
@@ -623,14 +622,6 @@ function useCountUp(target: string, run: boolean): string {
   return display;
 }
 
-function chipLabelForStep(step: AdsQuizStep): string {
-  if (step.type !== "choice" && step.type !== "multichoice") return step.id;
-  const title = step.title.trim();
-  const beforeQ = title.split("?")[0]?.trim() ?? title;
-  if (beforeQ.length <= 28) return beforeQ;
-  return step.id.charAt(0).toUpperCase() + step.id.slice(1).replace(/_/g, " ");
-}
-
 function optionLabelForStep(step: AdsQuizStep, optionId: string): string | null {
   if (step.type !== "choice" && step.type !== "multichoice") return null;
   return step.options.find((o) => o.id === optionId)?.label ?? null;
@@ -734,7 +725,7 @@ export default function AdsQuizFunnel() {
   }, [phase, stepIndex, leadStep, questionSteps.length, progressTotal]);
 
   const progressPct = progressTotal > 0 ? Math.round((progressDone / progressTotal) * 100) : 0;
-  const animatedPrice = useCountUp(offerStep?.priceLabel ?? "R$60", phase === "result" && resultViewed);
+  const animatedPrice = useCountUp(offerStep?.priceLabel ?? "R$49,99", phase === "result" && resultViewed);
 
   useEffect(() => {
     scrollFunnelToTop();
@@ -880,30 +871,6 @@ export default function AdsQuizFunnel() {
     setLeadStep("name");
     setPhase("lead");
   };
-
-  const answerChips = useMemo(() => {
-    return questionSteps
-      .filter(
-        (s): s is Extract<AdsQuizStep, { type: "choice" | "multichoice" }> =>
-          s.type === "choice" || s.type === "multichoice",
-      )
-      .map((step) => {
-        const raw = answers[step.id];
-        if (!raw) return null;
-        const label =
-          step.type === "multichoice"
-            ? raw
-                .split(",")
-                .filter(Boolean)
-                .map((id) => optionLabelForStep(step, id))
-                .filter(Boolean)
-                .join(", ")
-            : optionLabelForStep(step, raw);
-        if (!label) return null;
-        return { key: step.id, text: `${chipLabelForStep(step)}: ${label}` };
-      })
-      .filter(Boolean) as { key: string; text: string }[];
-  }, [questionSteps, answers]);
 
   const firstNameValue = fullName.trim().split(/\s+/)[0] ?? "";
   const nameOk = fullName.trim().length >= 2;
@@ -1424,55 +1391,12 @@ export default function AdsQuizFunnel() {
 
         {phase === "result" && offerStep && (
           <StepShell stepKey="result">
-            <FunnelEyebrow>{resultConfig.eyebrow}</FunnelEyebrow>
             <FunnelTitle size="lg" gold>
               {resultConfig.headline}
             </FunnelTitle>
-            {resultConfig.badge && (
-              <div className="inline-flex items-center gap-2 funnel-eyebrow-strip px-5 py-2.5">
-                <Sparkles className="h-5 w-5 text-[#f2a218]" />
-                <span className="text-sm font-bold uppercase tracking-[0.15em] text-[#c27800]">
-                  {resultConfig.badge}
-                </span>
-              </div>
-            )}
-            {resultConfig.highlights && resultConfig.highlights.length > 0 && (
-              <ul className="funnel-marker-solid space-y-3 rounded-xl">
-                {resultConfig.highlights.map((item) => (
-                  <li key={item} className="flex items-start gap-2.5 text-[#444] font-inter">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#f2a218]" />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            )}
-            {resultConfig.reassurance && (
-              <p className="text-sm leading-relaxed text-[#666] font-inter">{resultConfig.reassurance}</p>
-            )}
 
-            {answerChips.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {answerChips.map((chip) => (
-                  <span key={chip.key} className={funnel.chip}>
-                    {chip.text}
-                  </span>
-                ))}
-              </div>
-            )}
-
-            <div className={funnel.offerCard}>
-              <h3 className="text-xl font-bold text-[#111] sm:text-2xl">{offerStep.title}</h3>
-              <p className="mt-3 text-[#666] font-inter">{offerStep.body}</p>
-
-              {offerStep.urgencyNote && (
-                <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-2.5">
-                  <p className="text-xs font-bold uppercase tracking-wider text-red-600 font-inter">
-                    {offerStep.urgencyNote}
-                  </p>
-                </div>
-              )}
-
-              <div className="mt-5 flex min-h-[4.5rem] items-end gap-3">
+            <div className={cn(funnel.offerCard, "text-center")}>
+              <div className="flex min-h-[4.5rem] items-end justify-center gap-3">
                 {offerStep.originalPriceLabel && (
                   <p className="pb-1 text-lg text-[#bbb] font-inter line-through">
                     {offerStep.originalPriceLabel}
@@ -1482,21 +1406,11 @@ export default function AdsQuizFunnel() {
                   {animatedPrice}
                 </p>
               </div>
-
               {offerStep.priceNote && (
                 <p className="mt-2 text-xs uppercase tracking-wide text-[#999] font-inter">
                   {offerStep.priceNote}
                 </p>
               )}
-
-              <ul className="mt-6 space-y-2.5 border-t border-gray-100 pt-5">
-                {offerStep.bullets.map((b) => (
-                  <li key={b} className="flex items-start gap-2.5 text-sm text-[#555] font-inter">
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-[#f2a218]" />
-                    {b}
-                  </li>
-                ))}
-              </ul>
             </div>
 
             <button type="button" onClick={() => void finishCheckout()} className={funnel.cta}>

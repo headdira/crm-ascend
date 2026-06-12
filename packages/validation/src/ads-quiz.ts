@@ -934,21 +934,13 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
     {
       id: "oferta",
       type: "offer",
-      title: "Seu plano — loja + vendas + mentoria",
-      body: "Loja online pronta com produto no nicho que você escolheu, ensino de como divulgar e vender, e 12 meses de mentoria ao vivo com suporte de perto. Pagamento único.",
+      title: "Seu plano Ascend",
+      body: "Pagamento único · 12 meses de acesso",
       priceLabel: "R$49,99",
       originalPriceLabel: "R$197",
-      urgencyNote: "Condição liberada só nesta sessão",
-      priceNote: "Menos de R$0,14 por dia · loja + mentoria 1 ano",
-      bullets: [
-        "Loja pronta com produto validado no nicho escolhido",
-        "Logo, banner e visual personalizado",
-        "Ensino de como divulgar e vender",
-        "2 calls ao vivo por semana + WhatsApp",
-        "+500 alunos no mesmo programa",
-        "Venda sem precisar aparecer ou gravar vídeo",
-      ],
-      ctaLabel: "QUERO MEU PLANO COMPLETO",
+      priceNote: "ou 8x de R$6,25 no cartão",
+      bullets: ["Loja pronta + mentoria ao vivo"],
+      ctaLabel: "LIBERAR MEU ACESSO",
     },
   ],
   calculating: {
@@ -987,16 +979,9 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
     ],
   },
   result: {
-    eyebrow: "SEU PLANO TÁ PRONTO",
-    headline: "Montamos o plano no seu problema e no seu momento",
-    badge: "PERFIL IDEAL",
-    highlights: [
-      "Loja pronta com produto no nicho que você escolheu",
-      "Ensino de venda + mentoria ao vivo — não é curso gravado",
-      "Plano feito com base no que você contou aqui",
-    ],
-      reassurance:
-      "Pelas suas respostas, seu plano tá liberado nesta sessão — enquanto esta página estiver aberta.",
+    eyebrow: "",
+    headline: "Seu plano está liberado",
+    highlights: [],
   },
   resultRules: [
     {
