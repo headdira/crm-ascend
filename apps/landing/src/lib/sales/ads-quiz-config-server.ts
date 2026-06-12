@@ -1,9 +1,9 @@
 import { createServiceSupabase } from "@crm-ascend/db";
 import {
   ADS_QUIZ_SLUG,
-  adsQuizConfigSchema,
   DEFAULT_ADS_QUIZ_CONFIG,
   normalizeAdsQuizConfig,
+  parseAdsQuizConfig,
   type AdsQuizConfig,
 } from "@crm-ascend/validation";
 
@@ -23,7 +23,7 @@ export async function loadAdsQuizConfig(): Promise<AdsQuizConfig | null> {
 
     if (!data?.is_active) return null;
 
-    const parsed = adsQuizConfigSchema.safeParse(data.schema);
+    const parsed = parseAdsQuizConfig(data.schema);
     if (!parsed.success) {
       console.error("[ads-quiz] invalid schema", parsed.error.flatten());
       return normalizeAdsQuizConfig(DEFAULT_ADS_QUIZ_CONFIG);

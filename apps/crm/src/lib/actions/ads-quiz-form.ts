@@ -4,6 +4,8 @@ import {
   ADS_QUIZ_SLUG,
   adsQuizConfigSchema,
   DEFAULT_ADS_QUIZ_CONFIG,
+  mergeAdsQuizConfigDefaults,
+  parseAdsQuizConfig,
   type AdsQuizConfig,
 } from "@crm-ascend/validation";
 import type { Json } from "@crm-ascend/db";
@@ -41,7 +43,7 @@ export async function getAdsQuizForm(): Promise<AdsQuizFormRecord> {
     };
   }
 
-  const parsed = adsQuizConfigSchema.safeParse(data.schema);
+  const parsed = parseAdsQuizConfig(data.schema);
   return {
     id: data.id,
     slug: data.slug,
@@ -57,7 +59,7 @@ export async function saveAdsQuizForm(input: {
   schema: unknown;
 }) {
   await requireStaff();
-  const schema = adsQuizConfigSchema.parse(input.schema);
+  const schema = adsQuizConfigSchema.parse(mergeAdsQuizConfigDefaults(input.schema));
   const supabase = await getSupabaseServer();
 
   const { data: existing } = await supabase

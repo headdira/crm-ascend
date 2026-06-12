@@ -1109,6 +1109,27 @@ export const DEFAULT_ADS_QUIZ_CONFIG: AdsQuizConfig = {
   },
 };
 
+/** Preenche campos obrigatórios ausentes em configs parciais salvas no Supabase. */
+export function mergeAdsQuizConfigDefaults(raw: unknown): AdsQuizConfig {
+  if (!raw || typeof raw !== "object") return DEFAULT_ADS_QUIZ_CONFIG;
+  const partial = raw as Partial<AdsQuizConfig>;
+  return {
+    ...DEFAULT_ADS_QUIZ_CONFIG,
+    ...partial,
+    landing: { ...DEFAULT_ADS_QUIZ_CONFIG.landing, ...partial.landing },
+    contact: { ...DEFAULT_ADS_QUIZ_CONFIG.contact, ...partial.contact },
+    steps: partial.steps ?? DEFAULT_ADS_QUIZ_CONFIG.steps,
+    calculating: partial.calculating ?? DEFAULT_ADS_QUIZ_CONFIG.calculating,
+    result: partial.result ?? DEFAULT_ADS_QUIZ_CONFIG.result,
+    resultRules: partial.resultRules ?? DEFAULT_ADS_QUIZ_CONFIG.resultRules,
+    testimonials: partial.testimonials ?? DEFAULT_ADS_QUIZ_CONFIG.testimonials,
+  };
+}
+
+export function parseAdsQuizConfig(raw: unknown) {
+  return adsQuizConfigSchema.safeParse(mergeAdsQuizConfigDefaults(raw));
+}
+
 export const adsQuizConfigUpdateSchema = adsQuizConfigSchema;
 
 /** Config legada (sem campos novos) — retrocompatibilidade. */
