@@ -622,11 +622,6 @@ function useCountUp(target: string, run: boolean): string {
   return display;
 }
 
-function optionLabelForStep(step: AdsQuizStep, optionId: string): string | null {
-  if (step.type !== "choice" && step.type !== "multichoice") return null;
-  return step.options.find((o) => o.id === optionId)?.label ?? null;
-}
-
 function StepShell({ children, stepKey }: { children: React.ReactNode; stepKey: string }) {
   return (
     <div key={stepKey} className="quiz-step-enter min-w-0 space-y-4 sm:space-y-6">
