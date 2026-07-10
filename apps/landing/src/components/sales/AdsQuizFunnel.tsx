@@ -654,8 +654,10 @@ export default function AdsQuizFunnel() {
   const [calcProgress, setCalcProgress] = useState(0);
   const [resultViewed, setResultViewed] = useState(false);
   const [multiDraft, setMultiDraft] = useState<string[]>([]);
+  const [bootstrapped, setBootstrapped] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const calculatingStarted = useRef(false);
+  const resultCheckpointSent = useRef(false);
   const leadCapturedRef = useRef(false);
   const quizCompletedRef = useRef(false);
   const abandonSentRef = useRef(false);
@@ -691,6 +693,71 @@ export default function AdsQuizFunnel() {
         setConfig(normalizeAdsQuizConfig(DEFAULT_ADS_QUIZ_CONFIG));
       });
   }, []);
+
+  useEffect(() => {
+    if (!config) return;
+    let cancelled = false;
+
+    void (async () => {
+      await ensureLandingSession();
+      try {
+        const res = await fetch("/api/quiz/resume", {
+          credentials: "same-origin",
+          headers: sessionHeaders(),
+        });
+        if (!res.ok || cancelled) return;
+
+        const data = (await res.json()) as {
+          resumable?: boolean;
+          phase?: "steps" | "result";
+          step_index?: number;
+          answers?: Record<string, string>;
+          contact?: {
+            full_name: string;
+            email: string;
+            phone: string;
+            age?: number;
+            income?: string;
+          };
+        };
+
+        if (!data.resumable || cancelled || !data.contact) return;
+
+        setFullName(data.contact.full_name);
+        setEmail(data.contact.email);
+        setPhone(data.contact.phone ? formatBrazilMobilePhone(data.contact.phone) : "");
+        if (data.contact.age) setAge(String(data.contact.age));
+        if (data.contact.income) setIncome(data.contact.income);
+        if (data.answers) setAnswers(data.answers);
+
+        leadCapturedRef.current = true;
+        abandonSentRef.current = false;
+
+        if (data.phase === "result") {
+          calculatingStarted.current = true;
+          setResultViewed(true);
+          setPhase("result");
+        } else {
+          setStepIndex(data.step_index ?? 0);
+          setPhase("steps");
+        }
+
+        trackEvent("quiz_resume", {
+          cta: "quiz_form",
+          phase: data.phase,
+          step_index: data.step_index,
+        });
+      } catch {
+        /* início normal */
+      } finally {
+        if (!cancelled) setBootstrapped(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [config]);
 
   const steps = config?.steps ?? [];
   const questionSteps = useMemo(() => steps.filter((s) => s.type !== "offer"), [steps]);
@@ -847,20 +914,15 @@ export default function AdsQuizFunnel() {
     };
   }, [phase, calculatingMessages.length, profileTags]);
 
-  useEffect(() => {
-    if (phase !== "result") {
-      setResultViewed(false);
-      return;
-    }
-    setResultViewed(true);
-    trackEvent("view_offer", { cta: "quiz_form" });
-  }, [phase]);
-
   const persistProgress = useCallback(
     (
       stepId: string,
       nextAnswers: Record<string, string>,
-      extra?: { profile_tags?: string[]; insights_seen?: string[] },
+      extra?: {
+        profile_tags?: string[];
+        insights_seen?: string[];
+        phase?: "steps" | "calculating" | "result";
+      },
     ) => {
       void ensureLandingSession().then(() =>
         fetch("/api/sales/lead", {
@@ -871,6 +933,7 @@ export default function AdsQuizFunnel() {
           body: JSON.stringify({
             type: "quiz_progress",
             step_id: stepId,
+            phase: extra?.phase,
             answers: {
               ...nextAnswers,
               ...(extra?.profile_tags ? { profile_tags: extra.profile_tags } : {}),
@@ -884,7 +947,25 @@ export default function AdsQuizFunnel() {
     [],
   );
 
-  const goToCalculating = () => setPhase("calculating");
+  useEffect(() => {
+    if (phase !== "result") {
+      setResultViewed(false);
+      resultCheckpointSent.current = false;
+      return;
+    }
+    setResultViewed(true);
+    trackEvent("view_offer", { cta: "quiz_form" });
+    if (!resultCheckpointSent.current) {
+      resultCheckpointSent.current = true;
+      persistProgress("oferta", answers, { profile_tags: profileTags, phase: "result" });
+    }
+  }, [phase, answers, profileTags, persistProgress]);
+
+  const goToCalculating = useCallback(() => {
+    const tags = collectProfileTags(questionSteps, answers);
+    persistProgress("post_questions", answers, { profile_tags: tags, phase: "calculating" });
+    setPhase("calculating");
+  }, [answers, questionSteps, persistProgress]);
 
   const advanceAfterQuestion = () => {
     if (stepIndex < questionSteps.length - 1) setStepIndex((i) => i + 1);
@@ -903,6 +984,8 @@ export default function AdsQuizFunnel() {
   const advanceLinearStep = () => {
     if (!currentStep) return;
     trackEvent("quiz_step", { step_id: currentStep.id, action: "continue" });
+    const tags = collectProfileTags(questionSteps, answers);
+    persistProgress(currentStep.id, answers, { profile_tags: tags });
     if (stepIndex < questionSteps.length - 1) setStepIndex((i) => i + 1);
     else goToCalculating();
   };
@@ -1066,7 +1149,7 @@ export default function AdsQuizFunnel() {
     return () => window.removeEventListener("keydown", onKey);
   }, [phase, leadStep, canAdvanceLead, nameOk, ageOk, incomeOk, emailOk, phoneOk, leadSaving]);
 
-  if (!config) {
+  if (!config || !bootstrapped) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-white">
         <Loader2 className="h-8 w-8 animate-spin text-[#f2a218]" />

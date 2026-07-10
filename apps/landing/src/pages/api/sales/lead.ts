@@ -45,6 +45,7 @@ const quizCompleteSchema = completeSchema.omit({ type: true }).extend({
 const quizProgressSchema = z.object({
   type: z.literal("quiz_progress"),
   step_id: z.string().min(1).max(64),
+  phase: z.enum(["steps", "calculating", "result"]).optional(),
   answers: z.record(z.unknown()).optional(),
   utm: z.record(z.unknown()).optional(),
 });
@@ -141,6 +142,7 @@ export const POST: APIRoute = async ({ request }) => {
     if (parsed.data.type === "quiz_progress") {
       const id = await upsertAdsQuizProgress(request, {
         step_id: parsed.data.step_id,
+        phase: parsed.data.phase,
         answers: parsed.data.answers ?? {},
         utm: (parsed.data.utm ?? {}) as Json,
       });

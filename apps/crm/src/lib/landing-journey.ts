@@ -72,6 +72,14 @@ export function describeJourneyEvent(
       const stepId = str(payload.step_id);
       return stepId ? `Abandonou o quiz em: ${stepId}` : "Abandonou o quiz";
     }
+    case "quiz_resume": {
+      const phase = str(payload.phase);
+      if (phase === "result") return "Retomou o quiz na oferta";
+      const stepIndex = payload.step_index;
+      return typeof stepIndex === "number"
+        ? `Retomou o quiz (pergunta ${stepIndex + 1})`
+        : "Retomou o quiz de onde parou";
+    }
     case "quiz_step": {
       const stepId = str(payload.step_id);
       return stepId ? `Respondeu etapa do quiz: ${stepId}` : "Avançou no quiz";

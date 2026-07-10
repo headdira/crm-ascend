@@ -425,6 +425,7 @@ export async function upsertAdsQuizProgress(
   input: {
     step_id: string;
     answers: Record<string, unknown>;
+    phase?: "steps" | "calculating" | "result";
     utm?: Json;
   },
 ) {
@@ -452,6 +453,7 @@ export async function upsertAdsQuizProgress(
     ads_quiz_step: input.step_id,
     ads_quiz_answers: input.answers,
     ads_quiz_updated_at: now,
+    ...(input.phase ? { ads_quiz_phase: input.phase } : {}),
   };
 
   if (sessionLead) {
@@ -606,6 +608,7 @@ export async function upsertAdsQuizLeadCapture(
         lead_age: input.age,
         lead_income: input.income,
         lead_captured_at: now,
+        ads_quiz_phase: "steps",
       }) as Json,
       last_event_at: now,
       status: LEAD_STATUS_QUENTE,
