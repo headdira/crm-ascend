@@ -656,6 +656,13 @@ export default function AdsQuizFunnel() {
   const [multiDraft, setMultiDraft] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const calculatingStarted = useRef(false);
+  const leadCapturedRef = useRef(false);
+  const quizCompletedRef = useRef(false);
+  const abandonSentRef = useRef(false);
+  const phaseRef = useRef<Phase>("landing");
+  const stepIndexRef = useRef(0);
+  const answersRef = useRef<Record<string, string>>({});
+  const questionStepsRef = useRef<AdsQuizStep[]>([]);
 
   useEffect(() => {
     void ensureLandingSession().then(() => {
@@ -692,6 +699,69 @@ export default function AdsQuizFunnel() {
     if (found?.type === "offer") return found;
     return DEFAULT_OFFER.type === "offer" ? DEFAULT_OFFER : null;
   }, [steps]);
+
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
+  useEffect(() => {
+    stepIndexRef.current = stepIndex;
+  }, [stepIndex]);
+  useEffect(() => {
+    answersRef.current = answers;
+  }, [answers]);
+  useEffect(() => {
+    questionStepsRef.current = questionSteps;
+  }, [questionSteps]);
+
+  const reportQuizAbandon = useCallback(() => {
+    if (quizCompletedRef.current || abandonSentRef.current || !leadCapturedRef.current) return;
+
+    const p = phaseRef.current;
+    if (p !== "steps" && p !== "calculating" && p !== "result") return;
+
+    const ans = answersRef.current;
+    const qSteps = questionStepsRef.current;
+    if (p === "steps" && Object.keys(ans).length === 0) return;
+
+    const tags = collectProfileTags(qSteps, ans);
+    const stepId =
+      p === "steps"
+        ? qSteps[stepIndexRef.current]?.id
+        : p === "calculating"
+          ? "calculating"
+          : "oferta";
+
+    abandonSentRef.current = true;
+
+    void ensureLandingSession()
+      .then(() =>
+        fetch("/api/sales/lead", {
+          method: "POST",
+          headers: sessionHeaders(),
+          credentials: "same-origin",
+          keepalive: true,
+          body: JSON.stringify({
+            type: "quiz_abandon",
+            phase: p,
+            step_id: stepId,
+            answers: {
+              ...ans,
+              ...(tags.length ? { profile_tags: tags.join(",") } : {}),
+            },
+            utm: readUtm(),
+          }),
+        }),
+      )
+      .catch(() => undefined);
+
+    trackEvent("quiz_abandon", { phase: p, step_id: stepId, cta: "quiz_form" });
+  }, []);
+
+  useEffect(() => {
+    const onLeave = () => reportQuizAbandon();
+    window.addEventListener("pagehide", onLeave);
+    return () => window.removeEventListener("pagehide", onLeave);
+  }, [reportQuizAbandon]);
 
   const currentStep: AdsQuizStep | undefined = questionSteps[stepIndex];
   const profileTags = useMemo(
@@ -905,6 +975,7 @@ export default function AdsQuizFunnel() {
         income,
         meta_event_id: leadEventId,
       });
+      leadCapturedRef.current = true;
       setPhase("steps");
       setStepIndex(0);
     } finally {
@@ -915,6 +986,7 @@ export default function AdsQuizFunnel() {
   const finishCheckout = async () => {
     if (!phoneOk || !emailOk || !nameOk || !config) return;
     setLeadSaving(true);
+    quizCompletedRef.current = true;
     const personalizedUrl = buildPersonalizedCheckoutUrl(
       {
         email: email.trim().toLowerCase(),

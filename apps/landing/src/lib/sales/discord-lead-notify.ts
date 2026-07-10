@@ -4,7 +4,7 @@ import {
   type AdsQuizStep,
 } from "@crm-ascend/validation/ads-quiz";
 
-export type DiscordLeadKind = "capture" | "complete";
+export type DiscordLeadKind = "capture" | "complete" | "abandon";
 
 export type DiscordLeadPayload = {
   kind: DiscordLeadKind;
@@ -16,6 +16,7 @@ export type DiscordLeadPayload = {
   income?: string;
   utm?: Record<string, unknown>;
   quizAnswers?: Record<string, unknown>;
+  lastStep?: string;
 };
 
 const INCOME_LABELS: Record<string, string> = {
@@ -81,13 +82,27 @@ function utmLine(utm: Record<string, unknown> | undefined): string | null {
   return parts.length > 0 ? parts.join(" · ") : null;
 }
 
+const DISCORD_KIND_META: Record<
+  DiscordLeadKind,
+  { title: string; color: number; answersLabel: string }
+> = {
+  capture: { title: "Novo lead no quiz", color: 0xf2a218, answersLabel: "" },
+  complete: { title: "Lead completou o quiz", color: 0x00a650, answersLabel: "Respostas do quiz" },
+  abandon: {
+    title: "Abandonou o quiz",
+    color: 0xe74c3c,
+    answersLabel: "Respostas parciais",
+  },
+};
+
 export async function notifyDiscordLead(payload: DiscordLeadPayload): Promise<void> {
   const webhookUrl = getDiscordWebhookUrl();
   if (!webhookUrl) return;
 
-  const isComplete = payload.kind === "complete";
-  const title = isComplete ? "Lead completou o quiz" : "Novo lead no quiz";
-  const color = isComplete ? 0x00a650 : 0xf2a218;
+  const meta = DISCORD_KIND_META[payload.kind];
+  const title = meta.title;
+  const color = meta.color;
+  const showAnswers = payload.kind === "complete" || payload.kind === "abandon";
 
   const fields: { name: string; value: string; inline?: boolean }[] = [
     { name: "Nome", value: payload.full_name.slice(0, 256), inline: true },
@@ -111,9 +126,17 @@ export async function notifyDiscordLead(payload: DiscordLeadPayload): Promise<vo
     fields.push({ name: "Campanha", value: campaign.slice(0, 1024) });
   }
 
-  if (isComplete) {
+  if (payload.lastStep) {
     fields.push({
-      name: "Respostas do quiz",
+      name: "Parou em",
+      value: payload.lastStep.slice(0, 256),
+      inline: true,
+    });
+  }
+
+  if (showAnswers) {
+    fields.push({
+      name: meta.answersLabel,
       value: formatQuizAnswerLines(payload.quizAnswers),
     });
   }

@@ -68,6 +68,10 @@ export function describeJourneyEvent(
       return "Iniciou o quiz (/form)";
     case "quiz_lead_capture":
       return "Preencheu cadastro no quiz (nome, e-mail e WhatsApp)";
+    case "quiz_abandon": {
+      const stepId = str(payload.step_id);
+      return stepId ? `Abandonou o quiz em: ${stepId}` : "Abandonou o quiz";
+    }
     case "quiz_step": {
       const stepId = str(payload.step_id);
       return stepId ? `Respondeu etapa do quiz: ${stepId}` : "Avançou no quiz";

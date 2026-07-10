@@ -3,6 +3,7 @@ import { z } from "zod";
 import type { Json } from "@crm-ascend/db";
 import { ctaLabel } from "@/lib/sales/cta-labels";
 import {
+  upsertAdsQuizAbandon,
   upsertAdsQuizLeadCapture,
   upsertAdsQuizProgress,
   upsertCheckoutAbandon,
@@ -59,12 +60,21 @@ const quizLeadCaptureSchema = z.object({
   meta: metaSchema.optional(),
 });
 
+const quizAbandonSchema = z.object({
+  type: z.literal("quiz_abandon"),
+  phase: z.enum(["steps", "calculating", "result"]),
+  step_id: z.string().max(64).optional(),
+  answers: z.record(z.unknown()).optional(),
+  utm: z.record(z.unknown()).optional(),
+});
+
 const leadSchema = z.discriminatedUnion("type", [
   completeSchema,
   abandonSchema,
   quizCompleteSchema,
   quizProgressSchema,
   quizLeadCaptureSchema,
+  quizAbandonSchema,
 ]);
 
 export const POST: APIRoute = async ({ request }) => {
@@ -149,6 +159,19 @@ export const POST: APIRoute = async ({ request }) => {
         income: parsed.data.income,
         utm: (parsed.data.utm ?? {}) as Json,
         meta: parsed.data.meta,
+      });
+      return new Response(JSON.stringify({ ok: true, id }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    if (parsed.data.type === "quiz_abandon") {
+      const id = await upsertAdsQuizAbandon(request, {
+        phase: parsed.data.phase,
+        step_id: parsed.data.step_id,
+        answers: parsed.data.answers ?? {},
+        utm: (parsed.data.utm ?? {}) as Json,
       });
       return new Response(JSON.stringify({ ok: true, id }), {
         status: 200,

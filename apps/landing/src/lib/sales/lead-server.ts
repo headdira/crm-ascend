@@ -266,7 +266,7 @@ function quizDiscordAnswers(extra: Record<string, unknown> | undefined) {
 }
 
 async function notifyDiscordQuizLead(
-  kind: "capture" | "complete",
+  kind: "capture" | "complete" | "abandon",
   leadId: string,
   input: {
     full_name: string;
@@ -276,6 +276,7 @@ async function notifyDiscordQuizLead(
     income?: string;
     utm?: Json;
     quizAnswers?: Record<string, unknown>;
+    lastStep?: string;
   },
 ) {
   const utm =
@@ -293,6 +294,7 @@ async function notifyDiscordQuizLead(
     income: input.income,
     utm,
     quizAnswers: input.quizAnswers,
+    lastStep: input.lastStep,
   });
 }
 
@@ -466,6 +468,88 @@ export async function upsertAdsQuizProgress(
   }
 
   return null;
+}
+
+export async function upsertAdsQuizAbandon(
+  request: Request,
+  input: {
+    phase: string;
+    step_id?: string;
+    answers: Record<string, unknown>;
+    utm?: Json;
+  },
+) {
+  const sessionId = getSessionIdFromRequest(request);
+  if (!sessionId) return null;
+
+  await upsertLandingSession(request, sessionId);
+  await ensureColdLeadForSession(sessionId, { eventName: "quiz_abandon" });
+
+  const supabase = createServiceSupabase();
+  const { data: sessionLead } = await supabase
+    .from("leads")
+    .select("id, full_name, email_enc, phone_enc, quiz_answers, status, reached_kiwify_at")
+    .eq("session_id", sessionId)
+    .maybeSingle();
+
+  if (!sessionLead?.email_enc) return null;
+
+  const prev = (sessionLead.quiz_answers ?? {}) as Record<string, unknown>;
+  if (prev.checkout_completed === true || prev.discord_quiz_abandon_notified_at) {
+    return sessionLead.id;
+  }
+  if (sessionLead.reached_kiwify_at) return sessionLead.id;
+
+  const now = new Date().toISOString();
+  const tracking: CheckoutTracking = {
+    cta: "quiz_form",
+    cta_label: "Quiz anúncios",
+  };
+
+  const mergedAnswers = {
+    ...((prev.ads_quiz_answers ?? {}) as Record<string, unknown>),
+    ...input.answers,
+  };
+
+  const partial: Record<string, unknown> = {
+    ads_quiz: true,
+    ads_quiz_abandoned: true,
+    ads_quiz_abandoned_at: now,
+    ads_quiz_abandoned_phase: input.phase,
+    ads_quiz_abandoned_step: input.step_id ?? null,
+    ads_quiz_answers: mergedAnswers,
+    ads_quiz_updated_at: now,
+    discord_quiz_abandon_notified_at: now,
+  };
+
+  await supabase
+    .from("leads")
+    .update({
+      utm: (input.utm ?? {}) as Json,
+      quiz_answers: { ...prev, ...buildQuizAnswers(tracking, partial) } as Json,
+      last_event_at: now,
+    })
+    .eq("id", sessionLead.id);
+
+  const age = prev.lead_age;
+  const income = prev.lead_income;
+
+  void notifyDiscordQuizLead("abandon", sessionLead.id, {
+    full_name: sessionLead.full_name,
+    email: sessionLead.email_enc,
+    phone: sessionLead.phone_enc ?? "",
+    age: typeof age === "number" ? age : undefined,
+    income: typeof income === "string" ? income : undefined,
+    utm: input.utm,
+    lastStep: input.step_id ?? input.phase,
+    quizAnswers: quizDiscordAnswers({
+      ads_quiz_answers: mergedAnswers,
+      lead_age: age,
+      lead_income: income,
+    }),
+  });
+
+  return sessionLead.id;
 }
 
 export async function upsertAdsQuizLeadCapture(
