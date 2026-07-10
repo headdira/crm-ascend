@@ -2,7 +2,7 @@
  * Smoke test: URL de checkout Kiwify deve incluir email, name, phone e region.
  * Run: node scripts/test-checkout-url.mjs
  */
-const CHECKOUT_URL = "https://pay.kiwify.com.br/3yXXBij";
+const CHECKOUT_URL = "https://pay.kiwify.com.br/iXccbO8";
 
 function buildPersonalizedCheckoutUrl(customer, attribution) {
   const url = new URL(CHECKOUT_URL);

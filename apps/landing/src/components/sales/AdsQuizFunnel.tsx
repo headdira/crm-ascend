@@ -720,7 +720,7 @@ export default function AdsQuizFunnel() {
   }, [phase, stepIndex, leadStep, questionSteps.length, progressTotal]);
 
   const progressPct = progressTotal > 0 ? Math.round((progressDone / progressTotal) * 100) : 0;
-  const animatedPrice = useCountUp(offerStep?.priceLabel ?? "R$49,99", phase === "result" && resultViewed);
+  const animatedPrice = useCountUp(offerStep?.priceLabel ?? "R$197", phase === "result" && resultViewed);
 
   useEffect(() => {
     scrollFunnelToTop();

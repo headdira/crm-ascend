@@ -12,7 +12,7 @@ const objections = [
     a: "Perfeito. A mentoria foi criada exatamente para iniciantes. Você será guiado do absoluto zero com passo a passo claro.",
   },
   {
-    q: '"R$49,99 é muito pra mim agora…"',
+    q: '"R$197 é muito pra mim agora…"',
     a: `${offer.dailyCostNote} para 1 ano completo de mentoria, comunidade e suporte. O menor investimento com o maior retorno.`,
   },
   {

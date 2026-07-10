@@ -2,7 +2,7 @@ export const SITE_NAME = "Ascend Club";
 export const SITE_DESCRIPTION =
   "Mentoria em grupo para iniciantes construírem renda online no Brasil, com suporte próximo, networking e calls ao vivo.";
 
-export const CHECKOUT_URL = "https://pay.kiwify.com.br/3yXXBij";
+export const CHECKOUT_URL = "https://pay.kiwify.com.br/iXccbO8";
 export const LOGO_URL =
   "https://media.base44.com/images/public/69f23854d0500399d6881fb0/7e6b8fd8f_LOGO-ASCD.png";
 export const HERO_IMAGE =
@@ -13,11 +13,11 @@ export function formatOfferPrice(value: number): string {
 }
 
 export const offer = {
-  priceBrl: 49.99,
-  priceWasBrl: 197,
+  priceBrl: 197,
+  priceWasBrl: 1500,
   billing: "pagamento único",
   accessMonths: 12,
-  dailyCostNote: "Menos de R$0,14 por dia",
+  dailyCostNote: "Menos de R$0,54 por dia",
 };
 
 export const includes = [
@@ -51,9 +51,9 @@ export const faq = [
       "Sim. A mentoria foi criada para iniciantes. Você recebe passo a passo do zero, com suporte próximo e calls ao vivo para tirar dúvidas em tempo real.",
   },
   {
-    question: "R$49,99 é muito para mim agora. Vale a pena?",
+    question: "R$197 é muito para mim agora. Vale a pena?",
     answer:
-      "O acesso é por 12 meses com pagamento único de R$49,99 (menos de R$0,14 por dia). Inclui mentoria, comunidade, networking e suporte — custo menor que a maioria dos programas comparáveis.",
+      "O acesso é por 12 meses com pagamento único de R$197 (menos de R$0,54 por dia). Inclui mentoria, comunidade, networking e suporte — custo menor que a maioria dos programas comparáveis.",
   },
   {
     question: "Já comprei cursos e não funcionou. Por que seria diferente?",
@@ -74,4 +74,4 @@ export const testimonialsText = [
 ];
 
 export const summaryParagraph =
-  "O Ascend Club é uma mentoria em grupo para quem quer construir renda online começando do zero. Por R$49,99 em pagamento único você tem 12 meses de acesso, 2 calls ao vivo por semana, networking exclusivo, suporte próximo e direcionamento passo a passo. Não é curso gravado isolado: é comunidade + mentores Kelvin Martins e Erick Vinicius.";
+  "O Ascend Club é uma mentoria em grupo para quem quer construir renda online começando do zero. Por R$197 em pagamento único você tem 12 meses de acesso, 2 calls ao vivo por semana, networking exclusivo, suporte próximo e direcionamento passo a passo. Não é curso gravado isolado: é comunidade + mentores Kelvin Martins e Erick Vinicius.";
